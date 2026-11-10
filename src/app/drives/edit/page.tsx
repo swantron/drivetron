@@ -1,0 +1,246 @@
+"use client";
+
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AppShell } from "@/components/AppShell";
+import { useAuth } from "@/hooks/useAuth";
+import { useFamily } from "@/components/FamilyProvider";
+import { useToast } from "@/components/ui/Toast";
+import { Chips, toggle } from "@/components/ui/Chips";
+import { addDrive, removeDrive, saveDrive } from "@/lib/firebase/firestore";
+import { splitDayNight } from "@/utils/night";
+import { driveCoords } from "@/utils/location";
+import { defaultSupervisor, supervisorsOf } from "@/utils/members";
+import { formatMinutes } from "@/utils/progress";
+import { CONDITIONS, SKILLS } from "@/utils/montana";
+import type { Drive, Family } from "@/types";
+import { nowMs } from "@/utils/time";
+import { card, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
+
+const MAX_MINUTES = 16 * 60;
+
+export default function EditDrivePage() {
+  return (
+    <AppShell>
+      <Suspense>
+        <EditDrive />
+      </Suspense>
+    </AppShell>
+  );
+}
+
+function EditDrive() {
+  const params = useSearchParams();
+  const id = params.get("id");
+  const { family, drives, drivesLoaded } = useFamily();
+  if (!family) return null;
+  if (id && !drivesLoaded) return <p className="py-10 text-center text-gray-500">Loading…</p>;
+  const drive = id ? drives.find((d) => d.id === id) : undefined;
+  if (id && !drive) return <p className="py-10 text-center text-gray-500">That drive was deleted.</p>;
+  return (
+    <DriveForm
+      key={drive?.id ?? "new"}
+      family={family}
+      drive={drive}
+      finished={params.get("finished") === "1"}
+      forgot={params.get("forgot") === "1"}
+    />
+  );
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const toDateInput = (ms: number) => {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+const toTimeInput = (ms: number) => {
+  const d = new Date(ms);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+function combine(date: string, time: string): number {
+  const [y, m, d] = date.split("-").map(Number);
+  const [h, min] = time.split(":").map(Number);
+  return new Date(y, m - 1, d, h, min).getTime();
+}
+
+function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?: Drive; finished: boolean; forgot: boolean }) {
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const router = useRouter();
+  const supervisors = supervisorsOf(family);
+
+  const initialStart = drive?.startedAt ?? nowMs() - 60 * 60 * 1000;
+  const [date, setDate] = useState(toDateInput(initialStart));
+  const [startTime, setStartTime] = useState(toTimeInput(initialStart));
+  // A forgotten timer has no real end; make them type it rather than guessing.
+  const [endTime, setEndTime] = useState(drive?.endedAt ? toTimeInput(drive.endedAt) : forgot ? "" : toTimeInput(nowMs()));
+  const [supervisorUid, setSupervisorUid] = useState(drive?.supervisorUid ?? defaultSupervisor(family, user!.uid)?.uid ?? "");
+  const [conditions, setConditions] = useState<string[]>(drive?.conditions ?? []);
+  const [skills, setSkills] = useState<string[]>(drive?.skills ?? []);
+  const [notes, setNotes] = useState(drive?.notes ?? "");
+  // Night is worked out from the times; a supervisor can override it if they know better.
+  const [nightOverride, setNightOverride] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const [initialInputs] = useState(() => ({ date, startTime, endTime }));
+  const range = useMemo(() => {
+    if (!date || !startTime || !endTime) return null;
+    // Untouched timed drive: keep the exact timestamps instead of rounding to the minute.
+    if (
+      drive?.endedAt &&
+      date === initialInputs.date &&
+      startTime === initialInputs.startTime &&
+      endTime === initialInputs.endTime
+    ) {
+      return { start: drive.startedAt, end: drive.endedAt };
+    }
+    const start = combine(date, startTime);
+    let end = combine(date, endTime);
+    if (end < start) end += 24 * 60 * 60 * 1000; // crossed midnight
+    return { start, end };
+  }, [date, startTime, endTime, drive, initialInputs]);
+
+  const coords = driveCoords(drive ?? { lat: null, lng: null }, family);
+  const computed = range ? splitDayNight(range.start, range.end, coords.lat, coords.lng) : null;
+  const total = computed ? computed.dayMinutes + computed.nightMinutes : 0;
+  const nightMinutes =
+    nightOverride !== null && nightOverride !== "" ? Math.max(0, Math.min(total, Math.round(Number(nightOverride)))) : computed?.nightMinutes ?? 0;
+
+  const toggleTag = (list: "c" | "s") => (v: string) =>
+    list === "c" ? setConditions((x) => toggle(x, v)) : setSkills((x) => toggle(x, v));
+
+  const onError = () => showToast("Couldn't save — check your connection", "error");
+
+  const save = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!range || !user) return;
+    if (total <= 0) return showToast("End time must be after the start", "error");
+    if (total > MAX_MINUTES) return showToast("That's over 16 hours — split it into separate drives", "error");
+    if (range.end > nowMs() + 5 * 60 * 1000) return showToast("That drive ends in the future", "error");
+    const sup = supervisors.find((s) => s.uid === supervisorUid);
+    if (!sup) return showToast("Pick who supervised", "error");
+
+    const data = {
+      startedAt: range.start,
+      endedAt: range.end,
+      dayMinutes: total - nightMinutes,
+      nightMinutes,
+      supervisorUid: sup.uid,
+      supervisorName: sup.name,
+      supervisorInitials: sup.initials,
+      conditions,
+      skills,
+      notes: notes.trim(),
+      lat: drive?.lat ?? null,
+      lng: drive?.lng ?? null,
+      manual: drive ? drive.manual : true,
+      createdBy: drive?.createdBy ?? user.uid,
+      updatedAt: nowMs(),
+    };
+    if (drive) saveDrive(family.id, drive.id, data, onError);
+    else addDrive(family.id, data, onError);
+    showToast(drive ? "Drive saved" : "Drive added", "success");
+    router.push(finished ? "/" : "/drives");
+  };
+
+  const del = () => {
+    if (!drive) return;
+    removeDrive(family.id, drive.id, onError);
+    showToast("Drive deleted", "info");
+    router.push("/drives");
+  };
+
+  return (
+    <form onSubmit={save} className="space-y-4 pt-[max(1rem,env(safe-area-inset-top))]">
+      <h1 className="text-2xl font-bold">
+        {finished ? `Nice — ${formatMinutes(total)} logged` : forgot ? "When did the drive end?" : drive ? "Edit drive" : "Add a past drive"}
+      </h1>
+      {finished && <p className={muted}>Tag what you practiced. It helps spot what still needs work.</p>}
+      {forgot && <p className="text-amber-700 dark:text-amber-400">The timer ran over 16 hours. Enter the real end time.</p>}
+
+      <section className={`${card} space-y-3`}>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="col-span-3">
+            <label className={label} htmlFor="date">Date</label>
+            <input id="date" type="date" className={input} required value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="col-span-3 grid grid-cols-2 gap-2">
+            <div>
+              <label className={label} htmlFor="start">Start</label>
+              <input id="start" type="time" className={input} required value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+            </div>
+            <div>
+              <label className={label} htmlFor="end">End</label>
+              <input id="end" type="time" className={input} required value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        {computed && total > 0 && (
+          <div className="flex items-end justify-between gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-950">
+            <div className="text-sm">
+              <p className="font-semibold">{formatMinutes(total)} total</p>
+              <p className={muted}>
+                ☀️ {formatMinutes(total - nightMinutes)} · 🌙 {formatMinutes(nightMinutes)}
+              </p>
+            </div>
+            <label className="w-28 text-right text-xs text-gray-500">
+              Night minutes
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={total}
+                className={`${input} mt-1 py-1.5 text-right`}
+                value={nightOverride ?? String(computed.nightMinutes)}
+                onChange={(e) => setNightOverride(e.target.value)}
+              />
+            </label>
+          </div>
+        )}
+
+        <div>
+          <label className={label} htmlFor="sup">Supervised by</label>
+          <select id="sup" className={input} value={supervisorUid} onChange={(e) => setSupervisorUid(e.target.value)}>
+            {supervisors.map((s) => (
+              <option key={s.uid} value={s.uid}>
+                {s.name} ({s.initials})
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      <section className={`${card} space-y-3`}>
+        <h2 className="font-semibold">Conditions</h2>
+        <Chips options={CONDITIONS.weather} selected={conditions} onToggle={toggleTag("c")} />
+        <Chips options={CONDITIONS.road} selected={conditions} onToggle={toggleTag("c")} />
+        <h2 className="pt-2 font-semibold">Skills</h2>
+        <Chips options={SKILLS} selected={skills} onToggle={toggleTag("s")} />
+        <div className="pt-2">
+          <label className={label} htmlFor="notes">Notes</label>
+          <textarea
+            id="notes"
+            rows={3}
+            maxLength={2000}
+            className={input}
+            placeholder="What went well, what to work on next time"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </div>
+      </section>
+
+      <button className={primaryBtn}>Save</button>
+      {drive && (
+        <button
+          type="button"
+          onClick={() => (confirmDelete ? del() : setConfirmDelete(true))}
+          className={`${secondaryBtn} ${confirmDelete ? "border-red-600 text-red-600" : ""}`}
+        >
+          {confirmDelete ? "Tap again to delete" : "Delete drive"}
+        </button>
+      )}
+    </form>
+  );
+}

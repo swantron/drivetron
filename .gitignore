@@ -1,0 +1,60 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.cursor
+.DS_Store
+*.pem
+CLAUDE.md
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lint_output.txt
+
+# env files (keep .env.local.example committed as a template)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.gcpcreds
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# generated service worker (built by @serwist/next)
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+
+# firebase emulator logs
+firestore-debug.log
+firebase-debug.log
+ui-debug.log
+
+# firebase deploy cache
+.firebase/
