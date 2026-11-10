@@ -34,11 +34,18 @@ export default function EditDrivePage() {
 function EditDrive() {
   const params = useSearchParams();
   const id = params.get("id");
-  const { family, allDrives, drivesLoaded, learner } = useFamily();
+  const { family, allDrives, drivesLoaded, learner, isSupervisor } = useFamily();
   if (!family || !learner) return null;
   if (id && !drivesLoaded) return <p className="py-10 text-center text-gray-500">Loading…</p>;
   const drive = id ? allDrives.find((d) => d.id === id) : undefined;
   if (id && !drive) return <p className="py-10 text-center text-gray-500">That drive was deleted.</p>;
+  if (!drive && !isSupervisor) {
+    return (
+      <p className="py-10 text-center text-gray-500">
+        Past drives are added by a supervising adult. Use Start drive on the Home tab to time a drive.
+      </p>
+    );
+  }
   return (
     <DriveForm
       key={drive?.id ?? "new"}
@@ -70,7 +77,12 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const { showToast } = useToast();
   const router = useRouter();
   const supervisors = supervisorsOf(family);
-  const { learners, learner: selectedLearner, vehicles, drives: learnerDrives } = useFamily();
+  const { learners, learner: selectedLearner, vehicles, drives: learnerDrives, isSupervisor } = useFamily();
+  // Mirrors firestore.rules: learners edit only their own drives, and only tags once it's finished.
+  const ownDrive = !drive || drive.createdBy === user?.uid;
+  const canEdit = isSupervisor || ownDrive;
+  const canEditTimes = isSupervisor || (ownDrive && drive?.endedAt == null);
+  const canDelete = isSupervisor || (ownDrive && drive?.endedAt == null);
 
   const initialStart = drive?.startedAt ?? nowMs() - 60 * 60 * 1000;
   const [date, setDate] = useState(toDateInput(initialStart));
@@ -110,7 +122,15 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   }, [date, startTime, endTime, drive, initialInputs]);
 
   const coords = driveCoords(drive ?? { lat: null, lng: null }, family);
-  const computed = range ? splitDayNight(range.start, range.end, coords.lat, coords.lng) : null;
+  const untouched =
+    !!drive?.endedAt && range?.start === drive.startedAt && range?.end === drive.endedAt;
+  // An untouched finished drive keeps the split it was saved with; recomputing could shift a
+  // minute (e.g. the GPS fix arrived after it stopped) and wrongly mark it as edited.
+  const computed = !range
+    ? null
+    : untouched
+    ? { dayMinutes: drive!.dayMinutes, nightMinutes: drive!.nightMinutes }
+    : splitDayNight(range.start, range.end, coords.lat, coords.lng);
   const total = computed ? computed.dayMinutes + computed.nightMinutes : 0;
   const nightMinutes =
     nightOverride !== null && nightOverride !== "" ? Math.max(0, Math.min(total, Math.round(Number(nightOverride)))) : computed?.nightMinutes ?? 0;
@@ -159,6 +179,14 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
       manual: drive ? drive.manual : true,
       createdBy: drive?.createdBy ?? user.uid,
       updatedAt: nowMs(),
+      // Permanent mark on the printed log when a finished drive's times were changed
+      timesEdited:
+        !!drive?.timesEdited ||
+        (!!drive?.endedAt &&
+          (range.start !== drive.startedAt ||
+            range.end !== drive.endedAt ||
+            total - nightMinutes !== drive.dayMinutes ||
+            nightMinutes !== drive.nightMinutes)),
     };
     if (drive) saveDrive(family.id, drive.id, data, onError);
     else addDrive(family.id, data, onError);
@@ -175,26 +203,32 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
 
   return (
     <form onSubmit={save} className="space-y-4">
+      <fieldset disabled={!canEdit} className="contents">
       <h1 className="text-2xl font-bold">
         {finished ? `Nice — ${formatMinutes(total)} logged` : forgot ? "When did the drive end?" : drive ? "Edit drive" : "Add a past drive"}
       </h1>
       {finished && <p className={muted}>Tag what you practiced. It helps spot what still needs work.</p>}
       {forgot && <p className="text-amber-700 dark:text-amber-400">The timer ran over 16 hours. Enter the real end time.</p>}
+      {!canEdit && <p className="rounded-lg bg-gray-100 p-3 text-sm dark:bg-gray-900">Logged by a supervisor, so it&apos;s view-only for you.</p>}
+      {canEdit && !canEditTimes && (
+        <p className={muted}>Times on a finished drive can only be changed by a supervising adult. You can still add tags and notes.</p>
+      )}
+      {drive?.timesEdited && <p className="text-sm text-amber-700 dark:text-amber-400">Times on this drive were edited after it was logged. The printed log marks it.</p>}
 
       <section className={`${card} space-y-3`}>
         <div className="grid grid-cols-3 gap-2">
           <div className="col-span-3">
             <label className={label} htmlFor="date">Date</label>
-            <input id="date" type="date" className={input} required value={date} onChange={(e) => setDate(e.target.value)} />
+            <input disabled={!canEditTimes} id="date" type="date" className={input} required value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="col-span-3 grid grid-cols-2 gap-2">
             <div>
               <label className={label} htmlFor="start">Start</label>
-              <input id="start" type="time" className={input} required value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              <input disabled={!canEditTimes} id="start" type="time" className={input} required value={startTime} onChange={(e) => setStartTime(e.target.value)} />
             </div>
             <div>
               <label className={label} htmlFor="end">End</label>
-              <input id="end" type="time" className={input} required value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+              <input disabled={!canEditTimes} id="end" type="time" className={input} required value={endTime} onChange={(e) => setEndTime(e.target.value)} />
             </div>
           </div>
         </div>
@@ -214,6 +248,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
                 inputMode="numeric"
                 min={0}
                 max={total}
+                disabled={!canEditTimes}
                 className={`${input} mt-1 py-1.5 text-right`}
                 value={nightOverride ?? String(computed.nightMinutes)}
                 onChange={(e) => setNightOverride(e.target.value)}
@@ -294,8 +329,9 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
         </div>
       </section>
 
-      <button className={primaryBtn}>Save</button>
-      {drive && (
+      {canEdit && <button className={primaryBtn}>Save</button>}
+      </fieldset>
+      {drive && canDelete && (
         <button
           type="button"
           onClick={() => (confirmDelete ? del() : setConfirmDelete(true))}

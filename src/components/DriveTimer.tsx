@@ -26,7 +26,7 @@ function clock(ms: number) {
 
 export function DriveTimer() {
   const { user } = useAuth();
-  const { family, learner, drives, vehicles, activeDrive } = useFamily();
+  const { family, learner, drives, vehicles, activeDrive, isSupervisor } = useFamily();
   const { showToast } = useToast();
   const router = useRouter();
   const now = useNow(1000, activeDrive !== null);
@@ -100,7 +100,12 @@ export function DriveTimer() {
       return;
     }
     patchDrive(family.id, activeDrive.id, { endedAt, ...split }, onError);
-    router.push(`/drives/edit?id=${activeDrive.id}&finished=1`);
+    if (isSupervisor || activeDrive.createdBy === user.uid) {
+      router.push(`/drives/edit?id=${activeDrive.id}&finished=1`);
+    } else {
+      // Started on a parent's phone: it's theirs to tag
+      showToast(`Drive stopped — ${split.dayMinutes + split.nightMinutes} min logged`, "success");
+    }
   };
 
   const discard = () => {
@@ -126,9 +131,11 @@ export function DriveTimer() {
         <button onClick={stop} className="w-full rounded-xl bg-red-600 px-4 py-4 text-lg font-semibold text-white active:bg-red-700">
           Stop drive
         </button>
-        <button onClick={discard} className="mt-3 text-sm text-gray-500 underline">
-          Discard — started by mistake
-        </button>
+        {(isSupervisor || activeDrive.createdBy === user.uid) && (
+          <button onClick={discard} className="mt-3 text-sm text-gray-500 underline">
+            Discard — started by mistake
+          </button>
+        )}
       </section>
     );
   }
@@ -167,9 +174,11 @@ export function DriveTimer() {
       <button onClick={start} disabled={starting} className={`${primaryBtn} py-4 text-lg`}>
         Start drive
       </button>
-      <button onClick={() => router.push("/drives/edit")} className={`${secondaryBtn} mt-3`}>
-        Add a past drive
-      </button>
+      {isSupervisor && (
+        <button onClick={() => router.push("/drives/edit")} className={`${secondaryBtn} mt-3`}>
+          Add a past drive
+        </button>
+      )}
     </section>
   );
 }

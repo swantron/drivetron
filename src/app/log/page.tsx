@@ -98,7 +98,11 @@ function PrintableLog() {
                     {d.vehicleName && <div className="text-xs text-gray-500">Vehicle: {d.vehicleName}</div>}
                     {d.notes && <div className="text-xs text-gray-500">{d.notes}</div>}
                   </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{formatMinutes(d.dayMinutes + d.nightMinutes)}</td>
+                  <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">
+                    {formatMinutes(d.dayMinutes + d.nightMinutes)}
+                    {d.manual && <sup title="Entered by hand">†</sup>}
+                    {d.timesEdited && <sup title="Times edited after logging">*</sup>}
+                  </td>
                   <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{d.nightMinutes ? formatMinutes(d.nightMinutes) : ""}</td>
                   <td className="py-1 text-center font-medium">{d.supervisorInitials}</td>
                 </tr>
@@ -115,7 +119,7 @@ function PrintableLog() {
           <tfoot>
             <tr className="border-t-2 border-black font-bold dark:border-gray-500 print:border-black">
               <td className="py-1 pr-2" colSpan={2}>
-                TOTAL TIME ({p.driveCount} drives)
+                TOTAL TIME ({p.driveCount} {p.driveCount === 1 ? "drive" : "drives"})
               </td>
               <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.totalMinutes)}</td>
               <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.nightMinutes)}</td>
@@ -126,6 +130,8 @@ function PrintableLog() {
 
         <p className="mt-3 text-xs text-gray-500">
           Night = sunset to sunrise at the drive&apos;s location. Initials are the supervising licensed adult.
+          {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
+          {done.some((d) => d.timesEdited) && <> * Times were edited after the drive was logged.</>}
         </p>
 
         <div className="mt-10 grid grid-cols-2 gap-8 break-inside-avoid">

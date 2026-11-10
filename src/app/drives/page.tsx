@@ -17,7 +17,7 @@ export default function DrivesPage() {
 }
 
 function Drives() {
-  const { learner, drives, drivesLoaded } = useFamily();
+  const { learner, drives, drivesLoaded, isSupervisor } = useFamily();
   if (!learner) return null;
   const done = drives.filter((d) => d.endedAt !== null);
   const p = computeProgress(drives, learner.permitDate);
@@ -28,9 +28,11 @@ function Drives() {
 
   return (
     <div className="space-y-4">
-      <Link href="/drives/edit" className={`${primaryBtn} block text-center`}>
-        Add a past drive
-      </Link>
+      {isSupervisor && (
+        <Link href="/drives/edit" className={`${primaryBtn} block text-center`}>
+          Add a past drive
+        </Link>
+      )}
 
       {done.length > 0 && untried.length > 0 && (
         <section className={card}>

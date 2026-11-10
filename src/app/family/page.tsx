@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
@@ -8,6 +8,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
 import {
+  approveJoinRequest,
+  declineJoinRequest,
+  leaveFamily,
+  subscribeToJoinRequests,
+  type JoinRequest,
   removeLearner,
   removeMember,
   removeVehicle,
@@ -19,7 +24,7 @@ import {
 import { driveLearnerId, firstName, learnersOf, newId } from "@/utils/learners";
 import { signOut } from "@/lib/firebase/auth";
 import { initialsOf } from "@/utils/progress";
-import type { Family, Learner } from "@/types";
+import type { Family, Learner, Member } from "@/types";
 import { card, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 export default function FamilyPage() {
@@ -31,16 +36,18 @@ export default function FamilyPage() {
 }
 
 function FamilySettings() {
-  const { family } = useFamily();
+  const { family, isOwner, isSupervisor } = useFamily();
   const { user } = useAuth();
   const router = useRouter();
   if (!family || !user) return null;
   return (
     <div className="space-y-4">
-      <Invite family={family} isOwner={family.ownerUid === user.uid} />
+      {isOwner && <JoinRequests familyId={family.id} />}
+      <Invite family={family} isOwner={isOwner} />
       <Members family={family} myUid={user.uid} />
-      <Learners familyId={family.id} />
+      {isSupervisor ? <Learners familyId={family.id} /> : <LearnerSummary />}
       <Vehicles familyId={family.id} />
+      {!isOwner && <LeaveFamily familyId={family.id} uid={user.uid} />}
       <button
         className={secondaryBtn}
         onClick={async () => {
@@ -57,6 +64,85 @@ function FamilySettings() {
         Drivetron {process.env.NEXT_PUBLIC_APP_VERSION} · Not affiliated with the State of Montana, MVD, or OPI.
       </p>
     </div>
+  );
+}
+
+function JoinRequests({ familyId }: { familyId: string }) {
+  const [requests, setRequests] = useState<JoinRequest[]>([]);
+  useEffect(() => subscribeToJoinRequests(familyId, setRequests), [familyId]);
+  if (requests.length === 0) return null;
+  return (
+    <section className={`${card} space-y-3 border-amber-400 dark:border-amber-600`}>
+      <h2 className="font-semibold">Waiting to join</h2>
+      <p className={muted}>Only approve people you know. Approved members can see the whole log.</p>
+      <ul className="space-y-3">
+        {requests.map((r) => (
+          <JoinRequestRow key={r.uid} familyId={familyId} req={r} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function JoinRequestRow({ familyId, req }: { familyId: string; req: JoinRequest }) {
+  const { showToast } = useToast();
+  // They said what they are; the owner confirms, since that decides who can edit drives.
+  const [role, setRole] = useState<Member["role"]>(req.role);
+  const [busy, setBusy] = useState(false);
+  const act = (p: Promise<void>, done: string) => {
+    setBusy(true);
+    p.then(() => showToast(done, "success"))
+      .catch(() => showToast("Couldn't update. Are you online?", "error"))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <li className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-950">
+      <p className="font-medium">{req.name}</p>
+      <select className={input} value={role} onChange={(e) => setRole(e.target.value as Member["role"])} aria-label={`Role for ${req.name}`}>
+        <option value="supervisor">Supervising adult — can add and edit any drive</option>
+        <option value="learner">Learner — can time their own drives only</option>
+      </select>
+      <div className="grid grid-cols-2 gap-2">
+        <button className={secondaryBtn} disabled={busy} onClick={() => act(declineJoinRequest(familyId, req.uid), "Request declined")}>
+          Decline
+        </button>
+        <button className={primaryBtn} disabled={busy} onClick={() => act(approveJoinRequest(familyId, req, role), `${req.name} added`)}>
+          Approve
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function LearnerSummary() {
+  const { learners } = useFamily();
+  return (
+    <section className={`${card} space-y-2`}>
+      <h2 className="font-semibold">Learners</h2>
+      <ul className="text-sm">
+        {learners.map((l) => (
+          <li key={l.id}>{l.name}</li>
+        ))}
+      </ul>
+      <p className={muted}>A supervising adult manages learner details and license dates.</p>
+    </section>
+  );
+}
+
+function LeaveFamily({ familyId, uid }: { familyId: string; uid: string }) {
+  const { showToast } = useToast();
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <button
+      className={`${secondaryBtn} ${confirm ? "border-red-600 text-red-600" : ""}`}
+      onClick={() =>
+        confirm
+          ? leaveFamily(familyId, uid).catch(() => showToast("Couldn't leave. Are you online?", "error"))
+          : setConfirm(true)
+      }
+    >
+      {confirm ? "Tap again to leave this log" : "Leave this log"}
+    </button>
   );
 }
 
@@ -81,7 +167,7 @@ function Invite({ family, isOwner }: { family: Family; isOwner: boolean }) {
   return (
     <section className={`${card} space-y-3`}>
       <h2 className="font-semibold">Invite</h2>
-      <p className={muted}>The other parent, another licensed adult you authorize, or your teen can join with this code.</p>
+      <p className={muted}>Share this with the other parent, another licensed adult you authorize, or your teen. They ask to join with it, and the log owner approves them.</p>
       <p className="rounded-lg bg-gray-100 py-3 text-center font-mono text-2xl tracking-[0.3em] dark:bg-gray-950">{family.inviteCode}</p>
       <button className={primaryBtn} onClick={share}>
         Share invite

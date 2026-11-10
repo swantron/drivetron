@@ -67,6 +67,8 @@ export interface Drive {
   lng: number | null;
   /** true when typed in after the fact rather than timed */
   manual: boolean;
+  /** Set (permanently) when a finished drive's times were changed afterward */
+  timesEdited?: boolean;
   createdBy: string;
   updatedAt: number;
 }

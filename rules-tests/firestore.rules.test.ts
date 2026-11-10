@@ -97,34 +97,61 @@ describe("reading", () => {
   });
 });
 
-describe("joining", () => {
-  it("lets someone with the code add themselves", async () => {
-    await assertSucceeds(
-      updateDoc(doc(db("teen"), "families/f1"), {
-        memberUids: arrayUnion("teen"),
-        "members.teen": member("Teen", "learner"),
-        joinCode: CODE,
-      })
+describe("joining (request + owner approval)", () => {
+  const req = (role = "learner", code = CODE) => ({ name: "Teen", initials: "TE", role, code, createdAt: 1 });
+  const reqPath = "families/f1/joinRequests/teen";
+
+  it("no longer lets anyone add themselves directly", async () => {
+    await assertFails(
+      updateDoc(doc(db("teen"), "families/f1"), { memberUids: arrayUnion("teen"), "members.teen": member("Teen", "learner"), joinCode: CODE })
     );
+  });
+
+  it("lets someone with the code file a request and read only their own", async () => {
+    await assertSucceeds(setDoc(doc(db("teen"), reqPath), req()));
+    await assertSucceeds(getDoc(doc(db("teen"), reqPath)));
+    await assertFails(getDoc(doc(db("teen"), "families/f1")));
+    await assertFails(getDocs(collection(db("teen"), "families/f1/joinRequests")));
+  });
+
+  it("rejects a request with the wrong code or for someone else", async () => {
+    await assertFails(setDoc(doc(db("teen"), reqPath), req("learner", "WRONG234")));
+    await assertFails(setDoc(doc(db("mallory"), reqPath), req()));
+  });
+
+  it("lets the owner see requests and approve one, choosing the role", async () => {
+    await setDoc(doc(db("teen"), reqPath), req("supervisor"));
+    await assertSucceeds(getDocs(collection(db("parent"), "families/f1/joinRequests")));
+    const fs = db("parent");
+    const b = writeBatch(fs);
+    b.update(doc(fs, "families/f1"), {
+      memberUids: arrayUnion("teen"),
+      "members.teen": member("Teen", "learner"),
+      approvedUid: "teen",
+    });
+    b.delete(doc(fs, reqPath));
+    await assertSucceeds(b.commit());
     await assertSucceeds(getDoc(doc(db("teen"), "families/f1")));
   });
 
-  it("rejects a wrong code", async () => {
+  it("stops the owner adding an account that never asked to join", async () => {
     await assertFails(
-      updateDoc(doc(db("teen"), "families/f1"), { memberUids: arrayUnion("teen"), "members.teen": member("Teen"), joinCode: "WRONG234" })
+      updateDoc(doc(db("parent"), "families/f1"), { memberUids: arrayUnion("victim"), "members.victim": member("V"), approvedUid: "victim" })
     );
   });
 
-  it("rejects joining and changing anything else", async () => {
+  it("stops the owner adding two people under one request", async () => {
+    await setDoc(doc(db("teen"), reqPath), req());
     await assertFails(
-      updateDoc(doc(db("teen"), "families/f1"), { memberUids: arrayUnion("teen"), "members.teen": member("Teen"), joinCode: CODE, learnerName: "Hacked" })
+      updateDoc(doc(db("parent"), "families/f1"), { memberUids: arrayUnion("teen", "victim"), approvedUid: "teen" })
     );
   });
 
-  it("rejects adding a third party while joining", async () => {
-    await assertFails(
-      updateDoc(doc(db("teen"), "families/f1"), { memberUids: arrayUnion("teen", "friend"), "members.teen": member("Teen"), joinCode: CODE })
-    );
+  it("lets the requester withdraw and the owner decline", async () => {
+    await setDoc(doc(db("teen"), reqPath), req());
+    await assertSucceeds(deleteDoc(doc(db("teen"), reqPath)));
+    await setDoc(doc(db("teen"), reqPath), req());
+    await assertSucceeds(deleteDoc(doc(db("parent"), reqPath)));
   });
 });
 
@@ -135,14 +162,32 @@ describe("member edits", () => {
     );
   });
 
-  it("lets a member edit the learner details and their own entry", async () => {
-    await assertSucceeds(updateDoc(doc(db("teen"), "families/f1"), { learnerName: "Teen D.", "members.teen.name": "Teenie" }));
+  it("lets a learner edit their own entry and vehicles, but not learner details", async () => {
+    await assertSucceeds(updateDoc(doc(db("teen"), "families/f1"), { "members.teen.name": "Teenie", "vehicles.v9": { name: "Civic" } }));
+    await assertFails(updateDoc(doc(db("teen"), "families/f1"), { permitDate: "2026-01-01" }));
+    await assertFails(updateDoc(doc(db("teen"), "families/f1"), { "learners.primary": { name: "T", dob: "2011-03-04", permitDate: "2026-01-01" } }));
+  });
+
+  it("lets a supervisor who isn't the owner edit learner details", async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      updateDoc(doc(ctx.firestore(), "families/f1"), { memberUids: ["parent", "teen", "mom"], "members.mom": member("Mom") })
+    );
+    await assertSucceeds(updateDoc(doc(db("mom"), "families/f1"), { learnerName: "Teen D." }));
   });
 
   it("stops a non-owner from removing people or changing the code", async () => {
     await assertFails(updateDoc(doc(db("teen"), "families/f1"), { memberUids: ["teen"] }));
     await assertFails(updateDoc(doc(db("teen"), "families/f1"), { inviteCode: "MINE2345" }));
     await assertFails(updateDoc(doc(db("teen"), "families/f1"), { "members.parent.name": "Someone" }));
+  });
+
+  it("stops a member changing their own role", async () => {
+    await assertFails(updateDoc(doc(db("teen"), "families/f1"), { "members.teen.role": "supervisor" }));
+  });
+
+  it("lets a non-owner leave, and only remove themselves", async () => {
+    await assertFails(updateDoc(doc(db("teen"), "families/f1"), { memberUids: [], members: {} }));
+    await assertSucceeds(updateDoc(doc(db("teen"), "families/f1"), { memberUids: ["parent"], members: { parent: member("Parent") } }));
   });
 
   it("lets the owner remove a member", async () => {
@@ -196,6 +241,74 @@ describe("learners and vehicles", () => {
     await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n1"), { ...drive("parent"), learnerId: "kid2", vehicleId: "v1", vehicleName: "Outback" }));
     await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n2"), { ...drive("parent"), vehicleId: null, vehicleName: null }));
     await assertFails(setDoc(doc(fs, "families/f1/drives/n3"), { ...drive("parent"), learnerId: 7 }));
+  });
+});
+
+describe("drives: learner restrictions", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const fs = ctx.firestore();
+      await updateDoc(doc(fs, "families/f1"), { memberUids: ["parent", "teen"], "members.teen": member("Teen", "learner") });
+      await setDoc(doc(fs, "families/f1/drives/teenLive"), { ...drive("teen"), endedAt: null, dayMinutes: 0, nightMinutes: 0 });
+      await setDoc(doc(fs, "families/f1/drives/teenDone"), drive("teen"));
+    });
+  });
+  const fsT = () => db("teen");
+
+  it("lets a learner start a live timer but not type in a past drive", async () => {
+    await assertSucceeds(setDoc(doc(fsT(), "families/f1/drives/n1"), { ...drive("teen"), endedAt: null, dayMinutes: 0, nightMinutes: 0 }));
+    await assertFails(setDoc(doc(fsT(), "families/f1/drives/n2"), { ...drive("teen"), manual: true }));
+    await assertFails(setDoc(doc(fsT(), "families/f1/drives/n3"), drive("teen")));
+  });
+
+  it("lets a learner stop and tag their own drive", async () => {
+    await assertSucceeds(updateDoc(doc(fsT(), "families/f1/drives/teenLive"), { endedAt: 1_700_003_600_000, dayMinutes: 45, nightMinutes: 15, updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(fsT(), "families/f1/drives/teenDone"), { notes: "merged onto I-90", skills: ["Merging"], updatedAt: 2 }));
+  });
+
+  it("stops a learner changing a finished drive's times, even flagged", async () => {
+    await assertFails(updateDoc(doc(fsT(), "families/f1/drives/teenDone"), { endedAt: 1_700_009_000_000, dayMinutes: 120, updatedAt: 2 }));
+    await assertFails(updateDoc(doc(fsT(), "families/f1/drives/teenDone"), { endedAt: 1_700_009_000_000, dayMinutes: 120, timesEdited: true, updatedAt: 2 }));
+  });
+
+  it("stops a learner editing or deleting a parent's drive", async () => {
+    await assertFails(updateDoc(doc(fsT(), "families/f1/drives/d1"), { notes: "x", updatedAt: 2 }));
+    await assertFails(deleteDoc(doc(fsT(), "families/f1/drives/d1")));
+    await assertFails(deleteDoc(doc(fsT(), "families/f1/drives/teenDone")));
+  });
+
+  it("lets a learner stop a timer a parent started, but not discard it", async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), "families/f1/drives/parentLive"), { ...drive("parent"), endedAt: null, dayMinutes: 0, nightMinutes: 0 })
+    );
+    await assertFails(deleteDoc(doc(fsT(), "families/f1/drives/parentLive")));
+    await assertSucceeds(updateDoc(doc(fsT(), "families/f1/drives/parentLive"), { endedAt: 1_700_003_600_000, dayMinutes: 60, nightMinutes: 0, updatedAt: 2 }));
+  });
+
+  it("lets a learner discard their own running timer", async () => {
+    await assertSucceeds(deleteDoc(doc(fsT(), "families/f1/drives/teenLive")));
+  });
+
+  it("rejects more minutes than the drive lasted", async () => {
+    await assertFails(updateDoc(doc(fsT(), "families/f1/drives/teenLive"), { endedAt: 1_700_003_600_000, dayMinutes: 300, nightMinutes: 0, updatedAt: 2 }));
+  });
+});
+
+describe("drives: edit audit", () => {
+  it("requires the edited flag when a supervisor changes a finished drive's times", async () => {
+    const fs = db("parent");
+    await assertFails(updateDoc(doc(fs, "families/f1/drives/d1"), { endedAt: 1_700_007_200_000, dayMinutes: 105, updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(fs, "families/f1/drives/d1"), { endedAt: 1_700_007_200_000, dayMinutes: 105, timesEdited: true, updatedAt: 2 }));
+  });
+
+  it("never lets the flag be cleared", async () => {
+    const fs = db("parent");
+    await updateDoc(doc(fs, "families/f1/drives/d1"), { endedAt: 1_700_007_200_000, dayMinutes: 105, timesEdited: true, updatedAt: 2 });
+    await assertFails(updateDoc(doc(fs, "families/f1/drives/d1"), { timesEdited: false, updatedAt: 3 }));
+  });
+
+  it("doesn't flag tag or note edits", async () => {
+    await assertSucceeds(updateDoc(doc(db("parent"), "families/f1/drives/d1"), { notes: "rain", updatedAt: 2 }));
   });
 });
 

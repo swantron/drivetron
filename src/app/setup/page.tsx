@@ -1,12 +1,19 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
-import { createFamily, joinFamily, InviteNotFoundError } from "@/lib/firebase/firestore";
+import {
+  createFamily,
+  requestToJoin,
+  InviteNotFoundError,
+  pendingFamilyId,
+  subscribeToMyJoinRequest,
+  withdrawJoinRequest,
+} from "@/lib/firebase/firestore";
 import { initialsOf } from "@/utils/progress";
 import { card, input, label, primaryBtn, muted } from "@/components/ui/styles";
 
@@ -27,10 +34,18 @@ function Setup() {
   // Invite links look like /setup?code=ABCD2345
   const codeParam = params.get("code") ?? "";
   const [mode, setMode] = useState<"create" | "join">(codeParam ? "join" : "create");
+  const { user } = useAuth();
+  // A join request waiting on the owner (remembered on this device)
+  const [pendingId, setPendingId] = useState<string | null>(() => (typeof window === "undefined" ? null : pendingFamilyId()));
 
   useEffect(() => {
     if (loaded && family) router.replace("/");
   }, [loaded, family, router]);
+
+  const clearPending = useCallback(() => setPendingId(null), []);
+  if (pendingId && user) {
+    return <Waiting familyId={pendingId} uid={user.uid} onGone={clearPending} />;
+  }
 
   return (
     <main className="mx-auto max-w-md space-y-5 px-4 py-[max(1.5rem,env(safe-area-inset-top))]">
@@ -46,7 +61,7 @@ function Setup() {
           </button>
         ))}
       </div>
-      {mode === "create" ? <CreateForm /> : <JoinForm initialCode={codeParam} />}
+      {mode === "create" ? <CreateForm /> : <JoinForm initialCode={codeParam} onRequested={setPendingId} />}
     </main>
   );
 }
@@ -105,7 +120,40 @@ function CreateForm() {
   );
 }
 
-function JoinForm({ initialCode }: { initialCode: string }) {
+function Waiting({ familyId, uid, onGone }: { familyId: string; uid: string; onGone: () => void }) {
+  const { showToast } = useToast();
+  // Approval adds this account to the family, and the family listener takes over from there.
+  // If the request disappears without that (declined or withdrawn), drop back to the form.
+  useEffect(
+    () =>
+      subscribeToMyJoinRequest(familyId, uid, (exists) => {
+        if (!exists) onGone();
+      }),
+    [familyId, uid, onGone]
+  );
+
+  return (
+    <main className="mx-auto max-w-md space-y-5 px-4 py-[max(1.5rem,env(safe-area-inset-top))]">
+      <h1 className="text-2xl font-bold">Waiting for approval</h1>
+      <section className={`${card} space-y-3`}>
+        <p>Your request to join was sent. The parent who set up the log approves it from their Family tab.</p>
+        <p className={muted}>This screen updates on its own once you&apos;re approved.</p>
+        <button
+          className="w-full text-sm text-gray-500 underline"
+          onClick={() =>
+            withdrawJoinRequest(familyId, uid)
+              .then(onGone)
+              .catch(() => showToast("Couldn't cancel. Are you online?", "error"))
+          }
+        >
+          Cancel request
+        </button>
+      </section>
+    </main>
+  );
+}
+
+function JoinForm({ initialCode, onRequested }: { initialCode: string; onRequested: (familyId: string) => void }) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [code, setCode] = useState(initialCode);
@@ -118,10 +166,11 @@ function JoinForm({ initialCode }: { initialCode: string }) {
     if (!user) return;
     setBusy(true);
     try {
-      await joinFamily(user, code, { name: myName.trim(), initials: initialsOf(myName) || "?", role });
+      onRequested(await requestToJoin(user, code, { name: myName.trim(), initials: initialsOf(myName) || "?", role }));
     } catch (err) {
       console.error(err);
       showToast(err instanceof InviteNotFoundError ? "That code doesn't match a log" : "Couldn't join. Check the code and try again.", "error");
+    } finally {
       setBusy(false);
     }
   };
@@ -156,7 +205,7 @@ function JoinForm({ initialCode }: { initialCode: string }) {
         </div>
       </fieldset>
       <button className={primaryBtn} disabled={busy}>
-        {busy ? "Joining…" : "Join log"}
+        {busy ? "Sending…" : "Ask to join"}
       </button>
     </form>
   );

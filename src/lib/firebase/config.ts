@@ -45,11 +45,14 @@ export function getFirebaseAuth() {
       // since the real popup flow can't be scripted. e.g. __devSignIn("parent@test.dev", "Pat Parent")
       if (typeof window !== "undefined") {
         const auth = _auth;
-        (window as unknown as Record<string, unknown>).__devSignIn = (email: string, name: string) =>
-          signInWithCredential(
+        const w = window as unknown as Record<string, unknown>;
+        w.__devSignIn = async (email: string, name: string) => {
+          if (auth.currentUser) await auth.signOut();
+          return signInWithCredential(
             auth,
             GoogleAuthProvider.credential(JSON.stringify({ sub: email, email, name, email_verified: true }))
           );
+        };
       }
     }
   }

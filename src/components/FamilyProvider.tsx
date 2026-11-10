@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { migrateLegacyLearner, subscribeToDrives, subscribeToMyFamily } from "@/lib/firebase/firestore";
 import { driveLearnerId, learnersOf, vehiclesOf, type LearnerWithId, type VehicleWithId } from "@/utils/learners";
-import type { Drive, Family } from "@/types";
+import type { Drive, Family, Member } from "@/types";
 
 interface FamilyContextValue {
   /** false until we know whether this user belongs to a family */
@@ -23,6 +23,11 @@ interface FamilyContextValue {
   /** The selected learner's in-progress drive, if a timer is running on any device */
   activeDrive: Drive | null;
   error: string | null;
+  /** This user's entry in the family */
+  me: Member | null;
+  /** Supervisors can add past drives, edit any drive, and edit learner details */
+  isSupervisor: boolean;
+  isOwner: boolean;
 }
 
 const LEARNER_KEY = "drivetron.learnerId";
@@ -83,7 +88,8 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const family = fam?.family ?? null;
 
   // Families from before multi-learner support get their learner moved into the learners map.
-  const needsMigration = !!family && !family.learners && !!family.learnerName;
+  const needsMigration =
+    !!family && !family.learners && !!family.learnerName && !!uid && family.members[uid]?.role === "supervisor";
   useEffect(() => {
     if (needsMigration && family) migrateLegacyLearner(family);
   }, [needsMigration, family]);
@@ -116,6 +122,9 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     drivesLoaded: driveState !== null && driveState.familyId === familyId,
     activeDrive: drives.find((d) => d.endedAt === null) ?? null,
     error: fam?.error ?? null,
+    me: (uid && family?.members[uid]) || null,
+    isSupervisor: !!uid && family?.members[uid]?.role === "supervisor",
+    isOwner: !!uid && family?.ownerUid === uid,
   };
 
   return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>;

@@ -1,6 +1,15 @@
 rules_version = '2';
 
 // Rules are the only backend: the app is a static export with no server.
+//
+// Trust model
+// - The owner (the parent who created the log) decides who belongs and what role they have.
+//   Joining is a request the owner approves; nobody can add themselves.
+// - Supervisors (licensed adults) can log, edit and delete any drive.
+// - Learners can time their own drives from their own phone, but can't type in past drives,
+//   can't change the times on a finished drive, and can't touch drives someone else logged.
+//   The parent certifies these hours on MVD form 21-1600, so a learner must not be able to pad them.
+// - Any change to a finished drive's times is permanently flagged (timesEdited) and shows on the log.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -8,12 +17,24 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function familyPath(fid) {
+      return /databases/$(database)/documents/families/$(fid);
+    }
+
     function family(fid) {
-      return get(/databases/$(database)/documents/families/$(fid)).data;
+      return get(familyPath(fid)).data;
     }
 
     function isMember(fid) {
       return signedIn() && request.auth.uid in family(fid).memberUids;
+    }
+
+    function roleIn(fid) {
+      return family(fid).members[request.auth.uid].role;
+    }
+
+    function isSupervisor(fid) {
+      return isMember(fid) && roleIn(fid) == 'supervisor';
     }
 
     function validMember(m) {
@@ -29,7 +50,8 @@ service cloud.firestore {
 
     function validFamily(f) {
       return f.keys().hasOnly(['learners', 'vehicles', 'learnerName', 'learnerDob', 'permitDate', 'ownerUid',
-                               'memberUids', 'members', 'inviteCode', 'joinCode', 'lastLat', 'lastLng', 'createdAt'])
+                               'memberUids', 'members', 'inviteCode', 'joinCode', 'approvedUid',
+                               'lastLat', 'lastLng', 'createdAt'])
         // Legacy single-learner fields (pre-learners map)
         && (!('learnerName' in f) || (f.learnerName is string && f.learnerName.size() <= 80))
         && (!('learnerDob' in f) || isDate(f.learnerDob))
@@ -43,14 +65,14 @@ service cloud.firestore {
     }
 
     // Lookup from a shared code to its family. Readable one at a time by code, never listable,
-    // so codes can't be enumerated.
+    // so codes can't be enumerated (31^8 possibilities).
     match /invites/{code} {
       allow get: if signedIn();
       allow create: if signedIn()
         && code.size() >= 8
         && request.resource.data.keys().hasOnly(['familyId'])
-        && getAfter(/databases/$(database)/documents/families/$(request.resource.data.familyId)).data.ownerUid == request.auth.uid
-        && getAfter(/databases/$(database)/documents/families/$(request.resource.data.familyId)).data.inviteCode == code;
+        && getAfter(familyPath(request.resource.data.familyId)).data.ownerUid == request.auth.uid
+        && getAfter(familyPath(request.resource.data.familyId)).data.inviteCode == code;
       allow delete: if signedIn() && family(resource.data.familyId).ownerUid == request.auth.uid;
     }
 
@@ -62,47 +84,94 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.memberUids == [request.auth.uid]
         && request.resource.data.members.keys().hasOnly([request.auth.uid])
-        && validMember(request.resource.data.members[request.auth.uid]);
+        && validMember(request.resource.data.members[request.auth.uid])
+        && request.resource.data.members[request.auth.uid].role == 'supervisor';
 
-      // Any member edits the learner details, their own member entry and the last location.
-      // Only the owner changes who belongs or the invite code.
+      function changed() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      function addedUids() {
+        return request.resource.data.memberUids.toSet().difference(resource.data.memberUids.toSet());
+      }
+
+      // Owner: manages membership. Someone can only be added through their own pending join
+      // request (named in approvedUid), one at a time, so an owner can't push a family onto a
+      // stranger's account.
+      function ownerUpdate() {
+        return request.auth.uid == resource.data.ownerUid
+          && request.auth.uid in request.resource.data.memberUids
+          && (
+            addedUids().size() == 0
+            || (
+              addedUids().size() == 1
+              && addedUids().hasOnly([request.resource.data.approvedUid])
+              && exists(/databases/$(database)/documents/families/$(fid)/joinRequests/$(request.resource.data.approvedUid))
+            )
+          );
+      }
+
+      // Other members: vehicles, their own name/initials (not role), last location; supervisors also learner details.
+      function memberUpdate() {
+        return request.auth.uid in resource.data.memberUids
+          && !changed().hasAny(['memberUids', 'inviteCode', 'ownerUid', 'approvedUid', 'joinCode'])
+          && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
+          && request.resource.data.members[request.auth.uid].role == resource.data.members[request.auth.uid].role
+          // The license date drives the 6-month hold; only adults edit learner details
+          && (resource.data.members[request.auth.uid].role == 'supervisor'
+              || !changed().hasAny(['learners', 'learnerName', 'learnerDob', 'permitDate']));
+      }
+
+      // A member (not the owner) leaving: removes only themselves.
+      function leaving() {
+        return request.auth.uid in resource.data.memberUids
+          && request.auth.uid != resource.data.ownerUid
+          && request.resource.data.memberUids.toSet() == resource.data.memberUids.toSet().difference([request.auth.uid].toSet())
+          && changed().hasOnly(['memberUids', 'members'])
+          && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
+          && !(request.auth.uid in request.resource.data.members);
+      }
+
       allow update: if signedIn()
         && validFamily(request.resource.data)
         && request.resource.data.ownerUid == resource.data.ownerUid
-        && (
-          (request.auth.uid == resource.data.ownerUid)
-          || (
-            request.auth.uid in resource.data.memberUids
-            && request.resource.data.memberUids == resource.data.memberUids
-            && request.resource.data.inviteCode == resource.data.inviteCode
-            && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
-          )
-          || isJoining()
-        )
+        && (ownerUpdate() || memberUpdate() || leaving())
         && (!(request.auth.uid in request.resource.data.members) || validMember(request.resource.data.members[request.auth.uid]));
-
-      // Joining with the invite code: add only yourself, change nothing else.
-      function isJoining() {
-        return !(request.auth.uid in resource.data.memberUids)
-          && request.resource.data.joinCode == resource.data.inviteCode
-          && request.resource.data.memberUids == resource.data.memberUids.concat([request.auth.uid])
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids', 'members', 'joinCode'])
-          && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]);
-      }
 
       allow delete: if signedIn() && request.auth.uid == resource.data.ownerUid;
 
+      // Someone with the invite code asking to join. They can't read the family until the owner
+      // approves, so the doc id is their uid and they read only their own request.
+      match /joinRequests/{uid} {
+        allow get: if signedIn() && (request.auth.uid == uid || isMember(fid));
+        allow list: if isMember(fid);
+        allow create, update: if signedIn()
+          && request.auth.uid == uid
+          && !(uid in family(fid).memberUids)
+          && request.resource.data.keys().hasOnly(['name', 'initials', 'role', 'code', 'createdAt'])
+          && request.resource.data.code == family(fid).inviteCode
+          && validMember({
+               'name': request.resource.data.name,
+               'initials': request.resource.data.initials,
+               'role': request.resource.data.role
+             })
+          && request.resource.data.createdAt is int;
+        allow delete: if signedIn() && (request.auth.uid == uid || family(fid).ownerUid == request.auth.uid);
+      }
+
       match /drives/{did} {
         function validDrive(d) {
-          return d.keys().hasOnly(['learnerId', 'vehicleId', 'vehicleName', 'startedAt', 'endedAt', 'dayMinutes', 'nightMinutes', 'supervisorUid',
-                                   'supervisorName', 'supervisorInitials', 'conditions', 'skills', 'notes',
-                                   'lat', 'lng', 'manual', 'createdBy', 'updatedAt'])
+          return d.keys().hasOnly(['learnerId', 'vehicleId', 'vehicleName', 'startedAt', 'endedAt', 'dayMinutes',
+                                   'nightMinutes', 'supervisorUid', 'supervisorName', 'supervisorInitials',
+                                   'conditions', 'skills', 'notes', 'lat', 'lng', 'manual', 'timesEdited',
+                                   'createdBy', 'updatedAt'])
             && d.startedAt is int
             && (d.endedAt == null || (d.endedAt is int && d.endedAt > d.startedAt))
             && d.dayMinutes is int && d.dayMinutes >= 0
             && d.nightMinutes is int && d.nightMinutes >= 0
             // A single entry over 16 hours is a forgotten timer, not a drive
             && d.dayMinutes + d.nightMinutes <= 960
+            && (d.endedAt == null || d.dayMinutes + d.nightMinutes <= (d.endedAt - d.startedAt) / 60000 + 1)
             && d.supervisorUid is string
             && d.supervisorName is string && d.supervisorName.size() <= 80
             && d.supervisorInitials is string && d.supervisorInitials.size() <= 4
@@ -112,6 +181,7 @@ service cloud.firestore {
             && (d.lat == null || d.lat is number)
             && (d.lng == null || d.lng is number)
             && d.manual is bool
+            && (!('timesEdited' in d) || d.timesEdited is bool)
             && d.createdBy is string
             && d.updatedAt is int
             && (!('learnerId' in d) || (d.learnerId is string && d.learnerId.size() <= 40))
@@ -119,11 +189,51 @@ service cloud.firestore {
             && (!('vehicleName' in d) || d.vehicleName == null || (d.vehicleName is string && d.vehicleName.size() <= 80));
         }
 
-        allow read, delete: if isMember(fid);
-        allow create: if isMember(fid) && validDrive(request.resource.data)
-          && request.resource.data.createdBy == request.auth.uid;
-        allow update: if isMember(fid) && validDrive(request.resource.data)
-          && request.resource.data.createdBy == resource.data.createdBy;
+        function wasFinished() {
+          return resource.data.endedAt != null;
+        }
+
+        function timesChanged() {
+          return request.resource.data.startedAt != resource.data.startedAt
+            || request.resource.data.endedAt != resource.data.endedAt
+            || request.resource.data.dayMinutes != resource.data.dayMinutes
+            || request.resource.data.nightMinutes != resource.data.nightMinutes;
+        }
+
+        // Once flagged, always flagged; and any change to a finished drive's times sets the flag.
+        function auditOk() {
+          return (!resource.data.get('timesEdited', false) || request.resource.data.get('timesEdited', false) == true)
+            && (!wasFinished() || !timesChanged() || request.resource.data.get('timesEdited', false) == true);
+        }
+
+        allow read: if isMember(fid);
+
+        allow create: if isMember(fid)
+          && validDrive(request.resource.data)
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.get('timesEdited', false) == false
+          // Learners can only start a live timer, not type in a past drive
+          && (isSupervisor(fid) || (request.resource.data.endedAt == null && request.resource.data.manual == false));
+
+        allow update: if isMember(fid)
+          && validDrive(request.resource.data)
+          && request.resource.data.createdBy == resource.data.createdBy
+          && auditOk()
+          && (
+            isSupervisor(fid)
+            || (
+              // Learner: their own drive, or stopping any running timer (stopping early can only
+              // reduce hours); once a drive is finished its times are fixed
+              (resource.data.createdBy == request.auth.uid || !wasFinished())
+              && request.resource.data.startedAt == resource.data.startedAt
+              && request.resource.data.manual == resource.data.manual
+              && (!wasFinished() || !timesChanged())
+            )
+          );
+
+        allow delete: if isSupervisor(fid)
+          // A learner can discard their own timer while it's still running (a mis-tap)
+          || (isMember(fid) && resource.data.createdBy == request.auth.uid && resource.data.endedAt == null);
       }
     }
   }

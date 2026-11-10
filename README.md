@@ -60,7 +60,16 @@ families/{familyId}/drives/{id} learnerId, vehicleId/vehicleName, startedAt, end
 invites/{code}                 { familyId }  (get-only lookup for joining)
 ```
 
-All access control is in `firestore.rules`.
+All access control is in `firestore.rules`, with emulator tests in `rules-tests/`. The trust model:
+
+- **Joining is approved.** An invite code only lets someone file a request (`families/{id}/joinRequests/{uid}`).
+  The owner approves it and sets the role. An owner can only add an account that has a pending
+  request, so nobody can push a family onto a stranger's account.
+- **Roles are owner-controlled.** Members edit their own name and initials but not their role.
+- **Learners can't pad hours.** They can time drives live and tag them, but can't enter past drives,
+  change a finished drive's times, edit or delete drives a parent logged, or change license dates.
+- **Edits are visible.** Changing a finished drive's times sets a permanent `timesEdited` flag, and
+  the printed log marks those drives (*) along with hand-entered ones (†).
 
 Families created before multi-learner support stored one learner in top-level `learnerName` /
 `learnerDob` / `permitDate`. On load these are copied into `learners.primary`, and the old fields

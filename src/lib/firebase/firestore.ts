@@ -71,18 +71,107 @@ export async function createFamily(
 
 export class InviteNotFoundError extends Error {}
 
-export async function joinFamily(user: User, code: string, me: Member): Promise<void> {
+export interface JoinRequest {
+  uid: string;
+  name: string;
+  initials: string;
+  role: Member["role"];
+  code: string;
+  createdAt: number;
+}
+
+const PENDING_KEY = "drivetron.pendingFamilyId";
+
+/** The family this device asked to join, so the waiting screen survives a reload. */
+export function pendingFamilyId(): string | null {
+  try {
+    return localStorage.getItem(PENDING_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setPendingFamilyId(id: string | null) {
+  try {
+    if (id) localStorage.setItem(PENDING_KEY, id);
+    else localStorage.removeItem(PENDING_KEY);
+  } catch {
+    // Private mode: they'd re-enter the code after a reload, which just refreshes the request
+  }
+}
+
+/**
+ * Asks to join the family behind an invite code. The owner approves and confirms the role;
+ * until then the requester can see only their own request.
+ */
+export async function requestToJoin(user: User, code: string, me: Member): Promise<string> {
   const db = getFirebaseDb();
   const normalized = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const invite = await getDoc(doc(db, "invites", normalized));
   if (!invite.exists()) throw new InviteNotFoundError("No family uses that code");
   const familyId = invite.data().familyId as string;
-  // Non-members can't read the family, so the rules check instead that the new member list is
-  // the old one plus this user, and that joinCode matches the family's current invite code.
-  await updateDoc(doc(db, "families", familyId), {
-    memberUids: arrayUnion(user.uid),
-    [`members.${user.uid}`]: me,
-    joinCode: normalized,
+  await setDoc(doc(db, "families", familyId, "joinRequests", user.uid), {
+    name: me.name,
+    initials: me.initials,
+    role: me.role,
+    code: normalized,
+    createdAt: Date.now(),
+  });
+  setPendingFamilyId(familyId);
+  return familyId;
+}
+
+/** The requester's view of their own request: null once it's approved, declined or withdrawn. */
+export function subscribeToMyJoinRequest(
+  familyId: string,
+  uid: string,
+  onData: (exists: boolean) => void
+): Unsubscribe {
+  return onSnapshot(
+    doc(getFirebaseDb(), "families", familyId, "joinRequests", uid),
+    (snap) => {
+      if (!snap.exists()) setPendingFamilyId(null);
+      onData(snap.exists());
+    },
+    () => onData(false)
+  );
+}
+
+export async function withdrawJoinRequest(familyId: string, uid: string) {
+  await deleteDoc(doc(getFirebaseDb(), "families", familyId, "joinRequests", uid));
+  setPendingFamilyId(null);
+}
+
+export function subscribeToJoinRequests(familyId: string, onData: (reqs: JoinRequest[]) => void): Unsubscribe {
+  return onSnapshot(
+    collection(getFirebaseDb(), "families", familyId, "joinRequests"),
+    (snap) => onData(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as JoinRequest)),
+    () => onData([])
+  );
+}
+
+/** Owner only: adds the requester with the role the owner chose, and clears the request. */
+export async function approveJoinRequest(familyId: string, req: JoinRequest, role: Member["role"]) {
+  const db = getFirebaseDb();
+  const batch = writeBatch(db);
+  batch.update(doc(db, "families", familyId), {
+    memberUids: arrayUnion(req.uid),
+    [`members.${req.uid}`]: { name: req.name, initials: req.initials, role },
+    approvedUid: req.uid,
+  });
+  batch.delete(doc(db, "families", familyId, "joinRequests", req.uid));
+  await batch.commit();
+}
+
+export async function declineJoinRequest(familyId: string, uid: string) {
+  await deleteDoc(doc(getFirebaseDb(), "families", familyId, "joinRequests", uid));
+}
+
+/** A non-owner leaving. Drives they logged stay in the family's log. */
+export async function leaveFamily(familyId: string, uid: string) {
+  await updateDoc(doc(getFirebaseDb(), "families", familyId), {
+    memberUids: arrayRemove(uid),
+    [`members.${uid}`]: deleteField(),
   });
 }
 
