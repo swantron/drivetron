@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginButton } from "@/components/auth/LoginButton";
 import { muted } from "@/components/ui/styles";
@@ -38,7 +39,10 @@ function Login() {
       </div>
       <LoginButton />
       <p className={`${muted} max-w-xs`}>
-        Built for Montana&apos;s Graduated Driver Licensing rules. Not affiliated with the State of Montana, MVD, or OPI.
+        Built for Montana&apos;s Graduated Driver Licensing rules. Not affiliated with the State of Montana, MVD, or OPI.{" "}
+        <Link href="/about" className="underline">
+          About &amp; privacy
+        </Link>
       </p>
     </main>
   );

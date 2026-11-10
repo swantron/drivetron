@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { randomUUID } from "node:crypto";
-import { readdirSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
 import withSerwistInit from "@serwist/next";
 
 // Every page is a static shell that loads its data client-side, so precache
@@ -18,8 +19,24 @@ const withSerwist = withSerwistInit({
   additionalPrecacheEntries: pageUrls.map((url) => ({ url, revision: buildId })),
 });
 
+// Shown on the About page so a family can tell which version a phone is running.
+const { version } = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
+function commit(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    return "dev";
+  }
+}
+
 const nextConfig: NextConfig = {
   output: "export",
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+    NEXT_PUBLIC_BUILD_COMMIT: commit(),
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+  },
   images: {
     unoptimized: true,
   },

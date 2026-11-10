@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,7 +50,12 @@ function FamilySettings() {
       >
         Sign out
       </button>
-      <p className={`${muted} text-center`}>Not affiliated with the State of Montana, MVD, or OPI.</p>
+      <Link href="/about" className={`${secondaryBtn} block text-center`}>
+        About, install &amp; privacy
+      </Link>
+      <p className={`${muted} text-center`}>
+        Drivetron {process.env.NEXT_PUBLIC_APP_VERSION} · Not affiliated with the State of Montana, MVD, or OPI.
+      </p>
     </div>
   );
 }
