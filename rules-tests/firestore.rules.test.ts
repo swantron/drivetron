@@ -155,6 +155,50 @@ describe("member edits", () => {
   });
 });
 
+describe("learners and vehicles", () => {
+  it("lets a member migrate to the learners map and add a sibling and a car", async () => {
+    await assertSucceeds(
+      updateDoc(doc(db("parent"), "families/f1"), {
+        learners: {
+          primary: { name: "Teen Driver", dob: "2011-03-04", permitDate: "2026-11-01" },
+          kid2: { name: "Younger Sib", dob: "2013-05-06", permitDate: "2028-05-06" },
+        },
+        "vehicles.v1": { name: "Outback" },
+      })
+    );
+  });
+
+  it("accepts a new family that only has the learners map", async () => {
+    const fs = db("p2");
+    const { learnerName: _n, learnerDob: _d, permitDate: _p, ...rest } = family;
+    void _n; void _d; void _p;
+    const b = writeBatch(fs);
+    b.set(doc(fs, "families/f9"), {
+      ...rest,
+      ownerUid: "p2",
+      memberUids: ["p2"],
+      members: { p2: member("P2") },
+      inviteCode: "NEWW2345",
+      learners: { primary: { name: "Kid", dob: "2011-01-01", permitDate: "2026-11-01" } },
+    });
+    b.set(doc(fs, "invites/NEWW2345"), { familyId: "f9" });
+    await assertSucceeds(b.commit());
+  });
+
+  it("rejects a bad legacy date and an oversized garage", async () => {
+    await assertFails(updateDoc(doc(db("parent"), "families/f1"), { permitDate: "soon" }));
+    const many = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`v${i}`, { name: `Car ${i}` }]));
+    await assertFails(updateDoc(doc(db("parent"), "families/f1"), { vehicles: many }));
+  });
+
+  it("accepts drives with a learner and vehicle, and legacy drives without", async () => {
+    const fs = db("parent");
+    await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n1"), { ...drive("parent"), learnerId: "kid2", vehicleId: "v1", vehicleName: "Outback" }));
+    await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n2"), { ...drive("parent"), vehicleId: null, vehicleName: null }));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/n3"), { ...drive("parent"), learnerId: 7 }));
+  });
+});
+
 describe("drives", () => {
   it("lets a member log, edit and delete drives", async () => {
     await assertSucceeds(setDoc(doc(db("parent"), "families/f1/drives/d2"), drive("parent")));

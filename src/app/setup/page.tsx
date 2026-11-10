@@ -66,9 +66,7 @@ function CreateForm() {
     setBusy(true);
     try {
       await createFamily(user, {
-        learnerName: learnerName.trim(),
-        learnerDob,
-        permitDate,
+        learner: { name: learnerName.trim(), dob: learnerDob, permitDate },
         me: { name: myName.trim(), initials: initialsOf(myName) || "?", role: "supervisor" },
       });
     } catch (err) {

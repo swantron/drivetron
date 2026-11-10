@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useFamily } from "@/components/FamilyProvider";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { LearnerSwitcher } from "@/components/LearnerSwitcher";
 
 const tabs = [
   { href: "/", label: "Home", icon: "M3 12l9-8 9 8M5 10v10h14V10" },
@@ -15,7 +16,16 @@ const tabs = [
 ];
 
 /** Signed-in pages that need a family. Sends anyone without one to /setup. */
-export function AppShell({ children, title }: { children: React.ReactNode; title?: string }) {
+export function AppShell({
+  children,
+  title,
+  switcher = true,
+}: {
+  children: React.ReactNode;
+  title?: string;
+  /** Show the learner switcher (when there's more than one learner) */
+  switcher?: boolean;
+}) {
   return (
     <ProtectedRoute>
       <FamilyGate>
@@ -25,7 +35,14 @@ export function AppShell({ children, title }: { children: React.ReactNode; title
               <h1 className="text-2xl font-bold">{title}</h1>
             </header>
           )}
-          <main className="flex-1 px-4 pb-28 print:pb-0">{children}</main>
+          <main className={`flex-1 px-4 pb-28 print:pb-0 ${title ? "" : "pt-[max(1rem,env(safe-area-inset-top))] print:pt-0"}`}>
+            {switcher && (
+              <div className="mb-3 empty:hidden">
+                <LearnerSwitcher />
+              </div>
+            )}
+            {children}
+          </main>
           <BottomNav />
         </div>
       </FamilyGate>

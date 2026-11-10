@@ -23,12 +23,20 @@ service cloud.firestore {
         && m.role in ['supervisor', 'learner'];
     }
 
+    function isDate(v) {
+      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
     function validFamily(f) {
-      return f.keys().hasOnly(['learnerName', 'learnerDob', 'permitDate', 'ownerUid', 'memberUids', 'members',
-                               'inviteCode', 'joinCode', 'lastLat', 'lastLng', 'createdAt'])
-        && f.learnerName is string && f.learnerName.size() > 0 && f.learnerName.size() <= 80
-        && f.learnerDob is string && f.learnerDob.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && f.permitDate is string && f.permitDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      return f.keys().hasOnly(['learners', 'vehicles', 'learnerName', 'learnerDob', 'permitDate', 'ownerUid',
+                               'memberUids', 'members', 'inviteCode', 'joinCode', 'lastLat', 'lastLng', 'createdAt'])
+        // Legacy single-learner fields (pre-learners map)
+        && (!('learnerName' in f) || (f.learnerName is string && f.learnerName.size() <= 80))
+        && (!('learnerDob' in f) || isDate(f.learnerDob))
+        && (!('permitDate' in f) || isDate(f.permitDate))
+        // Map entries can't be iterated in rules; cap the sizes and validate shape client-side
+        && (!('learners' in f) || (f.learners is map && f.learners.size() <= 6))
+        && (!('vehicles' in f) || (f.vehicles is map && f.vehicles.size() <= 20))
         && f.memberUids is list && f.memberUids.size() <= 20
         && f.members is map
         && f.inviteCode is string && f.inviteCode.size() >= 8;
@@ -86,7 +94,7 @@ service cloud.firestore {
 
       match /drives/{did} {
         function validDrive(d) {
-          return d.keys().hasOnly(['startedAt', 'endedAt', 'dayMinutes', 'nightMinutes', 'supervisorUid',
+          return d.keys().hasOnly(['learnerId', 'vehicleId', 'vehicleName', 'startedAt', 'endedAt', 'dayMinutes', 'nightMinutes', 'supervisorUid',
                                    'supervisorName', 'supervisorInitials', 'conditions', 'skills', 'notes',
                                    'lat', 'lng', 'manual', 'createdBy', 'updatedAt'])
             && d.startedAt is int
@@ -105,7 +113,10 @@ service cloud.firestore {
             && (d.lng == null || d.lng is number)
             && d.manual is bool
             && d.createdBy is string
-            && d.updatedAt is int;
+            && d.updatedAt is int
+            && (!('learnerId' in d) || (d.learnerId is string && d.learnerId.size() <= 40))
+            && (!('vehicleId' in d) || d.vehicleId == null || (d.vehicleId is string && d.vehicleId.size() <= 40))
+            && (!('vehicleName' in d) || d.vehicleName == null || (d.vehicleName is string && d.vehicleName.size() <= 80));
         }
 
         allow read, delete: if isMember(fid);

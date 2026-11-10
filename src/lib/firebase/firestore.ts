@@ -18,7 +18,8 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { getFirebaseDb } from "./config";
-import type { Drive, DriveInput, Family, Member } from "@/types";
+import type { Drive, DriveInput, Family, Learner, Member, Vehicle } from "@/types";
+import { PRIMARY_LEARNER } from "@/utils/learners";
 
 const familiesCol = () => collection(getFirebaseDb(), "families");
 const drivesCol = (familyId: string) => collection(getFirebaseDb(), "families", familyId, "drives");
@@ -48,15 +49,13 @@ export function subscribeToMyFamily(
 
 export async function createFamily(
   user: User,
-  input: { learnerName: string; learnerDob: string; permitDate: string; me: Member }
+  input: { learner: Learner; me: Member }
 ): Promise<string> {
   const db = getFirebaseDb();
   const familyRef = doc(familiesCol());
   const inviteCode = makeInviteCode();
   const family: Omit<Family, "id"> = {
-    learnerName: input.learnerName,
-    learnerDob: input.learnerDob,
-    permitDate: input.permitDate,
+    learners: { [PRIMARY_LEARNER]: input.learner },
     ownerUid: user.uid,
     memberUids: [user.uid],
     members: { [user.uid]: input.me },
@@ -87,8 +86,44 @@ export async function joinFamily(user: User, code: string, me: Member): Promise<
   });
 }
 
-export async function updateFamily(familyId: string, patch: Partial<Omit<Family, "id" | "ownerUid" | "memberUids">>) {
+/** Accepts dotted paths ("members.uid", "learners.id") as well as top-level fields. */
+export async function updateFamily(familyId: string, patch: Record<string, unknown>) {
   await updateDoc(doc(getFirebaseDb(), "families", familyId), patch);
+}
+
+/**
+ * Moves a pre-multi-learner family's top-level learner fields into learners["primary"].
+ * Idempotent: drives without a learnerId already count as the primary learner's.
+ */
+export function migrateLegacyLearner(family: Family) {
+  if (family.learners && Object.keys(family.learners).length > 0) return;
+  if (!family.learnerName) return;
+  fireAndForget(
+    updateFamily(family.id, {
+      [`learners.${PRIMARY_LEARNER}`]: {
+        name: family.learnerName,
+        dob: family.learnerDob ?? "",
+        permitDate: family.permitDate ?? "",
+      },
+      // The legacy fields stay: an installed copy still on the old version reads them until it updates.
+    })
+  );
+}
+
+export function saveLearner(familyId: string, id: string, learner: Learner, onError?: (e: Error) => void) {
+  fireAndForget(updateFamily(familyId, { [`learners.${id}`]: learner }), onError);
+}
+
+export function removeLearner(familyId: string, id: string, onError?: (e: Error) => void) {
+  fireAndForget(updateFamily(familyId, { [`learners.${id}`]: deleteField() }), onError);
+}
+
+export function saveVehicle(familyId: string, id: string, vehicle: Vehicle, onError?: (e: Error) => void) {
+  fireAndForget(updateFamily(familyId, { [`vehicles.${id}`]: vehicle }), onError);
+}
+
+export function removeVehicle(familyId: string, id: string, onError?: (e: Error) => void) {
+  fireAndForget(updateFamily(familyId, { [`vehicles.${id}`]: deleteField() }), onError);
 }
 
 /** Owner only: drops a member from the log. Their past drives stay. */

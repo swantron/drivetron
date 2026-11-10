@@ -2,18 +2,37 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { subscribeToDrives, subscribeToMyFamily } from "@/lib/firebase/firestore";
+import { migrateLegacyLearner, subscribeToDrives, subscribeToMyFamily } from "@/lib/firebase/firestore";
+import { driveLearnerId, learnersOf, vehiclesOf, type LearnerWithId, type VehicleWithId } from "@/utils/learners";
 import type { Drive, Family } from "@/types";
 
 interface FamilyContextValue {
   /** false until we know whether this user belongs to a family */
   loaded: boolean;
   family: Family | null;
+  learners: LearnerWithId[];
+  /** The learner this device is looking at (remembered per device) */
+  learner: LearnerWithId | null;
+  setLearnerId: (id: string) => void;
+  vehicles: VehicleWithId[];
+  /** The selected learner's drives, newest first */
   drives: Drive[];
+  /** Every learner's drives */
+  allDrives: Drive[];
   drivesLoaded: boolean;
-  /** The in-progress drive, if a timer is running on any device */
+  /** The selected learner's in-progress drive, if a timer is running on any device */
   activeDrive: Drive | null;
   error: string | null;
+}
+
+const LEARNER_KEY = "drivetron.learnerId";
+
+function storedLearnerId(): string | null {
+  try {
+    return localStorage.getItem(LEARNER_KEY);
+  } catch {
+    return null;
+  }
 }
 
 const FamilyContext = createContext<FamilyContextValue | undefined>(undefined);
@@ -60,12 +79,40 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     };
   }, [familyId, retry]);
 
-  const drives = driveState && driveState.familyId === familyId ? driveState.drives : [];
+  const allDrives = driveState && driveState.familyId === familyId ? driveState.drives : [];
+  const family = fam?.family ?? null;
+
+  // Families from before multi-learner support get their learner moved into the learners map.
+  const needsMigration = !!family && !family.learners && !!family.learnerName;
+  useEffect(() => {
+    if (needsMigration && family) migrateLegacyLearner(family);
+  }, [needsMigration, family]);
+
+  const [pickedLearnerId, setPickedLearnerId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : storedLearnerId()
+  );
+  const setLearnerId = (id: string) => {
+    setPickedLearnerId(id);
+    try {
+      localStorage.setItem(LEARNER_KEY, id);
+    } catch {
+      // Private mode: the pick lasts until the app closes
+    }
+  };
+
+  const learners = family ? learnersOf(family) : [];
+  const learner = learners.find((l) => l.id === pickedLearnerId) ?? learners[0] ?? null;
+  const drives = learner ? allDrives.filter((d) => driveLearnerId(d) === learner.id) : [];
 
   const value: FamilyContextValue = {
     loaded: fam !== null,
-    family: fam?.family ?? null,
+    family,
+    learners,
+    learner,
+    setLearnerId,
+    vehicles: family ? vehiclesOf(family) : [],
     drives,
+    allDrives,
     drivesLoaded: driveState !== null && driveState.familyId === familyId,
     activeDrive: drives.find((d) => d.endedAt === null) ?? null,
     error: fam?.error ?? null,

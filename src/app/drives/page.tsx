@@ -17,10 +17,10 @@ export default function DrivesPage() {
 }
 
 function Drives() {
-  const { family, drives, drivesLoaded } = useFamily();
-  if (!family) return null;
+  const { learner, drives, drivesLoaded } = useFamily();
+  if (!learner) return null;
   const done = drives.filter((d) => d.endedAt !== null);
-  const p = computeProgress(drives, family.permitDate);
+  const p = computeProgress(drives, learner.permitDate);
 
   // Variety the OPI fact sheet asks for: show what hasn't been practiced yet.
   const allTags = [...CONDITIONS.weather, ...CONDITIONS.road, ...SKILLS];

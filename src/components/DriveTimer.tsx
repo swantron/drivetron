@@ -10,6 +10,7 @@ import { addDrive, patchDrive, removeDrive, updateFamily } from "@/lib/firebase/
 import { getLocation, driveCoords } from "@/utils/location";
 import { splitDayNight } from "@/utils/night";
 import { defaultSupervisor, supervisorsOf } from "@/utils/members";
+import { defaultVehicleId } from "@/utils/learners";
 import { nowMs } from "@/utils/time";
 import { card, input, primaryBtn, secondaryBtn, muted } from "@/components/ui/styles";
 
@@ -25,14 +26,18 @@ function clock(ms: number) {
 
 export function DriveTimer() {
   const { user } = useAuth();
-  const { family, activeDrive } = useFamily();
+  const { family, learner, drives, vehicles, activeDrive } = useFamily();
   const { showToast } = useToast();
   const router = useRouter();
   const now = useNow(1000, activeDrive !== null);
   const [starting, setStarting] = useState(false);
   const [pickedSupervisor, setPickedSupervisor] = useState<string | null>(null);
+  // undefined = not touched, use the default; "" = no vehicle
+  const [pickedVehicle, setPickedVehicle] = useState<string | undefined>(undefined);
 
-  if (!family || !user) return null;
+  if (!family || !user || !learner) return null;
+  const vehicleId = pickedVehicle !== undefined ? pickedVehicle || null : defaultVehicleId(drives, vehicles);
+  const vehicle = vehicles.find((v) => v.id === vehicleId) ?? null;
   const supervisors = supervisorsOf(family);
   const supervisor =
     supervisors.find((s) => s.uid === pickedSupervisor) ?? defaultSupervisor(family, user.uid);
@@ -49,6 +54,9 @@ export function DriveTimer() {
     const id = addDrive(
       family.id,
       {
+        learnerId: learner.id,
+        vehicleId: vehicle?.id ?? null,
+        vehicleName: vehicle?.name ?? null,
         startedAt,
         endedAt: null,
         dayMinutes: 0,
@@ -85,6 +93,12 @@ export function DriveTimer() {
     }
     const { lat, lng } = driveCoords(activeDrive, family);
     const split = splitDayNight(activeDrive.startedAt, endedAt, lat, lng);
+    if (split.dayMinutes + split.nightMinutes === 0) {
+      // Under a minute: almost certainly a mis-tap, and a 0m row is just clutter on the printed log.
+      removeDrive(family.id, activeDrive.id, onError);
+      showToast("Under a minute, so it wasn't logged", "info");
+      return;
+    }
     patchDrive(family.id, activeDrive.id, { endedAt, ...split }, onError);
     router.push(`/drives/edit?id=${activeDrive.id}&finished=1`);
   };
@@ -99,7 +113,10 @@ export function DriveTimer() {
     const elapsed = now - activeDrive.startedAt;
     return (
       <section className={`${card} text-center`}>
-        <p className={muted}>Driving with {activeDrive.supervisorName}</p>
+        <p className={muted}>
+          Driving with {activeDrive.supervisorName}
+          {activeDrive.vehicleName && <> · {activeDrive.vehicleName}</>}
+        </p>
         <p className="my-3 font-mono text-5xl font-bold tabular-nums" aria-live="off">
           {clock(elapsed)}
         </p>
@@ -131,6 +148,19 @@ export function DriveTimer() {
                 {s.name}
               </option>
             ))}
+          </select>
+        </label>
+      )}
+      {vehicles.length > 0 && (
+        <label className="mb-3 block">
+          <span className={`${muted} mb-1 block`}>Vehicle</span>
+          <select className={input} value={vehicleId ?? ""} onChange={(e) => setPickedVehicle(e.target.value)}>
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+            <option value="">No vehicle</option>
           </select>
         </label>
       )}

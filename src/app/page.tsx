@@ -7,6 +7,7 @@ import { ProgressCard } from "@/components/ProgressCard";
 import { DriveRow } from "@/components/DriveRow";
 import { useFamily } from "@/components/FamilyProvider";
 import { card } from "@/components/ui/styles";
+import { firstName } from "@/utils/learners";
 
 export default function HomePage() {
   return (
@@ -17,11 +18,11 @@ export default function HomePage() {
 }
 
 function Home() {
-  const { family, drives } = useFamily();
+  const { learner, drives } = useFamily();
   const recent = drives.filter((d) => d.endedAt !== null).slice(0, 3);
   return (
-    <div className="space-y-4 pt-[max(1rem,env(safe-area-inset-top))]">
-      <h1 className="text-2xl font-bold">{family?.learnerName.split(" ")[0]}&apos;s driving log</h1>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">{learner ? `${firstName(learner.name)}’s driving log` : "Driving log"}</h1>
       <DriveTimer />
       <ProgressCard />
       {recent.length > 0 && (

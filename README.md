@@ -21,7 +21,10 @@ Not affiliated with the State of Montana, MVD, or OPI.
 - **Past drives** can be entered by hand and any drive edited (including a forgotten timer).
 - **Printable log** laid out like the OPI practice driving log (Date / Conditions & Skills / Time /
   Initials, total, signature lines), plus a night column and the 21-1600 details.
-- **Family sharing** via invite code: parents, other authorized adults, and the learner.
+- **Family sharing** via invite code: parents, other authorized adults, and the learners.
+- **Multiple learners** (siblings) in one family log, each with their own permit date, progress, timer,
+  and printable log. Each device remembers which learner it's showing.
+- **Vehicles**: a family garage. Each drive records the car, defaulting to the one that learner used last.
 - **Offline.** An installable PWA with Firestore's persistent cache.
 
 ## Stack
@@ -50,12 +53,19 @@ NEXT_PUBLIC_FIREBASE_EMULATORS=1 NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-drivetron 
 ## Data
 
 ```
-families/{familyId}            learner details, memberUids, members{uid: name/initials/role}, inviteCode
-families/{familyId}/drives/{id} startedAt, endedAt (null = timer running), dayMinutes, nightMinutes, supervisor, tags, notes
+families/{familyId}            learners{id: name/dob/permitDate}, vehicles{id: name}, memberUids,
+                               members{uid: name/initials/role}, inviteCode
+families/{familyId}/drives/{id} learnerId, vehicleId/vehicleName, startedAt, endedAt (null = timer running),
+                               dayMinutes, nightMinutes, supervisor, tags, notes
 invites/{code}                 { familyId }  (get-only lookup for joining)
 ```
 
 All access control is in `firestore.rules`.
+
+Families created before multi-learner support stored one learner in top-level `learnerName` /
+`learnerDob` / `permitDate`. On load these are copied into `learners.primary`, and the old fields
+are kept so copies still running the old version keep working. Drives without a `learnerId` belong
+to `primary`.
 
 ## One-time setup (mt-services-swantron project)
 

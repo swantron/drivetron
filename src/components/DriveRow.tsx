@@ -16,6 +16,7 @@ export function DriveRow({ drive }: { drive: Drive }) {
             {start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
             <span className="ml-2 text-sm font-normal text-gray-500">
               {start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · {drive.supervisorInitials}
+              {drive.vehicleName && <> · {drive.vehicleName}</>}
             </span>
           </p>
           {tags.length > 0 && <p className="truncate text-sm text-gray-500">{tags.join(", ")}</p>}

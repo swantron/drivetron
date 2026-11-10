@@ -7,7 +7,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
 import { Chips, toggle } from "@/components/ui/Chips";
-import { addDrive, removeDrive, saveDrive } from "@/lib/firebase/firestore";
+import { addDrive, removeDrive, saveDrive, saveVehicle } from "@/lib/firebase/firestore";
+import { defaultVehicleId, driveLearnerId, newId, PRIMARY_LEARNER } from "@/utils/learners";
 import { splitDayNight } from "@/utils/night";
 import { driveCoords } from "@/utils/location";
 import { defaultSupervisor, supervisorsOf } from "@/utils/members";
@@ -18,6 +19,7 @@ import { nowMs } from "@/utils/time";
 import { card, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 const MAX_MINUTES = 16 * 60;
+const NEW_VEHICLE = "__new";
 
 export default function EditDrivePage() {
   return (
@@ -32,10 +34,10 @@ export default function EditDrivePage() {
 function EditDrive() {
   const params = useSearchParams();
   const id = params.get("id");
-  const { family, drives, drivesLoaded } = useFamily();
-  if (!family) return null;
+  const { family, allDrives, drivesLoaded, learner } = useFamily();
+  if (!family || !learner) return null;
   if (id && !drivesLoaded) return <p className="py-10 text-center text-gray-500">Loading…</p>;
-  const drive = id ? drives.find((d) => d.id === id) : undefined;
+  const drive = id ? allDrives.find((d) => d.id === id) : undefined;
   if (id && !drive) return <p className="py-10 text-center text-gray-500">That drive was deleted.</p>;
   return (
     <DriveForm
@@ -68,6 +70,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const { showToast } = useToast();
   const router = useRouter();
   const supervisors = supervisorsOf(family);
+  const { learners, learner: selectedLearner, vehicles, drives: learnerDrives } = useFamily();
 
   const initialStart = drive?.startedAt ?? nowMs() - 60 * 60 * 1000;
   const [date, setDate] = useState(toDateInput(initialStart));
@@ -78,6 +81,12 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const [conditions, setConditions] = useState<string[]>(drive?.conditions ?? []);
   const [skills, setSkills] = useState<string[]>(drive?.skills ?? []);
   const [notes, setNotes] = useState(drive?.notes ?? "");
+  const [learnerId, setLearnerId] = useState(drive ? driveLearnerId(drive) : selectedLearner?.id ?? PRIMARY_LEARNER);
+  // "" = no vehicle, NEW_VEHICLE = typing a new one
+  const [vehicleId, setVehicleId] = useState<string>(
+    drive ? drive.vehicleId ?? "" : defaultVehicleId(learnerDrives, vehicles) ?? ""
+  );
+  const [newVehicleName, setNewVehicleName] = useState("");
   // Night is worked out from the times; a supervisor can override it if they know better.
   const [nightOverride, setNightOverride] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -120,7 +129,21 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
     const sup = supervisors.find((s) => s.uid === supervisorUid);
     if (!sup) return showToast("Pick who supervised", "error");
 
+    let vehicle: { id: string; name: string } | null = null;
+    if (vehicleId === NEW_VEHICLE) {
+      const name = newVehicleName.trim();
+      if (!name) return showToast("Name the new vehicle, or pick one", "error");
+      vehicle = { id: newId(), name };
+      saveVehicle(family.id, vehicle.id, { name }, onError);
+    } else if (vehicleId) {
+      // A vehicle removed from the garage keeps its name on the drives that used it
+      vehicle = vehicles.find((v) => v.id === vehicleId) ?? (drive?.vehicleId === vehicleId ? { id: vehicleId, name: drive.vehicleName ?? "" } : null);
+    }
+
     const data = {
+      learnerId,
+      vehicleId: vehicle?.id ?? null,
+      vehicleName: vehicle?.name ?? null,
       startedAt: range.start,
       endedAt: range.end,
       dayMinutes: total - nightMinutes,
@@ -151,7 +174,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   };
 
   return (
-    <form onSubmit={save} className="space-y-4 pt-[max(1rem,env(safe-area-inset-top))]">
+    <form onSubmit={save} className="space-y-4">
       <h1 className="text-2xl font-bold">
         {finished ? `Nice — ${formatMinutes(total)} logged` : forgot ? "When did the drive end?" : drive ? "Edit drive" : "Add a past drive"}
       </h1>
@@ -208,6 +231,46 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
               </option>
             ))}
           </select>
+        </div>
+
+        {learners.length > 1 && (
+          <div>
+            <label className={label} htmlFor="learner">Driver</label>
+            <select id="learner" className={input} value={learnerId} onChange={(e) => setLearnerId(e.target.value)}>
+              {learners.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div>
+          <label className={label} htmlFor="vehicle">Vehicle</label>
+          <select id="vehicle" className={input} value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>
+            {vehicles.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+            {drive?.vehicleId && !vehicles.some((v) => v.id === drive.vehicleId) && (
+              <option value={drive.vehicleId}>{drive.vehicleName} (removed)</option>
+            )}
+            <option value="">No vehicle</option>
+            <option value={NEW_VEHICLE}>Add a vehicle…</option>
+          </select>
+          {vehicleId === NEW_VEHICLE && (
+            <input
+              aria-label="New vehicle name"
+              className={`${input} mt-2`}
+              placeholder="e.g. 2014 Outback"
+              maxLength={80}
+              autoFocus
+              value={newVehicleName}
+              onChange={(e) => setNewVehicleName(e.target.value)}
+            />
+          )}
         </div>
       </section>
 

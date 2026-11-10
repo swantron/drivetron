@@ -20,13 +20,13 @@ export default function LogPage() {
  * and a summary with what form 21-1600 certifies.
  */
 function PrintableLog() {
-  const { family, drives } = useFamily();
-  if (!family) return null;
+  const { learner, drives } = useFamily();
+  if (!learner) return null;
   const done = drives.filter((d) => d.endedAt !== null).sort((a, b) => a.startedAt - b.startedAt);
-  const p = computeProgress(drives, family.permitDate);
+  const p = computeProgress(drives, learner.permitDate);
 
   return (
-    <div className="space-y-4 pt-[max(1rem,env(safe-area-inset-top))] print:pt-0">
+    <div className="space-y-4">
       <div className="space-y-3 print:hidden">
         <h1 className="text-2xl font-bold">Printable log</h1>
         <p className={muted}>
@@ -54,15 +54,15 @@ function PrintableLog() {
         <dl className="mb-4 grid grid-cols-2 gap-x-6 gap-y-1">
           <div>
             <dt className="inline font-semibold">This log belongs to: </dt>
-            <dd className="inline">{family.learnerName}</dd>
+            <dd className="inline">{learner.name}</dd>
           </div>
           <div>
             <dt className="inline font-semibold">Date of birth: </dt>
-            <dd className="inline">{formatDate(parseLocalDate(family.learnerDob))}</dd>
+            <dd className="inline">{formatDate(parseLocalDate(learner.dob))}</dd>
           </div>
           <div>
             <dt className="inline font-semibold">Learner license issued: </dt>
-            <dd className="inline">{formatDate(parseLocalDate(family.permitDate))}</dd>
+            <dd className="inline">{formatDate(parseLocalDate(learner.permitDate))}</dd>
           </div>
           <div>
             <dt className="inline font-semibold">Six-month hold complete: </dt>
@@ -95,6 +95,7 @@ function PrintableLog() {
                   </td>
                   <td className="py-1 pr-2">
                     {[...d.conditions, ...d.skills].join(", ") || "—"}
+                    {d.vehicleName && <div className="text-xs text-gray-500">Vehicle: {d.vehicleName}</div>}
                     {d.notes && <div className="text-xs text-gray-500">{d.notes}</div>}
                   </td>
                   <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{formatMinutes(d.dayMinutes + d.nightMinutes)}</td>

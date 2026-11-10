@@ -5,17 +5,32 @@ export interface Member {
   role: "supervisor" | "learner";
 }
 
+export interface Learner {
+  /** Full legal name, as printed on form 21-1600 */
+  name: string;
+  /** YYYY-MM-DD */
+  dob: string;
+  /** YYYY-MM-DD the learner license was issued; the 6-month hold counts from here */
+  permitDate: string;
+}
+
+export interface Vehicle {
+  name: string;
+}
+
 /**
- * One family = one learner's log. Everyone in `memberUids` can read and write it.
+ * One family log: shared supervisors, one or more learners, and a garage of vehicles. Everyone in `memberUids` can read and write it.
  * Doc: families/{familyId}
  */
 export interface Family {
   id: string;
-  learnerName: string;
-  /** YYYY-MM-DD — printed on form 21-1600 */
-  learnerDob: string;
-  /** YYYY-MM-DD the learner license was issued; the 6-month hold counts from here */
-  permitDate: string;
+  /** Learners by id. Families created before multi-learner support have none until migrated. */
+  learners?: Record<string, Learner>;
+  vehicles?: Record<string, Vehicle>;
+  /** Legacy single-learner fields, migrated into learners["primary"] on first load */
+  learnerName?: string;
+  learnerDob?: string;
+  permitDate?: string;
   ownerUid: string;
   memberUids: string[];
   members: Record<string, Member>;
@@ -34,6 +49,10 @@ export interface Family {
  */
 export interface Drive {
   id: string;
+  /** Which learner drove. Missing on drives logged before multi-learner support = "primary". */
+  learnerId?: string;
+  vehicleId?: string | null;
+  vehicleName?: string | null;
   startedAt: number;
   endedAt: number | null;
   dayMinutes: number;

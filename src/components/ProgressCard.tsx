@@ -15,10 +15,10 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
 }
 
 export function ProgressCard() {
-  const { family, drives } = useFamily();
-  if (!family) return null;
+  const { learner, drives } = useFamily();
+  if (!learner) return null;
   const now = new Date();
-  const p = computeProgress(drives, family.permitDate, now);
+  const p = computeProgress(drives, learner.permitDate, now);
   const holdPassed = now >= p.holdDate;
   const daysToHold = Math.ceil((p.holdDate.getTime() - now.getTime()) / 86400000);
 
