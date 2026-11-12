@@ -408,7 +408,7 @@ function ConfirmRemove({ label, onConfirm }: { label: string; onConfirm: () => v
   return (
     <button
       aria-label={armed ? `Confirm: ${label}` : label}
-      className={`shrink-0 text-sm text-red-600 ${armed ? "font-semibold" : ""}`}
+      className={`-my-2 shrink-0 px-3 py-3 text-sm text-red-600 ${armed ? "font-semibold" : ""}`}
       onClick={() => (armed ? onConfirm() : setArmed(true))}
     >
       {armed ? "Tap again" : "Remove"}
@@ -429,9 +429,14 @@ function OwnerControls({ family, myUid }: { family: Family; myUid: string }) {
   const [typed, setTyped] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  // The list is live: someone approved after this page opened appears in it, while `to` may still
+  // be "" from the first render. Fall back to what the picker is actually showing.
+  const target = others.includes(to) ? to : others[0];
+
   const transfer = () => {
-    transferOwnership(family.id, to)
-      .then(() => showToast(`${family.members[to]?.name ?? "They"} now owns the log`, "success"))
+    if (!target) return;
+    transferOwnership(family.id, target)
+      .then(() => showToast(`${family.members[target]?.name ?? "They"} now owns the log`, "success"))
       .catch((e) => showToast(writeErrorMessage(e, "Couldn't hand over the log. Are you online?"), "error"));
     setConfirmTransfer(false);
   };
@@ -449,15 +454,17 @@ function OwnerControls({ family, myUid }: { family: Family; myUid: string }) {
   };
 
   return (
-    <section className={`${card} space-y-4`}>
-      <h2 className="font-semibold">Hand over or delete</h2>
+    <details className={`${card} group space-y-4`}>
+      <summary className="cursor-pointer list-none font-semibold">
+        Hand over or delete this log <span className="text-gray-500 group-open:hidden">›</span>
+      </summary>
       <div className="space-y-2">
         <p className={muted}>You own this log, so you approve people and can delete it. You can hand that to another supervising adult; you stay on as a supervisor.</p>
         {others.length === 0 ? (
           <p className={muted}>Add another supervising adult first.</p>
         ) : (
           <div className="flex gap-2">
-            <select aria-label="New owner" className={input} value={to} onChange={(e) => { setTo(e.target.value); setConfirmTransfer(false); }}>
+            <select aria-label="New owner" className={input} value={target} onChange={(e) => { setTo(e.target.value); setConfirmTransfer(false); }}>
               {others.map((uid) => (
                 <option key={uid} value={uid}>
                   {family.members[uid].name}
@@ -488,6 +495,6 @@ function OwnerControls({ family, myUid }: { family: Family; myUid: string }) {
           {deleting ? "Deleting…" : "Delete this log permanently"}
         </button>
       </div>
-    </section>
+    </details>
   );
 }

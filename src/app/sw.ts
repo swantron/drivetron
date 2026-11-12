@@ -42,3 +42,10 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// Builds before 0.3 cached Firestore responses and sign-in URLs in these runtime caches. Drop them
+// whenever a new worker activates; they only ever hold re-fetchable responses, and with the
+// NetworkOnly rule above nothing sensitive goes back in.
+self.addEventListener("activate", (event) => {
+  event.waitUntil(Promise.all(["cross-origin", "others"].map((name) => caches.delete(name))));
+});

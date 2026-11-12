@@ -407,6 +407,9 @@ describe("drives", () => {
     await assertFails(setDoc(doc(fs, "families/f1/drives/s2"), { ...typedIn("parent"), supervisorUid: "nobody", supervisorName: "Nobody" }));
     await assertFails(setDoc(doc(fs, "families/f1/drives/s3"), { ...typedIn("parent"), supervisorName: "Officer Friendly" }));
     await assertFails(updateDoc(doc(fs, "families/f1/drives/d1"), { supervisorName: "Officer Friendly", updatedAt: 2 }));
+    // The printed log shows initials, so those have to match too
+    await assertFails(setDoc(doc(fs, "families/f1/drives/s4"), { ...typedIn("parent"), supervisorInitials: "OF" }));
+    await assertFails(updateDoc(doc(fs, "families/f1/drives/d1"), { supervisorInitials: "OF", updatedAt: 2 }));
   });
 
   it("blocks strangers", async () => {

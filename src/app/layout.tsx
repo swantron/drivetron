@@ -4,6 +4,7 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { FamilyProvider } from "@/components/FamilyProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ChunkLoadErrorHandler } from "@/components/ChunkLoadErrorHandler";
+import { UpdateWatcher } from "@/components/UpdateWatcher";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://drivetron.app"),
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="antialiased">
         <AuthProvider>
           <ChunkLoadErrorHandler />
+          <UpdateWatcher />
           <FamilyProvider>
             <ToastProvider>{children}</ToastProvider>
           </FamilyProvider>

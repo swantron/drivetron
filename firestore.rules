@@ -211,16 +211,19 @@ service cloud.firestore {
             && (!('vehicleName' in d) || d.vehicleName == null || (d.vehicleName is string && d.vehicleName.size() <= 80));
         }
 
-        // The named supervisor is a current supervising adult, under their current name.
+        // The named supervisor is a current supervising adult, under their current name and the
+        // initials the printed log shows.
         function validSupervisor(d) {
           return d.supervisorUid in family(fid).memberUids
             && family(fid).members[d.supervisorUid].role == 'supervisor'
-            && d.supervisorName == family(fid).members[d.supervisorUid].name;
+            && d.supervisorName == family(fid).members[d.supervisorUid].name
+            && d.supervisorInitials == family(fid).members[d.supervisorUid].initials;
         }
 
         function supervisorChanged() {
           return request.resource.data.supervisorUid != resource.data.supervisorUid
-            || request.resource.data.supervisorName != resource.data.supervisorName;
+            || request.resource.data.supervisorName != resource.data.supervisorName
+            || request.resource.data.supervisorInitials != resource.data.supervisorInitials;
         }
 
         function wasFinished() {

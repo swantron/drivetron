@@ -73,7 +73,11 @@ function VersionCard() {
     setTimeout(() => {
       if (updated) return;
       setChecking(false);
-      if (!reg.installing && !reg.waiting) showToast("You're on the latest version", "success");
+      if (reg.installing || reg.waiting) {
+        showToast("Update downloading — the app reloads by itself when it's ready", "info");
+      } else {
+        showToast("You're on the latest version", "success");
+      }
     }, 4000);
   };
 

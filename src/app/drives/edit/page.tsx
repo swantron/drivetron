@@ -204,7 +204,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
 
   return (
     <form onSubmit={save} className="space-y-4">
-      <fieldset disabled={!canEdit} className="contents">
+      <fieldset disabled={!canEdit} className="min-w-0 space-y-4">
       <h1 className="text-2xl font-bold">
         {finished ? `Nice — ${formatMinutes(total)} logged` : forgot ? "When did the drive end?" : drive ? "Edit drive" : "Add a past drive"}
       </h1>
@@ -242,7 +242,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
                 ☀️ {formatMinutes(total - nightMinutes)} · 🌙 {formatMinutes(nightMinutes)}
               </p>
             </div>
-            <label className="w-28 text-right text-xs text-gray-500">
+            <label className="w-28 text-right text-xs text-gray-600 dark:text-gray-400">
               Night minutes
               <input
                 type="number"
@@ -330,7 +330,15 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
         </div>
       </section>
 
-      {canEdit && <button className={primaryBtn}>Save</button>}
+      {canEdit && (
+        // Pinned above the tab bar: the form is long, and Save shouldn't be a scroll away
+        <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 -mx-4 grid grid-cols-[1fr_2fr] gap-2 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95 print:hidden">
+          <button type="button" className={secondaryBtn} onClick={() => router.back()}>
+            Cancel
+          </button>
+          <button className={primaryBtn}>Save</button>
+        </div>
+      )}
       </fieldset>
       {drive && canDelete && (
         <button
