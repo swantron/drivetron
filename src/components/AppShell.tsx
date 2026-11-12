@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useFamily } from "@/components/FamilyProvider";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { LearnerSwitcher } from "@/components/LearnerSwitcher";
+import { subscribeToJoinRequests, type JoinRequest } from "@/lib/firebase/firestore";
 
 const tabs = [
   { href: "/", label: "Home", icon: "M3 12l9-8 9 8M5 10v10h14V10" },
@@ -36,6 +37,7 @@ export function AppShell({
             </header>
           )}
           <main className={`flex-1 px-4 pb-28 print:pb-0 ${title ? "" : "pt-[max(1rem,env(safe-area-inset-top))] print:pt-0"}`}>
+            <JoinRequestBanner />
             {switcher && (
               <div className="mb-3 empty:hidden">
                 <LearnerSwitcher />
@@ -71,8 +73,38 @@ function FamilyGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Owner only: live list of people waiting to be approved. */
+function usePendingRequests(): JoinRequest[] {
+  const { family, isOwner } = useFamily();
+  const familyId = isOwner ? family?.id : undefined;
+  const [state, setState] = useState<{ familyId?: string; reqs: JoinRequest[] }>({ reqs: [] });
+  useEffect(() => {
+    if (!familyId) return;
+    return subscribeToJoinRequests(familyId, (reqs) => setState({ familyId, reqs }));
+  }, [familyId]);
+  return familyId && state.familyId === familyId ? state.reqs : [];
+}
+
+/** Without this the owner only finds out someone asked to join by opening the Family tab. */
+function JoinRequestBanner() {
+  const pathname = usePathname();
+  const reqs = usePendingRequests();
+  if (reqs.length === 0 || pathname.startsWith("/family")) return null;
+  const who = reqs.length === 1 ? `${reqs[0].name} is` : `${reqs.length} people are`;
+  return (
+    <Link
+      href="/family"
+      className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100 print:hidden"
+    >
+      <span>{who} waiting for you to approve them.</span>
+      <span className="shrink-0 font-semibold">Review ›</span>
+    </Link>
+  );
+}
+
 function BottomNav() {
   const pathname = usePathname();
+  const pending = usePendingRequests().length;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-gray-800 dark:bg-gray-950/95 print:hidden">
       <ul className="mx-auto grid max-w-xl grid-cols-4">
@@ -86,9 +118,19 @@ function BottomNav() {
                   active ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400"
                 }`}
               >
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <path d={t.icon} />
-                </svg>
+                <span className="relative">
+                  <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d={t.icon} />
+                  </svg>
+                  {t.href === "/family" && pending > 0 && (
+                    <span
+                      aria-label={`${pending} waiting for approval`}
+                      className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white"
+                    >
+                      {pending}
+                    </span>
+                  )}
+                </span>
                 {t.label}
               </Link>
             </li>
