@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginButton } from "@/components/auth/LoginButton";
 import { muted } from "@/components/ui/styles";
+import { safeNext } from "@/utils/safeNext";
 
 export default function LoginPage() {
   return (
@@ -19,9 +20,7 @@ function Login() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next");
-  // Only follow same-site paths
-  const dest = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const dest = safeNext(params.get("next"), typeof window === "undefined" ? undefined : window.location.origin);
 
   useEffect(() => {
     if (!loading && user) router.replace(dest);
@@ -47,3 +46,4 @@ function Login() {
     </main>
   );
 }
+

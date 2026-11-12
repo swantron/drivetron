@@ -12,6 +12,7 @@ import { splitDayNight } from "@/utils/night";
 import { defaultSupervisor, supervisorsOf } from "@/utils/members";
 import { defaultVehicleId } from "@/utils/learners";
 import { nowMs } from "@/utils/time";
+import { writeErrorMessage } from "@/utils/errors";
 import { card, input, primaryBtn, secondaryBtn, muted } from "@/components/ui/styles";
 
 const MAX_DRIVE_MS = 16 * 60 * 60 * 1000;
@@ -41,7 +42,7 @@ export function DriveTimer() {
   const supervisors = supervisorsOf(family);
   const supervisor =
     supervisors.find((s) => s.uid === pickedSupervisor) ?? defaultSupervisor(family, user.uid);
-  const onError = () => showToast("Couldn't save — check your connection", "error");
+  const onError = (e: Error) => showToast(writeErrorMessage(e), "error");
 
   const start = async () => {
     if (!supervisor) {

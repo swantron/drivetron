@@ -21,7 +21,7 @@ export function Chips({
             onClick={() => onToggle(o)}
             className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
               on
-                ? "border-emerald-600 bg-emerald-600 text-white"
+                ? "border-emerald-700 bg-emerald-700 text-white"
                 : "border-gray-300 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             }`}
           >

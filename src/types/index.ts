@@ -71,6 +71,13 @@ export interface Drive {
   timesEdited?: boolean;
   createdBy: string;
   updatedAt: number;
+  /**
+   * When the server first received the drive (Firestore Timestamp; null until it syncs, missing on
+   * drives logged before this field existed). A timer whose syncedAt is long after its startedAt
+   * was started offline, or backdated, and the printed log marks it.
+   */
+  syncedAt?: { toMillis(): number } | null;
 }
 
-export type DriveInput = Omit<Drive, "id">;
+/** What the app writes; syncedAt is always set by the server. */
+export type DriveInput = Omit<Drive, "id" | "syncedAt">;

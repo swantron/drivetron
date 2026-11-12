@@ -5,6 +5,7 @@ import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
 import { FORM_21_1600_URL, OPI_LOG_URL } from "@/utils/montana";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
+import { syncedLate } from "@/utils/syncedLate";
 
 export default function LogPage() {
   return (
@@ -70,14 +71,14 @@ function PrintableLog() {
           </div>
         </dl>
 
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse text-xs sm:text-sm print:text-sm">
           <thead>
             <tr className="border-b-2 border-black text-left dark:border-gray-500 print:border-black">
-              <th className="py-1 pr-2">Date</th>
-              <th className="py-1 pr-2">Conditions &amp; Skills</th>
-              <th className="py-1 pr-2 text-right">Time</th>
-              <th className="py-1 pr-2 text-right">Night</th>
-              <th className="py-1 text-center">Initials</th>
+              <th className="py-1 pr-1.5 sm:pr-2">Date</th>
+              <th className="py-1 pr-1.5 sm:pr-2">Conditions &amp; Skills</th>
+              <th className="py-1 pr-1.5 sm:pr-2 text-right">Time</th>
+              <th className="py-1 pr-1.5 sm:pr-2 text-right">Night</th>
+              <th className="py-1 text-center">Init.</th>
             </tr>
           </thead>
           <tbody>
@@ -87,23 +88,24 @@ function PrintableLog() {
               const t = (x: Date) => x.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
               return (
                 <tr key={d.id} className="break-inside-avoid border-b border-gray-300 align-top dark:border-gray-700 print:border-gray-400">
-                  <td className="whitespace-nowrap py-1 pr-2">
+                  <td className="whitespace-nowrap py-1 pr-1.5 sm:pr-2">
                     {start.toLocaleDateString(undefined, { month: "numeric", day: "numeric", year: "2-digit" })}
                     <div className="text-xs text-gray-500">
                       {t(start)}–{t(end)}
                     </div>
                   </td>
-                  <td className="py-1 pr-2">
+                  <td className="break-words py-1 pr-1.5 sm:pr-2">
                     {[...d.conditions, ...d.skills].join(", ") || "—"}
                     {d.vehicleName && <div className="text-xs text-gray-500">Vehicle: {d.vehicleName}</div>}
                     {d.notes && <div className="text-xs text-gray-500">{d.notes}</div>}
                   </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">
+                  <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">
                     {formatMinutes(d.dayMinutes + d.nightMinutes)}
                     {d.manual && <sup title="Entered by hand">†</sup>}
                     {d.timesEdited && <sup title="Times edited after logging">*</sup>}
+                    {syncedLate(d) && <sup title="Reached the server well after its start time">‡</sup>}
                   </td>
-                  <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{d.nightMinutes ? formatMinutes(d.nightMinutes) : ""}</td>
+                  <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">{d.nightMinutes ? formatMinutes(d.nightMinutes) : ""}</td>
                   <td className="py-1 text-center font-medium">{d.supervisorInitials}</td>
                 </tr>
               );
@@ -129,9 +131,12 @@ function PrintableLog() {
         </table>
 
         <p className="mt-3 text-xs text-gray-500">
-          Night = sunset to sunrise at the drive&apos;s location. Initials are the supervising licensed adult.
+          Night = sunset to sunrise at the drive&apos;s location. Init. = initials of the supervising licensed adult.
           {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
           {done.some((d) => d.timesEdited) && <> * Times were edited after the drive was logged.</>}
+          {done.some(syncedLate) && (
+            <> ‡ Timed, but first saved more than 15 minutes after its start — usually started without signal; check the start time.</>
+          )}
         </p>
 
         <div className="mt-10 grid grid-cols-2 gap-8 break-inside-avoid">

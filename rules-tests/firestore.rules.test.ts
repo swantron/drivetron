@@ -5,7 +5,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { arrayUnion, doc, getDoc, getDocs, collection, setDoc, updateDoc, writeBatch, deleteDoc } from "firebase/firestore";
+import { arrayUnion, doc, getDoc, getDocs, collection, setDoc, updateDoc, writeBatch, deleteDoc, serverTimestamp } from "firebase/firestore";
 
 let env: RulesTestEnvironment;
 
@@ -41,7 +41,14 @@ const drive = (by: string) => ({
   updatedAt: 1,
 });
 
-const db = (uid?: string) => (uid ? env.authenticatedContext(uid).firestore() : env.unauthenticatedContext().firestore());
+/** A drive typed in after the fact (what "Add a past drive" writes). */
+const typedIn = (by: string) => ({ ...drive(by), manual: true });
+/** A timer as the Start button creates it. */
+const live = (by: string) => ({ ...drive(by), startedAt: Date.now(), endedAt: null, dayMinutes: 0, nightMinutes: 0, syncedAt: serverTimestamp() });
+const HOUR = 3_600_000;
+
+const db = (uid?: string) =>
+  uid ? env.authenticatedContext(uid, { email: `${uid}@example.com` }).firestore() : env.unauthenticatedContext().firestore();
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
@@ -98,7 +105,7 @@ describe("reading", () => {
 });
 
 describe("joining (request + owner approval)", () => {
-  const req = (role = "learner", code = CODE) => ({ name: "Teen", initials: "TE", role, code, createdAt: 1 });
+  const req = (role = "learner", code = CODE) => ({ name: "Teen", initials: "TE", role, code, createdAt: 1, email: "teen@example.com" });
   const reqPath = "families/f1/joinRequests/teen";
 
   it("no longer lets anyone add themselves directly", async () => {
@@ -112,6 +119,13 @@ describe("joining (request + owner approval)", () => {
     await assertSucceeds(getDoc(doc(db("teen"), reqPath)));
     await assertFails(getDoc(doc(db("teen"), "families/f1")));
     await assertFails(getDocs(collection(db("teen"), "families/f1/joinRequests")));
+  });
+
+  it("records the requester's real Google address", async () => {
+    await assertFails(setDoc(doc(db("teen"), reqPath), { ...req(), email: "parent@example.com" }));
+    const { email: _e, ...noEmail } = req();
+    void _e;
+    await assertFails(setDoc(doc(db("teen"), reqPath), noEmail));
   });
 
   it("rejects a request with the wrong code or for someone else", async () => {
@@ -194,6 +208,34 @@ describe("member edits", () => {
     await assertSucceeds(updateDoc(doc(db("parent"), "families/f1"), { memberUids: ["parent"], members: { parent: member("Parent") } }));
   });
 
+  it("lets the owner hand the log to another supervising adult, and nothing else", async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      updateDoc(doc(ctx.firestore(), "families/f1"), { memberUids: ["parent", "teen", "mom"], "members.mom": member("Mom") })
+    );
+    await assertFails(updateDoc(doc(db("parent"), "families/f1"), { ownerUid: "teen" }));
+    await assertFails(updateDoc(doc(db("parent"), "families/f1"), { ownerUid: "stranger" }));
+    await assertFails(updateDoc(doc(db("mom"), "families/f1"), { ownerUid: "mom" }));
+    await assertFails(updateDoc(doc(db("parent"), "families/f1"), { ownerUid: "mom", inviteCode: "MINE2345" }));
+    await assertSucceeds(updateDoc(doc(db("parent"), "families/f1"), { ownerUid: "mom" }));
+    // The old owner is now an ordinary member and can leave
+    await assertSucceeds(updateDoc(doc(db("parent"), "families/f1"), { memberUids: ["teen", "mom"], members: { teen: member("Teen", "learner"), mom: member("Mom") } }));
+  });
+
+  it("lets the owner delete the whole log: drives, requests, invite, then the family", async () => {
+    await setDoc(doc(db("stranger"), "families/f1/joinRequests/stranger"), {
+      name: "S", initials: "S", role: "learner", code: CODE, createdAt: 1, email: "stranger@example.com",
+    });
+    const fs = db("parent");
+    const b1 = writeBatch(fs);
+    b1.delete(doc(fs, "families/f1/drives/d1"));
+    b1.delete(doc(fs, "families/f1/joinRequests/stranger"));
+    await assertSucceeds(b1.commit());
+    const b2 = writeBatch(fs);
+    b2.delete(doc(fs, "invites", CODE));
+    b2.delete(doc(fs, "families/f1"));
+    await assertSucceeds(b2.commit());
+  });
+
   it("only lets the owner delete the family", async () => {
     await assertFails(deleteDoc(doc(db("teen"), "families/f1")));
     await assertSucceeds(deleteDoc(doc(db("parent"), "families/f1")));
@@ -238,9 +280,9 @@ describe("learners and vehicles", () => {
 
   it("accepts drives with a learner and vehicle, and legacy drives without", async () => {
     const fs = db("parent");
-    await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n1"), { ...drive("parent"), learnerId: "kid2", vehicleId: "v1", vehicleName: "Outback" }));
-    await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n2"), { ...drive("parent"), vehicleId: null, vehicleName: null }));
-    await assertFails(setDoc(doc(fs, "families/f1/drives/n3"), { ...drive("parent"), learnerId: 7 }));
+    await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n1"), { ...typedIn("parent"), learnerId: "kid2", vehicleId: "v1", vehicleName: "Outback" }));
+    await assertSucceeds(setDoc(doc(fs, "families/f1/drives/n2"), { ...typedIn("parent"), vehicleId: null, vehicleName: null }));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/n3"), { ...typedIn("parent"), learnerId: 7 }));
   });
 });
 
@@ -256,9 +298,32 @@ describe("drives: learner restrictions", () => {
   const fsT = () => db("teen");
 
   it("lets a learner start a live timer but not type in a past drive", async () => {
-    await assertSucceeds(setDoc(doc(fsT(), "families/f1/drives/n1"), { ...drive("teen"), endedAt: null, dayMinutes: 0, nightMinutes: 0 }));
-    await assertFails(setDoc(doc(fsT(), "families/f1/drives/n2"), { ...drive("teen"), manual: true }));
+    await assertSucceeds(setDoc(doc(fsT(), "families/f1/drives/n1"), live("teen")));
+    await assertFails(setDoc(doc(fsT(), "families/f1/drives/n2"), typedIn("teen")));
     await assertFails(setDoc(doc(fsT(), "families/f1/drives/n3"), drive("teen")));
+  });
+
+  it("requires a learner's timer to carry the server receipt time", async () => {
+    const { syncedAt: _s, ...noSync } = live("teen");
+    void _s;
+    await assertFails(setDoc(doc(fsT(), "families/f1/drives/n1"), noSync));
+    await assertFails(setDoc(doc(fsT(), "families/f1/drives/n2"), { ...live("teen"), syncedAt: 1 }));
+  });
+
+  it("lets a backdated timer through but keeps when the server saw it", async () => {
+    // Started offline in a dead zone: allowed, and the log compares startedAt with syncedAt
+    await assertSucceeds(setDoc(doc(fsT(), "families/f1/drives/n1"), { ...live("teen"), startedAt: Date.now() - 3 * HOUR }));
+    await assertFails(updateDoc(doc(fsT(), "families/f1/drives/n1"), { syncedAt: Date.now() - 3 * HOUR, updatedAt: 2 }));
+  });
+
+  it("rejects times in the future", async () => {
+    await assertFails(setDoc(doc(fsT(), "families/f1/drives/n1"), { ...live("teen"), startedAt: Date.now() + 2 * HOUR }));
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), "families/f1/drives/nowLive"), { ...drive("parent"), startedAt: Date.now() - HOUR, endedAt: null, dayMinutes: 0, nightMinutes: 0 })
+    );
+    await assertFails(updateDoc(doc(fsT(), "families/f1/drives/nowLive"), { endedAt: Date.now() + 5 * HOUR, dayMinutes: 360, nightMinutes: 0, updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(fsT(), "families/f1/drives/nowLive"), { endedAt: Date.now(), dayMinutes: 60, nightMinutes: 0, updatedAt: 2 }));
+    await assertFails(setDoc(doc(db("parent"), "families/f1/drives/p1"), { ...typedIn("parent"), startedAt: Date.now(), endedAt: Date.now() + 3 * HOUR, dayMinutes: 180, nightMinutes: 0 }));
   });
 
   it("lets a learner stop and tag their own drive", async () => {
@@ -314,13 +379,34 @@ describe("drives: edit audit", () => {
 
 describe("drives", () => {
   it("lets a member log, edit and delete drives", async () => {
-    await assertSucceeds(setDoc(doc(db("parent"), "families/f1/drives/d2"), drive("parent")));
+    await assertSucceeds(setDoc(doc(db("parent"), "families/f1/drives/d2"), typedIn("parent")));
     await assertSucceeds(updateDoc(doc(db("parent"), "families/f1/drives/d1"), { notes: "Icy on Main St", updatedAt: 2 }));
     await assertSucceeds(deleteDoc(doc(db("parent"), "families/f1/drives/d1")));
   });
 
   it("accepts an in-progress drive", async () => {
-    await assertSucceeds(setDoc(doc(db("parent"), "families/f1/drives/live"), { ...drive("parent"), endedAt: null, dayMinutes: 0, nightMinutes: 0 }));
+    await assertSucceeds(setDoc(doc(db("parent"), "families/f1/drives/live"), live("parent")));
+  });
+
+  it("keeps timed and typed-in drives labelled as what they are", async () => {
+    const fs = db("parent");
+    // Created already finished but claiming to be timed
+    await assertFails(setDoc(doc(fs, "families/f1/drives/x1"), drive("parent")));
+    // A running drive claiming to be typed in
+    await assertFails(setDoc(doc(fs, "families/f1/drives/x2"), { ...live("parent"), manual: true }));
+    // Relabelling either way
+    await assertFails(updateDoc(doc(fs, "families/f1/drives/d1"), { manual: true, updatedAt: 2 }));
+  });
+
+  it("requires the named supervisor to be a supervising adult in the family", async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      updateDoc(doc(ctx.firestore(), "families/f1"), { memberUids: ["parent", "teen"], "members.teen": member("Teen", "learner") })
+    );
+    const fs = db("parent");
+    await assertFails(setDoc(doc(fs, "families/f1/drives/s1"), { ...typedIn("parent"), supervisorUid: "teen", supervisorName: "Teen" }));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/s2"), { ...typedIn("parent"), supervisorUid: "nobody", supervisorName: "Nobody" }));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/s3"), { ...typedIn("parent"), supervisorName: "Officer Friendly" }));
+    await assertFails(updateDoc(doc(fs, "families/f1/drives/d1"), { supervisorName: "Officer Friendly", updatedAt: 2 }));
   });
 
   it("blocks strangers", async () => {
@@ -330,9 +416,9 @@ describe("drives", () => {
 
   it("rejects malformed drives", async () => {
     const fs = db("parent");
-    await assertFails(setDoc(doc(fs, "families/f1/drives/a"), { ...drive("parent"), endedAt: 1 }));
-    await assertFails(setDoc(doc(fs, "families/f1/drives/b"), { ...drive("parent"), dayMinutes: 2000 }));
-    await assertFails(setDoc(doc(fs, "families/f1/drives/c"), { ...drive("parent"), extra: true }));
-    await assertFails(setDoc(doc(fs, "families/f1/drives/e"), drive("someoneelse")));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/a"), { ...typedIn("parent"), endedAt: 1 }));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/b"), { ...typedIn("parent"), dayMinutes: 2000 }));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/c"), { ...typedIn("parent"), extra: true }));
+    await assertFails(setDoc(doc(fs, "families/f1/drives/e"), typedIn("someoneelse")));
   });
 });

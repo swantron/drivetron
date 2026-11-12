@@ -16,6 +16,7 @@ import { formatMinutes } from "@/utils/progress";
 import { CONDITIONS, SKILLS } from "@/utils/montana";
 import type { Drive, Family } from "@/types";
 import { nowMs } from "@/utils/time";
+import { writeErrorMessage } from "@/utils/errors";
 import { card, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 const MAX_MINUTES = 16 * 60;
@@ -106,18 +107,18 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const [initialInputs] = useState(() => ({ date, startTime, endTime }));
   const range = useMemo(() => {
     if (!date || !startTime || !endTime) return null;
-    // Untouched timed drive: keep the exact timestamps instead of rounding to the minute.
-    if (
-      drive?.endedAt &&
-      date === initialInputs.date &&
-      startTime === initialInputs.startTime &&
-      endTime === initialInputs.endTime
-    ) {
-      return { start: drive.startedAt, end: drive.endedAt };
+    // Untouched inputs keep the exact stored timestamps instead of rounding to the minute. For the
+    // start this matters beyond tidiness: a learner may not change startedAt, so finishing a
+    // forgotten timer would otherwise be rejected over the dropped seconds.
+    const startUntouched = !!drive && date === initialInputs.date && startTime === initialInputs.startTime;
+    const start = startUntouched ? drive.startedAt : combine(date, startTime);
+    if (startUntouched && drive.endedAt && endTime === initialInputs.endTime) {
+      return { start, end: drive.endedAt };
     }
-    const start = combine(date, startTime);
     let end = combine(date, endTime);
-    if (end < start) end += 24 * 60 * 60 * 1000; // crossed midnight
+    // Crossed midnight. Compare at minute precision so an untouched start's seconds don't push a
+    // same-minute end onto the next day.
+    if (end < combine(date, startTime)) end += 24 * 60 * 60 * 1000;
     return { start, end };
   }, [date, startTime, endTime, drive, initialInputs]);
 
@@ -138,7 +139,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const toggleTag = (list: "c" | "s") => (v: string) =>
     list === "c" ? setConditions((x) => toggle(x, v)) : setSkills((x) => toggle(x, v));
 
-  const onError = () => showToast("Couldn't save — check your connection", "error");
+  const onError = (e: Error) => showToast(writeErrorMessage(e), "error");
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();

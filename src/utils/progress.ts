@@ -2,9 +2,17 @@ import type { Drive } from "@/types";
 import { REQUIRED_HOLD_MONTHS, REQUIRED_NIGHT_MINUTES, REQUIRED_TOTAL_MINUTES, PERMIT_VALID_MONTHS } from "./montana";
 
 /** Parses YYYY-MM-DD as a local date (not UTC midnight, which is the previous evening in Montana). */
-export function parseLocalDate(ymd: string): Date {
-  const [y, m, d] = ymd.split("-").map(Number);
-  return new Date(y, m - 1, d);
+/**
+ * YYYY-MM-DD as a local date. Learner entries aren't shape-checked by the rules, so a missing or
+ * malformed value falls back to today rather than an Invalid Date that breaks every calculation.
+ */
+export function parseLocalDate(ymd: string | undefined | null): Date {
+  const m = typeof ymd === "string" ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd) : null;
+  if (!m) {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
 export function addMonths(date: Date, months: number): Date {

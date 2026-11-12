@@ -20,6 +20,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      # Catches a broken static export on pull requests too, not only at deploy time
+      - run: npm run build
 
       # Security rules are the only backend and this workflow deploys them, so
       # they're tested against the emulator before anything ships.

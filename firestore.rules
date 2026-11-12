@@ -10,6 +10,9 @@ rules_version = '2';
 //   can't change the times on a finished drive, and can't touch drives someone else logged.
 //   The parent certifies these hours on MVD form 21-1600, so a learner must not be able to pad them.
 // - Any change to a finished drive's times is permanently flagged (timesEdited) and shows on the log.
+// - Times can't be in the future (judged by the server clock), a timer can't be relabelled as
+//   typed-in or back, and a learner's timer records when the server first saw it (syncedAt), so a
+//   drive that claims to have started long before it reached the server is marked on the log.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -42,6 +45,11 @@ service cloud.firestore {
         && m.name is string && m.name.size() > 0 && m.name.size() <= 80
         && m.initials is string && m.initials.size() > 0 && m.initials.size() <= 4
         && m.role in ['supervisor', 'learner'];
+    }
+
+    // Phones' clocks drift; allow a little slack before calling a time "in the future".
+    function latestAllowedMs() {
+      return request.time.toMillis() + 10 * 60 * 1000;
     }
 
     function isDate(v) {
@@ -132,10 +140,20 @@ service cloud.firestore {
           && !(request.auth.uid in request.resource.data.members);
       }
 
+      // Owner hands the log to another supervising adult; nothing else changes in the same write.
+      function transferring() {
+        return request.auth.uid == resource.data.ownerUid
+          && changed().hasOnly(['ownerUid'])
+          && request.resource.data.ownerUid in resource.data.memberUids
+          && resource.data.members[request.resource.data.ownerUid].role == 'supervisor';
+      }
+
       allow update: if signedIn()
         && validFamily(request.resource.data)
-        && request.resource.data.ownerUid == resource.data.ownerUid
-        && (ownerUpdate() || memberUpdate() || leaving())
+        && (
+          (request.resource.data.ownerUid == resource.data.ownerUid && (ownerUpdate() || memberUpdate() || leaving()))
+          || transferring()
+        )
         && (!(request.auth.uid in request.resource.data.members) || validMember(request.resource.data.members[request.auth.uid]));
 
       allow delete: if signedIn() && request.auth.uid == resource.data.ownerUid;
@@ -148,7 +166,9 @@ service cloud.firestore {
         allow create, update: if signedIn()
           && request.auth.uid == uid
           && !(uid in family(fid).memberUids)
-          && request.resource.data.keys().hasOnly(['name', 'initials', 'role', 'code', 'createdAt'])
+          && request.resource.data.keys().hasOnly(['name', 'initials', 'role', 'code', 'createdAt', 'email'])
+          // The owner sees the Google account's address, not just a typed name
+          && request.resource.data.get('email', null) == request.auth.token.get('email', null)
           && request.resource.data.code == family(fid).inviteCode
           && validMember({
                'name': request.resource.data.name,
@@ -164,8 +184,10 @@ service cloud.firestore {
           return d.keys().hasOnly(['learnerId', 'vehicleId', 'vehicleName', 'startedAt', 'endedAt', 'dayMinutes',
                                    'nightMinutes', 'supervisorUid', 'supervisorName', 'supervisorInitials',
                                    'conditions', 'skills', 'notes', 'lat', 'lng', 'manual', 'timesEdited',
-                                   'createdBy', 'updatedAt'])
+                                   'createdBy', 'updatedAt', 'syncedAt'])
             && d.startedAt is int
+            && d.startedAt <= latestAllowedMs()
+            && (d.endedAt == null || d.endedAt <= latestAllowedMs())
             && (d.endedAt == null || (d.endedAt is int && d.endedAt > d.startedAt))
             && d.dayMinutes is int && d.dayMinutes >= 0
             && d.nightMinutes is int && d.nightMinutes >= 0
@@ -189,6 +211,18 @@ service cloud.firestore {
             && (!('vehicleName' in d) || d.vehicleName == null || (d.vehicleName is string && d.vehicleName.size() <= 80));
         }
 
+        // The named supervisor is a current supervising adult, under their current name.
+        function validSupervisor(d) {
+          return d.supervisorUid in family(fid).memberUids
+            && family(fid).members[d.supervisorUid].role == 'supervisor'
+            && d.supervisorName == family(fid).members[d.supervisorUid].name;
+        }
+
+        function supervisorChanged() {
+          return request.resource.data.supervisorUid != resource.data.supervisorUid
+            || request.resource.data.supervisorName != resource.data.supervisorName;
+        }
+
         function wasFinished() {
           return resource.data.endedAt != null;
         }
@@ -210,14 +244,22 @@ service cloud.firestore {
 
         allow create: if isMember(fid)
           && validDrive(request.resource.data)
+          && validSupervisor(request.resource.data)
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.get('timesEdited', false) == false
-          // Learners can only start a live timer, not type in a past drive
-          && (isSupervisor(fid) || (request.resource.data.endedAt == null && request.resource.data.manual == false));
+          // A timer starts running; anything created already finished is a typed-in drive and says so
+          && request.resource.data.manual == (request.resource.data.endedAt != null)
+          // When present, syncedAt is the server's receipt time (serverTimestamp())
+          && (!('syncedAt' in request.resource.data) || request.resource.data.syncedAt == request.time)
+          // Learners can only start a live timer, not type in a past drive, and it must carry syncedAt
+          && (isSupervisor(fid) || (request.resource.data.endedAt == null && 'syncedAt' in request.resource.data));
 
         allow update: if isMember(fid)
           && validDrive(request.resource.data)
           && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.manual == resource.data.manual
+          && request.resource.data.get('syncedAt', null) == resource.data.get('syncedAt', null)
+          && (!supervisorChanged() || validSupervisor(request.resource.data))
           && auditOk()
           && (
             isSupervisor(fid)
@@ -226,7 +268,6 @@ service cloud.firestore {
               // reduce hours); once a drive is finished its times are fixed
               (resource.data.createdBy == request.auth.uid || !wasFinished())
               && request.resource.data.startedAt == resource.data.startedAt
-              && request.resource.data.manual == resource.data.manual
               && (!wasFinished() || !timesChanged())
             )
           );

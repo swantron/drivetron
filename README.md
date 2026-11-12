@@ -57,20 +57,30 @@ NEXT_PUBLIC_FIREBASE_EMULATORS=1 NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-drivetron 
 families/{familyId}            learners{id: name/dob/permitDate}, vehicles{id: name}, memberUids,
                                members{uid: name/initials/role}, inviteCode
 families/{familyId}/drives/{id} learnerId, vehicleId/vehicleName, startedAt, endedAt (null = timer running),
-                               dayMinutes, nightMinutes, supervisor, tags, notes
+                               dayMinutes, nightMinutes, supervisor, tags, notes, manual, timesEdited,
+                               syncedAt (server time the drive first arrived)
+families/{familyId}/joinRequests/{uid}  name, initials, role, code, email (verified against the token)
 invites/{code}                 { familyId }  (get-only lookup for joining)
 ```
 
 All access control is in `firestore.rules`, with emulator tests in `rules-tests/`. The trust model:
 
 - **Joining is approved.** An invite code only lets someone file a request (`families/{id}/joinRequests/{uid}`).
-  The owner approves it and sets the role. An owner can only add an account that has a pending
-  request, so nobody can push a family onto a stranger's account.
+  The owner approves it and sets the role, seeing the requester's verified Google address. An owner
+  can only add an account that has a pending request, so nobody can push a family onto a stranger's
+  account. The owner can hand the log to another supervising adult, or delete it entirely.
 - **Roles are owner-controlled.** Members edit their own name and initials but not their role.
 - **Learners can't pad hours.** They can time drives live and tag them, but can't enter past drives,
   change a finished drive's times, edit or delete drives a parent logged, or change license dates.
+  No drive may start or end in the future by the server's clock (10 minutes' slack for phone clocks).
 - **Edits are visible.** Changing a finished drive's times sets a permanent `timesEdited` flag, and
-  the printed log marks those drives (*) along with hand-entered ones (†).
+  the printed log marks those drives (*) along with hand-entered ones (†). Timed vs. hand-entered is
+  fixed at creation. A timer whose `syncedAt` is more than 15 minutes after its `startedAt` (started
+  without signal, or backdated) is marked (‡).
+- **Supervisors are real.** A drive's supervisor must be a current supervising adult in the family,
+  under their current name.
+- **Not covered by rules:** the day/night split is computed on the phone, so a learner's stop could
+  label minutes as night. The parent reviews the log before certifying it.
 
 Families created before multi-learner support stored one learner in top-level `learnerName` /
 `learnerDob` / `permitDate`. On load these are copied into `learners.primary`, and the old fields

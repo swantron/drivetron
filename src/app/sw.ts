@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist } from "serwist";
+import { NetworkOnly, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -10,23 +10,22 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Let Firebase requests bypass the service worker entirely
+// Never cache Firebase traffic (Firestore has its own offline cache; tokens and family data
+// don't belong in Cache Storage) or Firebase Hosting's reserved /__/ paths, which carry the
+// OAuth sign-in handler and its callback URLs.
 const firebaseHostnames = [
   "firestore.googleapis.com",
   "identitytoolkit.googleapis.com",
   "securetoken.googleapis.com",
   "www.googleapis.com",
+  "apis.google.com",
+  "accounts.google.com",
 ];
-
-self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-  if (
-    firebaseHostnames.includes(url.hostname) ||
-    url.hostname.endsWith(".firebaseio.com")
-  ) {
-    return; // Don't handle — let the browser fetch normally
-  }
-});
+const neverCache = ({ url }: { url: URL }) =>
+  firebaseHostnames.includes(url.hostname) ||
+  url.hostname.endsWith(".firebaseio.com") ||
+  url.hostname.endsWith(".firebaseapp.com") ||
+  (url.origin === self.location.origin && url.pathname.startsWith("/__/"));
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -38,7 +37,8 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: false,
-  runtimeCaching: defaultCache,
+  // First match wins, so this has to come before the defaults (which cache cross-origin GETs).
+  runtimeCaching: [{ matcher: neverCache, handler: new NetworkOnly() }, ...defaultCache],
 });
 
 serwist.addEventListeners();

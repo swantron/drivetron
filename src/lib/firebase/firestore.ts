@@ -3,6 +3,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocsFromServer,
   limit,
   onSnapshot,
   orderBy,
@@ -14,6 +15,7 @@ import {
   arrayUnion,
   arrayRemove,
   deleteField,
+  serverTimestamp,
   type Unsubscribe,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -78,6 +80,8 @@ export interface JoinRequest {
   role: Member["role"];
   code: string;
   createdAt: number;
+  /** The requester's Google account address, verified by the rules. Missing on old requests. */
+  email?: string | null;
 }
 
 const PENDING_KEY = "drivetron.pendingFamilyId";
@@ -116,6 +120,7 @@ export async function requestToJoin(user: User, code: string, me: Member): Promi
     role: me.role,
     code: normalized,
     createdAt: Date.now(),
+    email: user.email ?? null,
   });
   setPendingFamilyId(familyId);
   return familyId;
@@ -142,12 +147,36 @@ export async function withdrawJoinRequest(familyId: string, uid: string) {
   setPendingFamilyId(null);
 }
 
+/**
+ * Retries on error: right after a family is created or ownership changes, the server can briefly
+ * reject the listener before it sees the new membership (same race the drives listener handles).
+ */
 export function subscribeToJoinRequests(familyId: string, onData: (reqs: JoinRequest[]) => void): Unsubscribe {
-  return onSnapshot(
-    collection(getFirebaseDb(), "families", familyId, "joinRequests"),
-    (snap) => onData(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as JoinRequest)),
-    () => onData([])
-  );
+  let unsub: Unsubscribe = () => {};
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let stopped = false;
+  let attempt = 0;
+  const listen = () => {
+    unsub = onSnapshot(
+      collection(getFirebaseDb(), "families", familyId, "joinRequests"),
+      (snap) => {
+        attempt = 0;
+        onData(snap.docs.map((d) => ({ uid: d.id, ...d.data() }) as JoinRequest));
+      },
+      () => {
+        onData([]);
+        if (stopped || attempt >= 5) return;
+        attempt += 1;
+        timer = setTimeout(listen, 2000 * attempt);
+      }
+    );
+  };
+  listen();
+  return () => {
+    stopped = true;
+    clearTimeout(timer);
+    unsub();
+  };
 }
 
 /** Owner only: adds the requester with the role the owner chose, and clears the request. */
@@ -223,6 +252,34 @@ export async function removeMember(family: Family, uid: string) {
   });
 }
 
+/** Owner only: hands the log to another supervising adult. The old owner stays as a supervisor. */
+export async function transferOwnership(familyId: string, toUid: string) {
+  await updateDoc(doc(getFirebaseDb(), "families", familyId), { ownerUid: toUid });
+}
+
+/**
+ * Owner only: permanently deletes the log — every drive, pending request, the invite code and the
+ * family itself. Reads from the server (not the offline cache) so nothing is left behind, which
+ * means it needs a connection. The family goes last: the rules check ownership against it.
+ */
+export async function deleteLog(family: Family) {
+  const db = getFirebaseDb();
+  const [drives, requests] = await Promise.all([
+    getDocsFromServer(drivesCol(family.id)),
+    getDocsFromServer(collection(db, "families", family.id, "joinRequests")),
+  ]);
+  const refs = [...drives.docs, ...requests.docs].map((d) => d.ref);
+  for (let i = 0; i < refs.length; i += 400) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + 400).forEach((r) => batch.delete(r));
+    await batch.commit();
+  }
+  const last = writeBatch(db);
+  last.delete(doc(db, "invites", family.inviteCode));
+  last.delete(doc(db, "families", family.id));
+  await last.commit();
+}
+
 /** Owner only: invalidates the old code (e.g. after it was shared too widely). */
 export async function rotateInviteCode(family: Family): Promise<string> {
   const db = getFirebaseDb();
@@ -255,12 +312,15 @@ function fireAndForget(p: Promise<unknown>, onError?: (e: Error) => void) {
 
 export function addDrive(familyId: string, drive: DriveInput, onError?: (e: Error) => void): string {
   const ref = doc(drivesCol(familyId));
-  fireAndForget(setDoc(ref, drive), onError);
+  // syncedAt is stamped by the server when the write arrives. The log compares it with startedAt
+  // to flag a "live" drive that reached the server long after it claims to have started.
+  fireAndForget(setDoc(ref, { ...drive, syncedAt: serverTimestamp() }), onError);
   return ref.id;
 }
 
+/** Updates rather than replaces, so the server-set syncedAt is never touched. */
 export function saveDrive(familyId: string, id: string, drive: DriveInput, onError?: (e: Error) => void) {
-  fireAndForget(setDoc(doc(drivesCol(familyId), id), drive), onError);
+  fireAndForget(updateDoc(doc(drivesCol(familyId), id), { ...drive }), onError);
 }
 
 export function patchDrive(familyId: string, id: string, patch: Partial<DriveInput>, onError?: (e: Error) => void) {

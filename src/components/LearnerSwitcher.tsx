@@ -21,7 +21,7 @@ export function LearnerSwitcher() {
             onClick={() => setLearnerId(l.id)}
             className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium ${
               on
-                ? "bg-emerald-600 text-white"
+                ? "bg-emerald-700 text-white"
                 : "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
             }`}
           >

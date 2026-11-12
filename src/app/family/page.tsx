@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/Toast";
 import {
   approveJoinRequest,
   declineJoinRequest,
+  deleteLog,
   leaveFamily,
   subscribeToJoinRequests,
   type JoinRequest,
@@ -19,8 +20,10 @@ import {
   rotateInviteCode,
   saveLearner,
   saveVehicle,
+  transferOwnership,
   updateFamily,
 } from "@/lib/firebase/firestore";
+import { writeErrorMessage } from "@/utils/errors";
 import { driveLearnerId, firstName, learnersOf, newId } from "@/utils/learners";
 import { signOut } from "@/lib/firebase/auth";
 import { initialsOf } from "@/utils/progress";
@@ -48,6 +51,7 @@ function FamilySettings() {
       {isSupervisor ? <Learners familyId={family.id} /> : <LearnerSummary />}
       <Vehicles familyId={family.id} />
       {!isOwner && <LeaveFamily familyId={family.id} uid={user.uid} />}
+      {isOwner && <OwnerControls family={family} myUid={user.uid} />}
       <button
         className={secondaryBtn}
         onClick={async () => {
@@ -92,12 +96,16 @@ function JoinRequestRow({ familyId, req }: { familyId: string; req: JoinRequest 
   const act = (p: Promise<void>, done: string) => {
     setBusy(true);
     p.then(() => showToast(done, "success"))
-      .catch(() => showToast("Couldn't update. Are you online?", "error"))
+      .catch((e) => showToast(writeErrorMessage(e, "Couldn't update. Are you online?"), "error"))
       .finally(() => setBusy(false));
   };
   return (
     <li className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-950">
-      <p className="font-medium">{req.name}</p>
+      <div>
+        <p className="font-medium">{req.name}</p>
+        {/* The name is whatever they typed; the address is their actual Google account */}
+        {req.email ? <p className={`${muted} break-all`}>{req.email}</p> : <p className={muted}>Google account address not shown</p>}
+      </div>
       <select className={input} value={role} onChange={(e) => setRole(e.target.value as Member["role"])} aria-label={`Role for ${req.name}`}>
         <option value="supervisor">Supervising adult — can add and edit any drive</option>
         <option value="learner">Learner — can time their own drives only</option>
@@ -137,7 +145,7 @@ function LeaveFamily({ familyId, uid }: { familyId: string; uid: string }) {
       className={`${secondaryBtn} ${confirm ? "border-red-600 text-red-600" : ""}`}
       onClick={() =>
         confirm
-          ? leaveFamily(familyId, uid).catch(() => showToast("Couldn't leave. Are you online?", "error"))
+          ? leaveFamily(familyId, uid).catch((e) => showToast(writeErrorMessage(e, "Couldn't leave. Are you online?"), "error"))
           : setConfirm(true)
       }
     >
@@ -178,7 +186,7 @@ function Invite({ family, isOwner }: { family: Family; isOwner: boolean }) {
           onClick={() =>
             rotateInviteCode(family)
               .then(() => showToast("New code made; the old one no longer works", "success"))
-              .catch(() => showToast("Couldn't change the code", "error"))
+              .catch((e) => showToast(writeErrorMessage(e, "Couldn't change the code"), "error"))
           }
         >
           Make a new code
@@ -202,7 +210,7 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
       [`members.${myUid}`]: { ...me, name: name.trim(), initials: (initials.trim() || initialsOf(name)).toUpperCase().slice(0, 4) },
     } as never)
       .then(() => showToast("Saved", "success"))
-      .catch(() => showToast("Couldn't save", "error"));
+      .catch((e) => showToast(writeErrorMessage(e), "error"));
   };
 
   return (
@@ -222,12 +230,10 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
                 <p className={muted}>{m.role === "supervisor" ? "Supervising adult" : "Learner"}{uid === family.ownerUid ? " · owner" : ""}</p>
               </div>
               {isOwner && uid !== myUid && (
-                <button
-                  className="text-sm text-red-600"
-                  onClick={() => removeMember(family, uid).catch(() => showToast("Couldn't remove", "error"))}
-                >
-                  Remove
-                </button>
+                <ConfirmRemove
+                  label={`Remove ${m.name}`}
+                  onConfirm={() => removeMember(family, uid).catch((e) => showToast(writeErrorMessage(e, "Couldn't remove"), "error"))}
+                />
               )}
             </li>
           );
@@ -297,7 +303,7 @@ function LearnerForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [dob, setDob] = useState(initial?.dob ?? "");
   const [permitDate, setPermitDate] = useState(initial?.permitDate ?? new Date().toLocaleDateString("en-CA"));
-  const onError = () => showToast("Couldn't save — check your connection", "error");
+  const onError = (e: Error) => showToast(writeErrorMessage(e), "error");
   const dirty = !initial || name !== initial.name || dob !== initial.dob || permitDate !== initial.permitDate;
 
   const save = (e: React.FormEvent) => {
@@ -349,7 +355,7 @@ function Vehicles({ familyId }: { familyId: string }) {
   const { vehicles } = useFamily();
   const { showToast } = useToast();
   const [name, setName] = useState("");
-  const onError = () => showToast("Couldn't save — check your connection", "error");
+  const onError = (e: Error) => showToast(writeErrorMessage(e), "error");
 
   const add = (e: React.FormEvent) => {
     e.preventDefault();
@@ -369,9 +375,7 @@ function Vehicles({ familyId }: { familyId: string }) {
             <li key={v.id} className="flex items-center justify-between py-2">
               <span className="font-medium">{v.name}</span>
               {/* Past drives keep the vehicle's name, so removing one doesn't change the log */}
-              <button className="text-sm text-red-600" onClick={() => removeVehicle(familyId, v.id, onError)}>
-                Remove
-              </button>
+              <ConfirmRemove label={`Remove ${v.name}`} onConfirm={() => removeVehicle(familyId, v.id, onError)} />
             </li>
           ))}
         </ul>
@@ -385,10 +389,105 @@ function Vehicles({ familyId }: { familyId: string }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <button className="shrink-0 rounded-xl bg-emerald-600 px-4 font-semibold text-white disabled:opacity-50" disabled={!name.trim()}>
+        <button className="shrink-0 rounded-xl bg-emerald-700 px-4 font-semibold text-white disabled:opacity-50" disabled={!name.trim()}>
           Add
         </button>
       </form>
+    </section>
+  );
+}
+
+/** Two taps, like Delete drive: a stray tap on a row shouldn't drop a person or a car. */
+function ConfirmRemove({ label, onConfirm }: { label: string; onConfirm: () => void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return (
+    <button
+      aria-label={armed ? `Confirm: ${label}` : label}
+      className={`shrink-0 text-sm text-red-600 ${armed ? "font-semibold" : ""}`}
+      onClick={() => (armed ? onConfirm() : setArmed(true))}
+    >
+      {armed ? "Tap again" : "Remove"}
+    </button>
+  );
+}
+
+/**
+ * The owner can't leave, so these are the ways out: hand the log to the other parent, or delete
+ * it outright (including a second log started by mistake instead of joining).
+ */
+function OwnerControls({ family, myUid }: { family: Family; myUid: string }) {
+  const { showToast } = useToast();
+  const router = useRouter();
+  const others = family.memberUids.filter((uid) => uid !== myUid && family.members[uid]?.role === "supervisor");
+  const [to, setTo] = useState(others[0] ?? "");
+  const [confirmTransfer, setConfirmTransfer] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const transfer = () => {
+    transferOwnership(family.id, to)
+      .then(() => showToast(`${family.members[to]?.name ?? "They"} now owns the log`, "success"))
+      .catch((e) => showToast(writeErrorMessage(e, "Couldn't hand over the log. Are you online?"), "error"));
+    setConfirmTransfer(false);
+  };
+
+  const del = async () => {
+    setDeleting(true);
+    try {
+      await deleteLog(family);
+      showToast("Log deleted", "info");
+      router.replace("/setup");
+    } catch (e) {
+      setDeleting(false);
+      showToast(writeErrorMessage(e, "Couldn't delete — you need a connection for this."), "error");
+    }
+  };
+
+  return (
+    <section className={`${card} space-y-4`}>
+      <h2 className="font-semibold">Hand over or delete</h2>
+      <div className="space-y-2">
+        <p className={muted}>You own this log, so you approve people and can delete it. You can hand that to another supervising adult; you stay on as a supervisor.</p>
+        {others.length === 0 ? (
+          <p className={muted}>Add another supervising adult first.</p>
+        ) : (
+          <div className="flex gap-2">
+            <select aria-label="New owner" className={input} value={to} onChange={(e) => { setTo(e.target.value); setConfirmTransfer(false); }}>
+              {others.map((uid) => (
+                <option key={uid} value={uid}>
+                  {family.members[uid].name}
+                </option>
+              ))}
+            </select>
+            <button
+              className={`shrink-0 rounded-xl border px-4 text-sm font-medium ${confirmTransfer ? "border-red-600 text-red-600" : "border-gray-300 dark:border-gray-700"}`}
+              onClick={() => (confirmTransfer ? transfer() : setConfirmTransfer(true))}
+            >
+              {confirmTransfer ? "Confirm" : "Hand over"}
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="space-y-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <p className="text-sm">
+          <strong>Delete this log</strong> for everyone: every drive, the learners, vehicles and the invite code. This can&apos;t be undone.
+          Print or save the log first if you might need it.
+        </p>
+        <label className={label} htmlFor="confirmDelete">Type DELETE to confirm</label>
+        <input id="confirmDelete" className={input} autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />
+        <button
+          className={`${secondaryBtn} border-red-600 text-red-600`}
+          disabled={typed.trim().toUpperCase() !== "DELETE" || deleting}
+          onClick={del}
+        >
+          {deleting ? "Deleting…" : "Delete this log permanently"}
+        </button>
+      </div>
     </section>
   );
 }
