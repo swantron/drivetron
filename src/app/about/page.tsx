@@ -134,7 +134,7 @@ function InstallCard() {
             </ol>
           )}
           {platform === "other" && !install && (
-            <p className={muted}>On a phone, open drive.mt.services and add it to your home screen. On a computer, Chrome and Edge offer an install icon in the address bar.</p>
+            <p className={muted}>On a phone, open drivetron.app and add it to your home screen. On a computer, Chrome and Edge offer an install icon in the address bar.</p>
           )}
         </>
       )}

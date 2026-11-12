@@ -6,7 +6,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { ChunkLoadErrorHandler } from "@/components/ChunkLoadErrorHandler";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://drive.mt.services"),
+  metadataBase: new URL("https://drivetron.app"),
   title: "Drivetron",
   description: "Supervised driving log for Montana learner drivers",
   manifest: "/manifest.json",

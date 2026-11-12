@@ -1,6 +1,6 @@
 # Drivetron
 
-Supervised driving log for Montana learner drivers, served at **drive.mt.services**.
+Supervised driving log for Montana learner drivers, served at **[drivetron.app](https://drivetron.app)**.
 
 Montana's GDL learner stage requires holding the learner license for 6 months and logging
 50 supervised hours, 10 of them at night (MCA 61-5-132). The parent certifies this on MVD form
@@ -30,8 +30,9 @@ Not affiliated with the State of Montana, MVD, or OPI.
 ## Stack
 
 Next.js 15 static export, Tailwind 4, Firebase Auth (Google) and Firestore, Serwist PWA.
-Hosted as a second Firebase Hosting site in the `mt-services-swantron` project. The mt.services
-landing page is untouched.
+Hosted as a second Firebase Hosting site (`drive-mt-services`) in the `mt-services-swantron` project,
+at drivetron.app (www.drivetron.app and the original drive.mt.services redirect to it). Domains are
+registered at Squarespace.
 
 ## Commands
 
@@ -79,9 +80,9 @@ to `primary`.
 ## One-time setup (mt-services-swantron project)
 
 1. Firestore: create the database (Native mode).
-2. Authentication: enable the Google provider, and add `drive.mt.services` to authorized domains.
+2. Authentication: enable the Google provider, and add `drivetron.app` to authorized domains.
 3. Register a web app, and put its config in the repo's Actions **variables** (`NEXT_PUBLIC_FIREBASE_*`).
-4. Hosting: `firebase hosting:sites:create drive-mt-services`, then add the custom domain
-   `drive.mt.services` (DNS records at the registrar).
+4. Hosting: `firebase hosting:sites:create drive-mt-services`, then add the custom domains
+   `drivetron.app` and `www.drivetron.app` (DNS records at the registrar).
 5. Workload identity: allow this repo in the `github-oidc` provider's attribute condition, and give
    `github-action-deploy@` the Firebase Rules Admin role so it can deploy `firestore.rules`.
