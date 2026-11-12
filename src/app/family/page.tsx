@@ -46,8 +46,8 @@ function FamilySettings() {
   return (
     <div className="space-y-4">
       {isOwner && <JoinRequests familyId={family.id} />}
-      <Invite family={family} isOwner={isOwner} />
       <Members family={family} myUid={user.uid} />
+      <Invite family={family} isOwner={isOwner} />
       {isSupervisor ? <Learners familyId={family.id} /> : <LearnerSummary />}
       <Vehicles familyId={family.id} />
       {!isOwner && <LeaveFamily familyId={family.id} uid={user.uid} />}
@@ -249,7 +249,9 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
             <label className={label} htmlFor="myinit">Initials</label>
             <input id="myinit" className={`${input} uppercase`} maxLength={4} value={initials} onChange={(e) => setInitials(e.target.value)} />
           </div>
-          <button className={`${secondaryBtn} col-span-2`}>Save my details</button>
+          {(name.trim() !== me.name || (initials.trim() || initialsOf(name)).toUpperCase().slice(0, 4) !== me.initials) && (
+            <button className={`${secondaryBtn} col-span-2`}>Save my details</button>
+          )}
         </form>
       )}
     </section>

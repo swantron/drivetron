@@ -26,6 +26,8 @@ export function ProgressCard() {
   const readyDate =
     p.projectedHoursDate && (p.projectedHoursDate > p.holdDate ? p.projectedHoursDate : p.holdDate);
   const behindExpiry = readyDate && readyDate > p.expiryDate;
+  const totalToGo = Math.max(0, REQUIRED_TOTAL_MINUTES - p.totalMinutes);
+  const nightToGo = Math.max(0, REQUIRED_NIGHT_MINUTES - p.nightMinutes);
 
   return (
     <section className={`${card} space-y-4`}>
@@ -64,12 +66,27 @@ export function ProgressCard() {
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>
-          <dt className={muted}>6-month hold</dt>
-          <dd className="font-medium">{holdPassed ? "Done ✓" : `${daysToHold} days · ${formatDate(p.holdDate)}`}</dd>
+          <dt className={muted}>Still to drive</dt>
+          <dd className="font-medium">
+            {p.hoursDone ? "Done ✓" : formatMinutes(totalToGo)}
+            {!p.hoursDone && nightToGo > 0 && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">incl. {formatMinutes(nightToGo)} at night</span>}
+          </dd>
         </div>
         <div>
           <dt className={muted}>Pace</dt>
-          <dd className="font-medium">{formatMinutes(p.minutesPerWeek)} / week</dd>
+          <dd className="font-medium">{p.driveCount < 2 ? "—" : `${formatMinutes(p.minutesPerWeek)} / week`}</dd>
+        </div>
+        <div>
+          {/* The 6-month hold: the earliest the restricted-license test can be taken */}
+          <dt className={muted}>Earliest test date</dt>
+          <dd className="font-medium">
+            {holdPassed ? "Reached ✓" : formatDate(p.holdDate)}
+            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">6-month hold · {daysToHold} days</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className={muted}>Learner license expires</dt>
+          <dd className="font-medium">{formatDate(p.expiryDate)}</dd>
         </div>
         <div className="col-span-2">
           <dt className={muted}>Projected test-ready</dt>

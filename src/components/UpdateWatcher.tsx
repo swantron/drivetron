@@ -31,12 +31,24 @@ export function UpdateWatcher() {
       else pending = true;
     };
 
+    // A worker left waiting (e.g. installed by a build whose old worker was still busy) is told to
+    // take over; Serwist listens for this message.
+    const nudge = (reg?: ServiceWorkerRegistration) => reg?.waiting?.postMessage({ type: "SKIP_WAITING" });
+    navigator.serviceWorker.getRegistration().then(nudge).catch(() => {});
+
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
         if (pending) reload();
         return;
       }
-      navigator.serviceWorker.getRegistration().then((reg) => reg?.update()).catch(() => {});
+      navigator.serviceWorker
+        .getRegistration()
+        .then(async (reg) => {
+          nudge(reg);
+          await reg?.update();
+          nudge(reg);
+        })
+        .catch(() => {});
     };
 
     // Only an update replacing an existing controller should trigger a reload, not the very

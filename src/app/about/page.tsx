@@ -96,7 +96,7 @@ function VersionCard() {
           </>
         )}
       </dl>
-      <p className={muted}>Updates install on their own the next time the app is opened fresh.</p>
+      <p className={muted}>Updates install on their own: the app checks whenever it&apos;s opened and reloads into the new version.</p>
       <button className={secondaryBtn} onClick={checkForUpdate} disabled={checking}>
         {checking ? "Checking…" : "Check for updates"}
       </button>

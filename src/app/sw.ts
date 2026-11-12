@@ -1,6 +1,6 @@
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { NetworkOnly, Serwist } from "serwist";
+import { Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -21,11 +21,20 @@ const firebaseHostnames = [
   "apis.google.com",
   "accounts.google.com",
 ];
-const neverCache = ({ url }: { url: URL }) =>
+const bypass = (url: URL) =>
   firebaseHostnames.includes(url.hostname) ||
   url.hostname.endsWith(".firebaseio.com") ||
   url.hostname.endsWith(".firebaseapp.com") ||
   (url.origin === self.location.origin && url.pathname.startsWith("/__/"));
+
+// Registered before Serwist's listener so it runs first. Not calling respondWith() leaves the
+// request to the browser, and stopping propagation keeps Serwist from answering it. This matters
+// beyond caching: Firestore holds a streaming request open for minutes, and while the worker is
+// answering it the fetch event stays alive, which blocks a new worker from activating (even with
+// skipWaiting). That was the multi-minute delay before updates reached open apps.
+self.addEventListener("fetch", (event) => {
+  if (bypass(new URL(event.request.url))) event.stopImmediatePropagation();
+});
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -37,8 +46,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: false,
-  // First match wins, so this has to come before the defaults (which cache cross-origin GETs).
-  runtimeCaching: [{ matcher: neverCache, handler: new NetworkOnly() }, ...defaultCache],
+  runtimeCaching: defaultCache,
 });
 
 serwist.addEventListeners();
