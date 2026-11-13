@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   // Family data only — keep it out of search results
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Drivetron" },
-  icons: { icon: "/icons/icon.svg", apple: "/icons/apple-touch-icon.png" },
+  // favicon.svg is the logo simplified for browser-tab size; icon.svg is the full version
+  icons: { icon: "/icons/favicon.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
