@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { STATES, getStateBySlug } from "@/states";
+import { STATES, getStateBySlug, holdText } from "@/states";
+import { socialMeta } from "@/lib/site";
 import { formatMinutes } from "@/utils/progress";
 
 /** "50 hours" rather than "50h", for page titles and prose. */
@@ -21,10 +22,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = getStateBySlug((await params).state);
   if (!s) return {};
   const hours = `${hoursText(s.totalMinutes)}, ${hoursText(s.nightMinutes)} at night`;
+  const title = `${s.name} supervised driving log: ${hours} | Drivetron`;
+  const description = `${s.name} teen drivers need ${hours}, with the ${s.permitName} held at least ${holdText(s)}. Here are the rules, and a free log the whole family can share.`;
   return {
-    title: `${s.name} supervised driving log: ${hours} | Drivetron`,
-    description: `${s.name} teen drivers need ${hours}, over at least ${s.holdMonths} months on a ${s.permitName}. Here are the rules, and a free log the whole family can share.`,
+    title,
+    description,
     alternates: { canonical: `/${s.slug}` },
+    ...socialMeta(title, description, `/${s.slug}`),
     robots: { index: true, follow: true },
   };
 }
@@ -35,7 +39,7 @@ export default async function StatePage({ params }: Props) {
   const facts = [
     { label: "Supervised hours", value: formatMinutes(s.totalMinutes) },
     { label: "At night", value: formatMinutes(s.nightMinutes) },
-    { label: `Hold the ${s.permitName}`, value: `${s.holdMonths} months` },
+    { label: `Hold the ${s.permitName}`, value: holdText(s) },
     { label: `${s.permitName} valid for`, value: `${s.permitValidMonths} months` },
   ];
   return (
@@ -71,6 +75,7 @@ export default async function StatePage({ params }: Props) {
             <li>Night minutes counted from sunset and sunrise where you drove.</li>
             <li>A printable log{s.practiceLog ? ` laid out like ${s.name}'s own practice log` : ""}, ready to sign.</li>
           </ul>
+          {s.logAtTest && <p className="mt-3 text-gray-700 dark:text-gray-300">{s.logAtTest} Drivetron&apos;s log opens on your phone, or prints.</p>}
           <Link
             href={START_HREF}
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"

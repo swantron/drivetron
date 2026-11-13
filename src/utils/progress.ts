@@ -31,7 +31,7 @@ export interface Progress {
   totalRemaining: number;
   nightRemaining: number;
   driveCount: number;
-  /** Earliest date the 6-month hold is satisfied */
+  /** Earliest date the permit has been held long enough (the state's hold period) */
   holdDate: Date;
   /** Learner license expiry */
   expiryDate: Date;
@@ -62,6 +62,7 @@ export function computeProgress(
 
   const permit = parseLocalDate(permitDate);
   const holdDate = addMonths(permit, rules.holdMonths);
+  holdDate.setDate(holdDate.getDate() + (rules.holdExtraDays ?? 0));
   const expiryDate = addMonths(permit, rules.permitValidMonths);
 
   // Pace from the permit date (or first drive, if logging started later), at least one week.

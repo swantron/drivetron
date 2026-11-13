@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useInstall } from "@/hooks/useInstall";
 import { useToast } from "@/components/ui/Toast";
 import { STATES } from "@/states";
+import { CONTACT_EMAIL } from "@/lib/site";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "dev";
@@ -200,7 +201,13 @@ function DataCard() {
       </p>
       <p className={muted}>
         Data is stored in Google Firebase. The family owner can remove members and make a new invite code from the Family
-        tab.
+        tab, and can delete the whole log there, which erases it for everyone.
+      </p>
+      <p>
+        Questions, a correction to a state&apos;s rules, or a request to delete your data:{" "}
+        <a className="text-emerald-700 underline dark:text-emerald-400" href={`mailto:${CONTACT_EMAIL}`}>
+          {CONTACT_EMAIL}
+        </a>
       </p>
     </section>
   );

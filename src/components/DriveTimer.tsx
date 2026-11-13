@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useNow } from "@/hooks/useNow";
@@ -35,6 +35,13 @@ export function DriveTimer() {
   const [pickedSupervisor, setPickedSupervisor] = useState<string | null>(null);
   // undefined = not touched, use the default; "" = no vehicle
   const [pickedVehicle, setPickedVehicle] = useState<string | undefined>(undefined);
+  // Discard sits under Stop, so it takes a second tap within a few seconds.
+  const [discardArmed, setDiscardArmed] = useState(false);
+  useEffect(() => {
+    if (!discardArmed) return;
+    const t = setTimeout(() => setDiscardArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [discardArmed]);
 
   if (!family || !user || !learner) return null;
   const vehicleId = pickedVehicle !== undefined ? pickedVehicle || null : defaultVehicleId(drives, vehicles);
@@ -111,6 +118,11 @@ export function DriveTimer() {
 
   const discard = () => {
     if (!activeDrive) return;
+    if (!discardArmed) {
+      setDiscardArmed(true);
+      return;
+    }
+    setDiscardArmed(false);
     removeDrive(family.id, activeDrive.id, onError);
     showToast("Drive discarded", "info");
   };
@@ -133,8 +145,11 @@ export function DriveTimer() {
           Stop drive
         </button>
         {(isSupervisor || activeDrive.createdBy === user.uid) && (
-          <button onClick={discard} className="mt-3 text-sm text-gray-500 underline">
-            Discard — started by mistake
+          <button
+            onClick={discard}
+            className={`mt-6 rounded-lg px-3 py-2 text-sm ${discardArmed ? "bg-red-50 font-semibold text-red-700 dark:bg-red-950 dark:text-red-300" : "text-gray-500 underline"}`}
+          >
+            {discardArmed ? "Tap again to discard this drive" : "Discard — started by mistake"}
           </button>
         )}
       </section>

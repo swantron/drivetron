@@ -16,3 +16,9 @@ export function getState(code: string | undefined | null): StateRules {
 export function getStateBySlug(slug: string): StateRules | undefined {
   return STATES.find((s) => s.slug === slug);
 }
+
+/** "6 months", or "6 months + 1 day" for a state that adds days. */
+export function holdText(r: StateRules): string {
+  const months = `${r.holdMonths} month${r.holdMonths === 1 ? "" : "s"}`;
+  return r.holdExtraDays ? `${months} + ${r.holdExtraDays} day${r.holdExtraDays === 1 ? "" : "s"}` : months;
+}

@@ -1,4 +1,4 @@
-import { DEFAULT_STATE, STATES, getState, getStateBySlug } from "@/states";
+import { DEFAULT_STATE, STATES, getState, getStateBySlug, holdText } from "@/states";
 import { computeProgress } from "@/utils/progress";
 
 describe("state rules", () => {
@@ -16,6 +16,7 @@ describe("state rules", () => {
       expect(s.nightMinutes).toBeGreaterThanOrEqual(0);
       expect(s.nightMinutes).toBeLessThanOrEqual(s.totalMinutes);
       expect(s.holdMonths).toBeGreaterThan(0);
+      expect(s.holdExtraDays).toBeGreaterThanOrEqual(0);
       expect(s.permitValidMonths).toBeGreaterThanOrEqual(s.holdMonths);
       expect(s.sources.length).toBeGreaterThan(0);
       for (const l of [...s.sources, s.certification]) expect(l.url).toMatch(/^https:\/\//);
@@ -34,5 +35,12 @@ describe("state rules", () => {
     const strict = { ...getState("MT"), totalMinutes: 60 * 60, nightMinutes: 15 * 60, holdMonths: 9 };
     const p = computeProgress([], "2026-11-01", new Date(2026, 10, 9), strict);
     expect(p.holdDate.getMonth()).toBe(7); // Aug 2027
+  });
+
+  it("adds a state's extra hold days, across a month end", () => {
+    const r = { ...getState("MT"), holdMonths: 6, holdExtraDays: 1 };
+    expect(computeProgress([], "2026-08-31", new Date(2026, 8, 1), r).holdDate).toEqual(new Date(2027, 2, 1));
+    expect(holdText(r)).toBe("6 months + 1 day");
+    expect(holdText({ ...r, holdExtraDays: 0 })).toBe("6 months");
   });
 });

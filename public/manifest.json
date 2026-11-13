@@ -2,6 +2,7 @@
   "name": "Drivetron",
   "short_name": "Drivetron",
   "description": "Shared supervised driving log for teen drivers and their parents",
+  "id": "/",
   "start_url": "/home",
   "display": "standalone",
   "background_color": "#f9fafb",

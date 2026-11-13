@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { STATES } from "@/states";
+import { STATES, holdText } from "@/states";
+import { socialMeta } from "@/lib/site";
 import { formatMinutes } from "@/utils/progress";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { LandingRedirect, SIGNED_IN_HINT_SCRIPT } from "@/components/public/LandingRedirect";
-import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+import { JOIN_HREF, SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+
+const title = "Drivetron — the supervised driving log the whole family shares";
+const description =
+  "Log your teen's supervised driving hours from any phone, iPhone or Android, in one shared log. Night hours are counted from sunset, and the printable log follows your state's rules.";
 
 export const metadata: Metadata = {
-  title: "Drivetron — the supervised driving log the whole family shares",
-  description:
-    "Log your teen's supervised driving hours from any phone, iPhone or Android, in one shared log. Night hours are counted from sunset, and the printable log follows your state's rules.",
+  title,
+  description,
   alternates: { canonical: "/" },
+  ...socialMeta(title, description, "/"),
   robots: { index: true, follow: true },
 };
 
@@ -78,6 +83,13 @@ export default function LandingPage() {
                 How it works
               </a>
             </div>
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+              Already invited? Open the link the other parent sent you, or{" "}
+              <Link href={JOIN_HREF} className="font-medium text-emerald-700 underline dark:text-emerald-400">
+                join with a code
+              </Link>
+              . Each family shares one log.
+            </p>
           </section>
 
           <section aria-labelledby="features" className="py-6">
@@ -123,7 +135,7 @@ export default function LandingPage() {
                   >
                     <span className="font-semibold">{s.name}</span>
                     <span className="block text-sm text-gray-600 dark:text-gray-400">
-                      {formatMinutes(s.totalMinutes)} supervised · {formatMinutes(s.nightMinutes)} at night · {s.holdMonths}-month hold
+                      {formatMinutes(s.totalMinutes)} supervised · {formatMinutes(s.nightMinutes)} at night · hold {holdText(s)}
                     </span>
                   </Link>
                 </li>

@@ -42,11 +42,11 @@ describe("parseLocalDate", () => {
 describe("computeProgress", () => {
   const permit = "2026-11-01";
 
-  it("starts at zero with the hold date six months out", () => {
+  it("starts at zero with the hold date six months and a day out (Montana MVD)", () => {
     const p = computeProgress([], permit, new Date(2026, 10, 9));
     expect(p.totalRemaining).toBe(3000);
     expect(p.nightRemaining).toBe(600);
-    expect(p.holdDate).toEqual(new Date(2027, 4, 1));
+    expect(p.holdDate).toEqual(new Date(2027, 4, 2));
     expect(p.expiryDate).toEqual(new Date(2027, 10, 1));
     expect(p.projectedHoursDate).toBeNull();
     expect(p.eligible).toBe(false);
@@ -74,10 +74,11 @@ describe("computeProgress", () => {
     expect(computeProgress(drives, permit, new Date(2026, 10, 9)).projectedHoursDate).toBeNull();
   });
 
-  it("is eligible only once both the hours and the six-month hold are done", () => {
+  it("is eligible only once both the hours and the hold are done", () => {
     const drives = [drive(new Date(2026, 11, 1), 2400, 600)];
     expect(computeProgress(drives, permit, new Date(2027, 2, 1)).eligible).toBe(false);
-    expect(computeProgress(drives, permit, new Date(2027, 4, 1)).eligible).toBe(true);
+    expect(computeProgress(drives, permit, new Date(2027, 4, 1)).eligible).toBe(false); // six months, not yet the extra day
+    expect(computeProgress(drives, permit, new Date(2027, 4, 2)).eligible).toBe(true);
   });
 
   it("tallies conditions and skills", () => {

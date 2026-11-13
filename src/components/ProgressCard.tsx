@@ -3,6 +3,7 @@
 import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes } from "@/utils/progress";
 import { card, muted } from "@/components/ui/styles";
+import { holdText } from "@/states";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = Math.min(100, (value / max) * 100);
@@ -23,7 +24,7 @@ export function ProgressCard() {
   const holdPassed = now >= p.holdDate;
   const daysToHold = Math.ceil((p.holdDate.getTime() - now.getTime()) / 86400000);
 
-  // The day they can test is whichever comes last: the hours or the 6-month hold.
+  // The day they can test is whichever comes last: the hours or the hold period.
   const readyDate =
     p.projectedHoursDate && (p.projectedHoursDate > p.holdDate ? p.projectedHoursDate : p.holdDate);
   const behindExpiry = readyDate && readyDate > p.expiryDate;
@@ -82,7 +83,7 @@ export function ProgressCard() {
           <dt className={muted}>Earliest test date</dt>
           <dd className="font-medium">
             {holdPassed ? "Reached ✓" : formatDate(p.holdDate)}
-            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">{rules.holdMonths}-month hold · {daysToHold} days</span>}
+            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Hold of {holdText(rules)} · {daysToHold} days</span>}
           </dd>
         </div>
         <div>

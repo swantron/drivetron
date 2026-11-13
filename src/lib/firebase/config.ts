@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 import { connectAuthEmulator, getAuth, GoogleAuthProvider, signInWithCredential, type Auth } from "firebase/auth";
 import {
   connectFirestoreEmulator,
@@ -24,6 +25,14 @@ const firebaseConfig = {
  */
 const useEmulators = process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1";
 
+/**
+ * App Check proves requests come from this site, not a script using the public API key. Off
+ * until the reCAPTCHA Enterprise site key is set (repo variable NEXT_PUBLIC_RECAPTCHA_SITE_KEY).
+ * Only turn on enforcement in the console once this build has reached the installed apps, or
+ * older copies (which send no token) are locked out.
+ */
+const appCheckSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
 let _app: FirebaseApp | undefined;
 let _auth: Auth | undefined;
 let _db: Firestore | undefined;
@@ -31,7 +40,11 @@ let _db: Firestore | undefined;
 // Lazily initialized: calling getAuth() at module load breaks the static export prerender.
 function getFirebaseApp() {
   if (!_app) {
-    _app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    const fresh = getApps().length === 0;
+    _app = fresh ? initializeApp(firebaseConfig) : getApp();
+    if (fresh && appCheckSiteKey && !useEmulators && typeof window !== "undefined") {
+      initializeAppCheck(_app, { provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey), isTokenAutoRefreshEnabled: true });
+    }
   }
   return _app;
 }

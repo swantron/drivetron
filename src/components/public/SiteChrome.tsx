@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { STATES } from "@/states";
+import { CONTACT_EMAIL } from "@/lib/site";
 
 export const START_HREF = "/login?next=%2Fsetup";
+/** For a second parent or the teen: one family shares one log, so they join rather than start one. */
+export const JOIN_HREF = "/login?next=%2Fsetup%3Fjoin%3D1";
 
 export function SiteHeader() {
   return (
@@ -45,6 +48,11 @@ export function SiteFooter() {
               <Link href="/about" className="underline">
                 About, install &amp; privacy
               </Link>
+            </li>
+            <li>
+              <a href={`mailto:${CONTACT_EMAIL}`} className="underline">
+                {CONTACT_EMAIL}
+              </a>
             </li>
           </ul>
           <p className="mt-3 text-xs">Not affiliated with any state government or motor vehicle agency.</p>

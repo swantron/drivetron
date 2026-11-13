@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { DEFAULT_STATE, STATES, getState } from "@/states";
+import { DEFAULT_STATE, STATES, getState, holdText } from "@/states";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -34,7 +34,7 @@ function Setup() {
   const params = useSearchParams();
   // Invite links look like /setup?code=ABCD2345
   const codeParam = params.get("code") ?? "";
-  const [mode, setMode] = useState<"create" | "join">(codeParam ? "join" : "create");
+  const [mode, setMode] = useState<"create" | "join">(codeParam || params.get("join") ? "join" : "create");
   const { user } = useAuth();
   // A join request waiting on the owner (remembered on this device)
   const [pendingId, setPendingId] = useState<string | null>(() => (typeof window === "undefined" ? null : pendingFamilyId()));
@@ -62,6 +62,15 @@ function Setup() {
           </button>
         ))}
       </div>
+      {mode === "create" && (
+        <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          Invited by someone? Use the link they sent, or{" "}
+          <button className="font-semibold underline" onClick={() => setMode("join")}>
+            join with their code
+          </button>
+          . Each family shares one log, so only one parent starts it.
+        </p>
+      )}
       {mode === "create" ? <CreateForm /> : <JoinForm initialCode={codeParam} onRequested={setPendingId} />}
     </main>
   );
@@ -108,7 +117,7 @@ function CreateForm() {
           ))}
         </select>
         <p className={`${muted} mt-1`}>
-          {formatMinutes(rules.totalMinutes)} supervised, {formatMinutes(rules.nightMinutes)} at night, over at least {rules.holdMonths} months.
+          {formatMinutes(rules.totalMinutes)} supervised, {formatMinutes(rules.nightMinutes)} at night, with the {rules.permitName} held at least {holdText(rules)}.
           {STATES.length === 1 && " More states are on the way."}
         </p>
       </div>

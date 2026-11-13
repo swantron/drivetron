@@ -204,6 +204,9 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
   const [name, setName] = useState(me?.name ?? "");
   const [initials, setInitials] = useState(me?.initials ?? "");
 
+  const meDirty =
+    !!me && (name.trim() !== me.name || (initials.trim() || initialsOf(name)).toUpperCase().slice(0, 4) !== me.initials);
+
   const saveMe = (e: React.FormEvent) => {
     e.preventDefault();
     if (!me) return;
@@ -241,7 +244,11 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
         })}
       </ul>
       {me && (
-        <form onSubmit={saveMe} className="grid grid-cols-[1fr_5rem] gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+        <form
+          onSubmit={saveMe}
+          data-unsaved={meDirty || undefined}
+          className="grid grid-cols-[1fr_5rem] gap-2 border-t border-gray-100 pt-3 dark:border-gray-800"
+        >
           <div>
             <label className={label} htmlFor="myname">Your name</label>
             <input id="myname" className={input} required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
@@ -250,7 +257,7 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
             <label className={label} htmlFor="myinit">Initials</label>
             <input id="myinit" className={`${input} uppercase`} maxLength={4} value={initials} onChange={(e) => setInitials(e.target.value)} />
           </div>
-          {(name.trim() !== me.name || (initials.trim() || initialsOf(name)).toUpperCase().slice(0, 4) !== me.initials) && (
+          {meDirty && (
             <button className={`${secondaryBtn} col-span-2`}>Save my details</button>
           )}
         </form>
@@ -337,7 +344,7 @@ function LearnerForm({
   };
 
   return (
-    <form onSubmit={save} className="space-y-3 border-t border-gray-100 pt-3 first-of-type:border-0 first-of-type:pt-0 dark:border-gray-800">
+    <form onSubmit={save} data-unsaved={(dirty && (!!initial || !!name.trim())) || undefined} className="space-y-3 border-t border-gray-100 pt-3 first-of-type:border-0 first-of-type:pt-0 dark:border-gray-800">
       <div>
         <label className={label}>Full legal name</label>
         <input className={input} required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
@@ -403,7 +410,7 @@ function Vehicles({ familyId }: { familyId: string }) {
           ))}
         </ul>
       )}
-      <form onSubmit={add} className="flex gap-2">
+      <form onSubmit={add} data-unsaved={!!name.trim() || undefined} className="flex gap-2">
         <input
           aria-label="Vehicle name"
           className={input}

@@ -1,9 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
-/** Pages where an automatic reload would throw away what someone is typing. */
-const FORM_PATHS = ["/drives/edit", "/setup"];
+/**
+ * Pages where an automatic reload would throw away what someone is doing: the drive form and
+ * setup, and sign-in, where the page sits hidden behind the Google popup until it returns.
+ */
+const BUSY_PATHS = ["/drives/edit", "/setup", "/login"];
+
+/** Not a good moment to reload: on a busy page, typing, or with unsaved edits marked `data-unsaved`. */
+function busy(): boolean {
+  if (BUSY_PATHS.some((p) => window.location.pathname.startsWith(p))) return true;
+  const el = document.activeElement;
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return true;
+  return document.querySelector("[data-unsaved]") !== null;
+}
 
 /**
  * Gets phones onto a new build quickly. An installed app resumed from the background doesn't
@@ -12,23 +24,33 @@ const FORM_PATHS = ["/drives/edit", "/setup"];
  * may assume the latest build, so a stale copy can have its writes refused.
  */
 export function UpdateWatcher() {
+  const pathname = usePathname();
+  // Set when a new version took over at a bad moment; the reload waits for a better one.
+  const pending = useRef(false);
+  const reloading = useRef(false);
+
+  // Leaving a busy page (e.g. sign-in finishing, or a saved drive) is a fine moment.
+  useEffect(() => {
+    if (pending.current && !reloading.current && !busy()) {
+      reloading.current = true;
+      window.location.reload();
+    }
+  }, [pathname]);
+
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    let reloading = false;
-    let pending = false;
 
     const reload = () => {
-      if (reloading) return;
-      reloading = true;
+      if (reloading.current) return;
+      reloading.current = true;
       window.location.reload();
     };
-    const onFormPage = () => FORM_PATHS.some((p) => window.location.pathname.startsWith(p));
 
     const onControllerChange = () => {
-      // A new version just took over. Reload now unless they're mid-form; then do it the next
-      // time the app is backgrounded, which is when a reload goes unnoticed.
-      if (document.visibilityState === "hidden" || !onFormPage()) reload();
-      else pending = true;
+      // A new version just took over. Reload now unless it would interrupt something; then wait
+      // for the app to be backgrounded or for a move to another page.
+      if (busy()) pending.current = true;
+      else reload();
     };
 
     // A worker left waiting (e.g. installed by a build whose old worker was still busy) is told to
@@ -38,7 +60,8 @@ export function UpdateWatcher() {
 
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
-        if (pending) reload();
+        // Hidden isn't always idle: the sign-in popup hides the page it returns to.
+        if (pending.current && !busy()) reload();
         return;
       }
       navigator.serviceWorker

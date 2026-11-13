@@ -19,8 +19,10 @@ export interface StateRules {
   permitName: string;
   totalMinutes: number;
   nightMinutes: number;
-  /** Minimum time the permit must be held before the next stage */
+  /** Minimum time the permit must be held before the next stage: holdMonths, plus holdExtraDays */
   holdMonths: number;
+  /** Days on top of holdMonths, for states that say e.g. "6 months + 1 day" (otherwise 0) */
+  holdExtraDays: number;
   /** How long the permit is valid */
   permitValidMonths: number;
   /** Who may supervise, in the state's words */
@@ -33,6 +35,8 @@ export interface StateRules {
   certification: Link;
   /** The state's own paper log, which the printed log mirrors */
   practiceLog?: Link;
+  /** What the state says about bringing the log to the license test, in its words */
+  logAtTest?: string;
   /** Agencies named in the "not affiliated with" disclaimer */
   notAffiliatedWith: string;
   /** Fallback for night calculations with no GPS fix: the capital */

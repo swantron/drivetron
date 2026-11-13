@@ -5,6 +5,7 @@ import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
 import { syncedLate } from "@/utils/syncedLate";
+import { holdText } from "@/states";
 
 export default function LogPage() {
   return (
@@ -72,7 +73,7 @@ function PrintableLog() {
             <dd className="inline">{formatDate(parseLocalDate(learner.permitDate))}</dd>
           </div>
           <div>
-            <dt className="inline font-semibold">{rules.holdMonths}-month hold complete: </dt>
+            <dt className="inline font-semibold">Held {holdText(rules)}: </dt>
             <dd className="inline">{formatDate(p.holdDate)}</dd>
           </div>
         </dl>

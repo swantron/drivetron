@@ -20,6 +20,12 @@ const firebaseHostnames = [
   "www.googleapis.com",
   "apis.google.com",
   "accounts.google.com",
+  // App Check and its reCAPTCHA challenge
+  "firebaseappcheck.googleapis.com",
+  "content-firebaseappcheck.googleapis.com",
+  "www.google.com",
+  "www.gstatic.com",
+  "www.recaptcha.net",
 ];
 const bypass = (url: URL) =>
   firebaseHostnames.includes(url.hostname) ||
