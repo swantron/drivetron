@@ -51,7 +51,7 @@ export function subscribeToMyFamily(
 
 export async function createFamily(
   user: User,
-  input: { learner: Learner; me: Member }
+  input: { learner: Learner; me: Member; state: string }
 ): Promise<string> {
   const db = getFirebaseDb();
   const familyRef = doc(familiesCol());
@@ -62,6 +62,7 @@ export async function createFamily(
     memberUids: [user.uid],
     members: { [user.uid]: input.me },
     inviteCode,
+    state: input.state,
     createdAt: Date.now(),
   };
   const batch = writeBatch(db);

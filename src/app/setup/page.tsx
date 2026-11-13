@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
+import { DEFAULT_STATE, STATES, getState } from "@/states";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -14,7 +15,7 @@ import {
   subscribeToMyJoinRequest,
   withdrawJoinRequest,
 } from "@/lib/firebase/firestore";
-import { initialsOf } from "@/utils/progress";
+import { formatMinutes, initialsOf } from "@/utils/progress";
 import { card, input, label, primaryBtn, muted } from "@/components/ui/styles";
 
 export default function SetupPage() {
@@ -39,7 +40,7 @@ function Setup() {
   const [pendingId, setPendingId] = useState<string | null>(() => (typeof window === "undefined" ? null : pendingFamilyId()));
 
   useEffect(() => {
-    if (loaded && family) router.replace("/");
+    if (loaded && family) router.replace("/home");
   }, [loaded, family, router]);
 
   const clearPending = useCallback(() => setPendingId(null), []);
@@ -74,6 +75,8 @@ function CreateForm() {
   const [learnerDob, setLearnerDob] = useState("");
   const [permitDate, setPermitDate] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [busy, setBusy] = useState(false);
+  const [state, setState] = useState(DEFAULT_STATE);
+  const rules = getState(state);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +85,7 @@ function CreateForm() {
     try {
       await createFamily(user, {
         learner: { name: learnerName.trim(), dob: learnerDob, permitDate },
+        state,
         me: { name: myName.trim(), initials: initialsOf(myName) || "?", role: "supervisor" },
       });
     } catch (err) {
@@ -95,13 +99,27 @@ function CreateForm() {
     <form onSubmit={submit} className={`${card} space-y-4`}>
       <p className={muted}>For the parent or guardian. You&apos;ll get a code to invite the other parent and your teen.</p>
       <div>
+        <label className={label} htmlFor="state">State</label>
+        <select id="state" className={input} value={state} onChange={(e) => setState(e.target.value)}>
+          {STATES.map((st) => (
+            <option key={st.code} value={st.code}>
+              {st.name}
+            </option>
+          ))}
+        </select>
+        <p className={`${muted} mt-1`}>
+          {formatMinutes(rules.totalMinutes)} supervised, {formatMinutes(rules.nightMinutes)} at night, over at least {rules.holdMonths} months.
+          {STATES.length === 1 && " More states are on the way."}
+        </p>
+      </div>
+      <div>
         <label className={label} htmlFor="me">Your name (supervising adult)</label>
         <input id="me" className={input} required maxLength={80} value={myName} onChange={(e) => setMyName(e.target.value)} />
       </div>
       <div>
         <label className={label} htmlFor="learner">Learner&apos;s full legal name</label>
         <input id="learner" className={input} required maxLength={80} value={learnerName} onChange={(e) => setLearnerName(e.target.value)} />
-        <p className={`${muted} mt-1`}>As it will appear on form 21-1600.</p>
+        <p className={`${muted} mt-1`}>As it will appear on {rules.certification.label}.</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -109,7 +127,7 @@ function CreateForm() {
           <input id="dob" type="date" className={input} required value={learnerDob} onChange={(e) => setLearnerDob(e.target.value)} />
         </div>
         <div>
-          <label className={label} htmlFor="permit">Learner license issued</label>
+          <label className={`${label} first-letter:uppercase`} htmlFor="permit">{rules.permitName} issued</label>
           <input id="permit" type="date" className={input} required value={permitDate} onChange={(e) => setPermitDate(e.target.value)} />
         </div>
       </div>

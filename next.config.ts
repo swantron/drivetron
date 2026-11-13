@@ -3,13 +3,16 @@ import { randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import withSerwistInit from "@serwist/next";
+import { STATES } from "./src/states";
 
 // Every page is a static shell that loads its data client-side, so precache
 // them all: the installed app then opens any page with no signal, not just
 // ones the phone happened to load before. Paths match Hosting's cleanUrls.
+// The one dynamic route, /[state], is expanded to the real state pages.
 const pageUrls = readdirSync("src/app", { recursive: true, encoding: "utf8" })
   .filter((file) => /(^|\/)page\.tsx$/.test(file))
-  .map((file) => "/" + file.replace(/\/?page\.tsx$/, ""));
+  .map((file) => "/" + file.replace(/\/?page\.tsx$/, ""))
+  .flatMap((url) => (url === "/[state]" ? STATES.map((s) => `/${s.slug}`) : [url]));
 const buildId = randomUUID();
 
 const withSerwist = withSerwistInit({

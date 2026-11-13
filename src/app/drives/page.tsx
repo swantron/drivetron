@@ -5,7 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { DriveRow } from "@/components/DriveRow";
 import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatMinutes } from "@/utils/progress";
-import { CONDITIONS, SKILLS } from "@/utils/montana";
+import { CONDITIONS, SKILLS } from "@/utils/practice";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
 
 export default function DrivesPage() {
@@ -17,10 +17,10 @@ export default function DrivesPage() {
 }
 
 function Drives() {
-  const { learner, drives, drivesLoaded, isSupervisor } = useFamily();
+  const { learner, drives, drivesLoaded, isSupervisor, rules } = useFamily();
   if (!learner) return null;
   const done = drives.filter((d) => d.endedAt !== null);
-  const p = computeProgress(drives, learner.permitDate);
+  const p = computeProgress(drives, learner.permitDate, new Date(), rules);
 
   // Variety the OPI fact sheet asks for: show what hasn't been practiced yet.
   const allTags = [...CONDITIONS.weather, ...CONDITIONS.road, ...SKILLS];
@@ -37,7 +37,7 @@ function Drives() {
       {done.length > 0 && untried.length > 0 && (
         <section className={card}>
           <h2 className="font-semibold">Not practiced yet</h2>
-          <p className={`${muted} mb-2`}>Montana asks for varied weather, traffic, and roads.</p>
+          <p className={`${muted} mb-2`}>{rules.practiceNote}</p>
           <p className="text-sm">{untried.join(" · ")}</p>
         </section>
       )}

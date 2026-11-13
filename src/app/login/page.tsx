@@ -20,7 +20,9 @@ function Login() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
-  const dest = safeNext(params.get("next"), typeof window === "undefined" ? undefined : window.location.origin);
+  const next = safeNext(params.get("next"), typeof window === "undefined" ? undefined : window.location.origin);
+  // "/" is the public landing page; after signing in, the app lives at /home
+  const dest = next === "/" ? "/home" : next;
 
   useEffect(() => {
     if (!loading && user) router.replace(dest);
@@ -33,12 +35,12 @@ function Login() {
       <div>
         <h1 className="text-3xl font-bold">Drivetron</h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Log your teen&apos;s 50 supervised hours — 10 at night — from any phone, shared with the whole family.
+          Log your teen&apos;s supervised driving hours, day and night, from any phone, shared with the whole family.
         </p>
       </div>
       <LoginButton />
       <p className={`${muted} max-w-xs`}>
-        Built for Montana&apos;s Graduated Driver Licensing rules. Not affiliated with the State of Montana, MVD, or OPI.{" "}
+        Built around each state&apos;s teen driver rules. Not affiliated with any state government or motor vehicle agency.{" "}
         <Link href="/about" className="underline">
           About &amp; privacy
         </Link>

@@ -13,7 +13,7 @@ import { splitDayNight } from "@/utils/night";
 import { driveCoords } from "@/utils/location";
 import { defaultSupervisor, supervisorsOf } from "@/utils/members";
 import { formatMinutes } from "@/utils/progress";
-import { CONDITIONS, SKILLS } from "@/utils/montana";
+import { CONDITIONS, SKILLS } from "@/utils/practice";
 import type { Drive, Family } from "@/types";
 import { nowMs } from "@/utils/time";
 import { writeErrorMessage } from "@/utils/errors";
@@ -192,7 +192,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
     if (drive) saveDrive(family.id, drive.id, data, onError);
     else addDrive(family.id, data, onError);
     showToast(drive ? "Drive saved" : "Drive added", "success");
-    router.push(finished ? "/" : "/drives");
+    router.push(finished ? "/home" : "/drives");
   };
 
   const del = () => {

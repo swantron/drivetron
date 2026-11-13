@@ -182,6 +182,12 @@ describe("member edits", () => {
     await assertFails(updateDoc(doc(db("teen"), "families/f1"), { "learners.primary": { name: "T", dob: "2011-03-04", permitDate: "2026-01-01" } }));
   });
 
+  it("lets supervisors set the log's state, but not learners, and only as a state code", async () => {
+    await assertFails(updateDoc(doc(db("teen"), "families/f1"), { state: "CA" }));
+    await assertFails(updateDoc(doc(db("parent"), "families/f1"), { state: "Montana" }));
+    await assertSucceeds(updateDoc(doc(db("parent"), "families/f1"), { state: "MT" }));
+  });
+
   it("lets a supervisor who isn't the owner edit learner details", async () => {
     await env.withSecurityRulesDisabled((ctx) =>
       updateDoc(doc(ctx.firestore(), "families/f1"), { memberUids: ["parent", "teen", "mom"], "members.mom": member("Mom") })

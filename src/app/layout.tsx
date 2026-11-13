@@ -9,7 +9,7 @@ import { UpdateWatcher } from "@/components/UpdateWatcher";
 export const metadata: Metadata = {
   metadataBase: new URL("https://drivetron.app"),
   title: "Drivetron",
-  description: "Supervised driving log for Montana learner drivers",
+  description: "Shared supervised driving log for teen drivers and their parents",
   manifest: "/manifest.json",
   // Family data only — keep it out of search results
   robots: { index: false, follow: false },

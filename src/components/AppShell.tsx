@@ -10,7 +10,7 @@ import { LearnerSwitcher } from "@/components/LearnerSwitcher";
 import { subscribeToJoinRequests, type JoinRequest } from "@/lib/firebase/firestore";
 
 const tabs = [
-  { href: "/", label: "Home", icon: "M3 12l9-8 9 8M5 10v10h14V10" },
+  { href: "/home", label: "Home", icon: "M3 12l9-8 9 8M5 10v10h14V10" },
   { href: "/drives", label: "Drives", icon: "M4 6h16M4 12h16M4 18h10" },
   { href: "/log", label: "Log", icon: "M7 3h7l5 5v13H7zM14 3v5h5" },
   { href: "/family", label: "Family", icon: "M9 11a4 4 0 100-8 4 4 0 000 8zM2 21a7 7 0 0114 0M17 11a3 3 0 100-6M22 21a6 6 0 00-4-5.6" },
@@ -109,7 +109,7 @@ function BottomNav() {
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-gray-800 dark:bg-gray-950/95 print:hidden">
       <ul className="mx-auto grid max-w-xl grid-cols-4">
         {tabs.map((t) => {
-          const active = t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);
+          const active = pathname.startsWith(t.href);
           return (
             <li key={t.href}>
               <Link

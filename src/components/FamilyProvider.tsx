@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { migrateLegacyLearner, subscribeToDrives, subscribeToMyFamily } from "@/lib/firebase/firestore";
 import { driveLearnerId, learnersOf, vehiclesOf, type LearnerWithId, type VehicleWithId } from "@/utils/learners";
 import type { Drive, Family, Member } from "@/types";
+import { getState, type StateRules } from "@/states";
 
 interface FamilyContextValue {
   /** false until we know whether this user belongs to a family */
@@ -28,6 +29,8 @@ interface FamilyContextValue {
   /** Supervisors can add past drives, edit any drive, and edit learner details */
   isSupervisor: boolean;
   isOwner: boolean;
+  /** The state rules this log follows (Montana for logs created before multi-state support) */
+  rules: StateRules;
 }
 
 const LEARNER_KEY = "drivetron.learnerId";
@@ -125,6 +128,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     me: (uid && family?.members[uid]) || null,
     isSupervisor: !!uid && family?.members[uid]?.role === "supervisor",
     isOwner: !!uid && family?.ownerUid === uid,
+    rules: getState(family?.state),
   };
 
   return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>;

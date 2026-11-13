@@ -1,8 +1,8 @@
 {
   "name": "Drivetron",
   "short_name": "Drivetron",
-  "description": "Supervised driving log for Montana learner drivers",
-  "start_url": "/",
+  "description": "Shared supervised driving log for teen drivers and their parents",
+  "start_url": "/home",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#059669",

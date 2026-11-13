@@ -59,7 +59,9 @@ service cloud.firestore {
     function validFamily(f) {
       return f.keys().hasOnly(['learners', 'vehicles', 'learnerName', 'learnerDob', 'permitDate', 'ownerUid',
                                'memberUids', 'members', 'inviteCode', 'joinCode', 'approvedUid',
-                               'lastLat', 'lastLng', 'createdAt'])
+                               'lastLat', 'lastLng', 'createdAt', 'state'])
+        // USPS code of the state whose rules the log follows; missing = Montana
+        && (!('state' in f) || (f.state is string && f.state.matches('^[A-Z]{2}$')))
         // Legacy single-learner fields (pre-learners map)
         && (!('learnerName' in f) || (f.learnerName is string && f.learnerName.size() <= 80))
         && (!('learnerDob' in f) || isDate(f.learnerDob))
@@ -127,7 +129,7 @@ service cloud.firestore {
           && request.resource.data.members[request.auth.uid].role == resource.data.members[request.auth.uid].role
           // The license date drives the 6-month hold; only adults edit learner details
           && (resource.data.members[request.auth.uid].role == 'supervisor'
-              || !changed().hasAny(['learners', 'learnerName', 'learnerDob', 'permitDate']));
+              || !changed().hasAny(['learners', 'learnerName', 'learnerDob', 'permitDate', 'state']));
       }
 
       // A member (not the owner) leaving: removes only themselves.

@@ -24,6 +24,7 @@ import {
   updateFamily,
 } from "@/lib/firebase/firestore";
 import { writeErrorMessage } from "@/utils/errors";
+import { STATES } from "@/states";
 import { driveLearnerId, firstName, learnersOf, newId } from "@/utils/learners";
 import { signOut } from "@/lib/firebase/auth";
 import { initialsOf } from "@/utils/progress";
@@ -39,7 +40,7 @@ export default function FamilyPage() {
 }
 
 function FamilySettings() {
-  const { family, isOwner, isSupervisor } = useFamily();
+  const { family, isOwner, isSupervisor, rules } = useFamily();
   const { user } = useAuth();
   const router = useRouter();
   if (!family || !user) return null;
@@ -65,7 +66,7 @@ function FamilySettings() {
         About, install &amp; privacy
       </Link>
       <p className={`${muted} text-center`}>
-        Drivetron {process.env.NEXT_PUBLIC_APP_VERSION} · Not affiliated with the State of Montana, MVD, or OPI.
+        Drivetron {process.env.NEXT_PUBLIC_APP_VERSION} · Not affiliated with {rules.notAffiliatedWith}.
       </p>
     </div>
   );
@@ -123,7 +124,7 @@ function JoinRequestRow({ familyId, req }: { familyId: string; req: JoinRequest 
 }
 
 function LearnerSummary() {
-  const { learners } = useFamily();
+  const { learners, rules } = useFamily();
   return (
     <section className={`${card} space-y-2`}>
       <h2 className="font-semibold">Learners</h2>
@@ -132,7 +133,7 @@ function LearnerSummary() {
           <li key={l.id}>{l.name}</li>
         ))}
       </ul>
-      <p className={muted}>A supervising adult manages learner details and license dates.</p>
+      <p className={muted}>{rules.name} rules. A supervising adult manages learner details and license dates.</p>
     </section>
   );
 }
@@ -259,11 +260,31 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
 }
 
 function Learners({ familyId }: { familyId: string }) {
-  const { learners, allDrives } = useFamily();
+  const { learners, allDrives, rules } = useFamily();
+  const { showToast } = useToast();
   const [adding, setAdding] = useState(false);
   return (
     <section className={`${card} space-y-3`}>
       <h2 className="font-semibold">Learners</h2>
+      <div>
+        <label className={label} htmlFor="logState">State</label>
+        <select
+          id="logState"
+          className={input}
+          value={rules.code}
+          disabled={STATES.length < 2}
+          onChange={(e) =>
+            updateFamily(familyId, { state: e.target.value }).catch((err) => showToast(writeErrorMessage(err), "error"))
+          }
+        >
+          {STATES.map((st) => (
+            <option key={st.code} value={st.code}>
+              {st.name}
+            </option>
+          ))}
+        </select>
+        <p className={`${muted} mt-1`}>Sets the hours, hold period and forms this log follows.</p>
+      </div>
       {learners.map((l) => (
         <LearnerForm
           key={`${l.id}|${l.name}|${l.dob}|${l.permitDate}`}

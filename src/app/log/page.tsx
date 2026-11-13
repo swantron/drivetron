@@ -3,7 +3,6 @@
 import { AppShell } from "@/components/AppShell";
 import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
-import { FORM_21_1600_URL, OPI_LOG_URL } from "@/utils/montana";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
 import { syncedLate } from "@/utils/syncedLate";
 
@@ -21,25 +20,30 @@ export default function LogPage() {
  * and a summary with what form 21-1600 certifies.
  */
 function PrintableLog() {
-  const { learner, drives } = useFamily();
+  const { learner, drives, rules } = useFamily();
   if (!learner) return null;
   const done = drives.filter((d) => d.endedAt !== null).sort((a, b) => a.startedAt - b.startedAt);
-  const p = computeProgress(drives, learner.permitDate);
+  const p = computeProgress(drives, learner.permitDate, new Date(), rules);
 
   return (
     <div className="space-y-4">
       <div className="space-y-3 print:hidden">
         <h1 className="text-2xl font-bold">Printable log</h1>
         <p className={muted}>
-          Laid out like the state&apos;s{" "}
-          <a href={OPI_LOG_URL} className="underline" target="_blank" rel="noreferrer">
-            practice driving log
-          </a>
-          . Print it or save it as a PDF, sign it, and bring it with{" "}
-          <a href={FORM_21_1600_URL} className="underline" target="_blank" rel="noreferrer">
-            form 21-1600
+          {rules.practiceLog ? (
+            <>
+              Laid out like {rules.name}&apos;s{" "}
+              <a href={rules.practiceLog.url} className="underline" target="_blank" rel="noreferrer">
+                practice driving log
+              </a>
+              .{" "}
+            </>
+          ) : null}
+          Print it or save it as a PDF, sign it, and bring it with{" "}
+          <a href={rules.certification.url} className="underline" target="_blank" rel="noreferrer">
+            {rules.certification.label}
           </a>{" "}
-          to the exam station.
+          when your teen applies.
         </p>
         <button className={primaryBtn} onClick={() => window.print()}>
           Print / Save as PDF
@@ -49,7 +53,9 @@ function PrintableLog() {
       <article className={`${card} overflow-x-auto text-sm print:border-0 print:p-0 print:shadow-none`}>
         <header className="mb-4 text-center">
           <h2 className="text-lg font-bold uppercase tracking-wide">Practice Driving Log</h2>
-          <p>Montana Graduated Driver Licensing — 50 hours supervised, including 10 at night</p>
+          <p>
+            {rules.name} {rules.program} — {formatMinutes(rules.totalMinutes)} supervised, including {formatMinutes(rules.nightMinutes)} at night
+          </p>
         </header>
 
         <dl className="mb-4 grid grid-cols-2 gap-x-6 gap-y-1">
@@ -62,11 +68,11 @@ function PrintableLog() {
             <dd className="inline">{formatDate(parseLocalDate(learner.dob))}</dd>
           </div>
           <div>
-            <dt className="inline font-semibold">Learner license issued: </dt>
+            <dt className="inline font-semibold first-letter:uppercase">{rules.permitName} issued: </dt>
             <dd className="inline">{formatDate(parseLocalDate(learner.permitDate))}</dd>
           </div>
           <div>
-            <dt className="inline font-semibold">Six-month hold complete: </dt>
+            <dt className="inline font-semibold">{rules.holdMonths}-month hold complete: </dt>
             <dd className="inline">{formatDate(p.holdDate)}</dd>
           </div>
         </dl>

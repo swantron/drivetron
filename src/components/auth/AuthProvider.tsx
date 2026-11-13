@@ -14,6 +14,9 @@ export const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
+/** localStorage key: "1" while this browser has a signed-in user. Read by an inline script on "/". */
+export const SIGNED_IN_HINT = "drivetron.signedIn";
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +25,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (u) => {
       setUser(u);
       setLoading(false);
+      // Lets the public landing page send a signed-in visitor (or an installed app that still
+      // opens at "/") straight to the app before painting, instead of flashing the marketing page.
+      try {
+        if (u) localStorage.setItem(SIGNED_IN_HINT, "1");
+        else localStorage.removeItem(SIGNED_IN_HINT);
+      } catch {
+        // Private mode: the landing page still redirects once auth resolves
+      }
     });
     return unsubscribe;
   }, []);

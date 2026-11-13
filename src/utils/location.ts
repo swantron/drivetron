@@ -1,5 +1,5 @@
 import type { Family } from "@/types";
-import { DEFAULT_LAT, DEFAULT_LNG } from "./montana";
+import { getState } from "@/states";
 
 /**
  * One GPS fix, used only to work out sunset/sunrise for the night split. Resolves null
@@ -21,9 +21,9 @@ function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-/** Where to compute sun times for a drive: its own fix, else the family's last, else Helena. */
+/** Where to compute sun times for a drive: its own fix, else the family's last, else the state capital. */
 export function driveCoords(drive: { lat: number | null; lng: number | null }, family: Family | null) {
   if (drive.lat != null && drive.lng != null) return { lat: drive.lat, lng: drive.lng };
   if (family?.lastLat != null && family?.lastLng != null) return { lat: family.lastLat, lng: family.lastLng };
-  return { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
+  return getState(family?.state).defaultLocation;
 }

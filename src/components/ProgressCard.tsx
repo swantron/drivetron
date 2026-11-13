@@ -2,7 +2,6 @@
 
 import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes } from "@/utils/progress";
-import { REQUIRED_NIGHT_MINUTES, REQUIRED_TOTAL_MINUTES, FORM_21_1600_URL } from "@/utils/montana";
 import { card, muted } from "@/components/ui/styles";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
@@ -15,10 +14,12 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
 }
 
 export function ProgressCard() {
-  const { learner, drives } = useFamily();
+  const { learner, drives, rules } = useFamily();
   if (!learner) return null;
   const now = new Date();
-  const p = computeProgress(drives, learner.permitDate, now);
+  const p = computeProgress(drives, learner.permitDate, now, rules);
+  const REQUIRED_TOTAL_MINUTES = rules.totalMinutes;
+  const REQUIRED_NIGHT_MINUTES = rules.nightMinutes;
   const holdPassed = now >= p.holdDate;
   const daysToHold = Math.ceil((p.holdDate.getTime() - now.getTime()) / 86400000);
 
@@ -36,8 +37,8 @@ export function ProgressCard() {
           <p className="font-semibold">Ready for the restricted license 🎉</p>
           <p className="text-sm">
             Print the log, then sign{" "}
-            <a className="underline" href={FORM_21_1600_URL} target="_blank" rel="noreferrer">
-              form 21-1600
+            <a className="underline" href={rules.certification.url} target="_blank" rel="noreferrer">
+              {rules.certification.label}
             </a>{" "}
             and bring both to the exam station.
           </p>
@@ -48,7 +49,7 @@ export function ProgressCard() {
         <div className="mb-1 flex items-baseline justify-between">
           <span className="font-semibold">Total</span>
           <span className="tabular-nums">
-            {formatMinutes(p.totalMinutes)} <span className={muted}>/ 50h</span>
+            {formatMinutes(p.totalMinutes)} <span className={muted}>/ {formatMinutes(rules.totalMinutes)}</span>
           </span>
         </div>
         <Bar value={p.totalMinutes} max={REQUIRED_TOTAL_MINUTES} color="bg-emerald-500" />
@@ -58,7 +59,7 @@ export function ProgressCard() {
         <div className="mb-1 flex items-baseline justify-between">
           <span className="font-semibold">Night</span>
           <span className="tabular-nums">
-            {formatMinutes(p.nightMinutes)} <span className={muted}>/ 10h</span>
+            {formatMinutes(p.nightMinutes)} <span className={muted}>/ {formatMinutes(rules.nightMinutes)}</span>
           </span>
         </div>
         <Bar value={p.nightMinutes} max={REQUIRED_NIGHT_MINUTES} color="bg-indigo-500" />
@@ -77,15 +78,15 @@ export function ProgressCard() {
           <dd className="font-medium">{p.driveCount < 2 ? "—" : `${formatMinutes(p.minutesPerWeek)} / week`}</dd>
         </div>
         <div>
-          {/* The 6-month hold: the earliest the restricted-license test can be taken */}
+          {/* The hold period: the earliest the next license can be applied for */}
           <dt className={muted}>Earliest test date</dt>
           <dd className="font-medium">
             {holdPassed ? "Reached ✓" : formatDate(p.holdDate)}
-            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">6-month hold · {daysToHold} days</span>}
+            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">{rules.holdMonths}-month hold · {daysToHold} days</span>}
           </dd>
         </div>
         <div>
-          <dt className={muted}>Learner license expires</dt>
+          <dt className={`${muted} first-letter:uppercase`}>{rules.permitName} expires</dt>
           <dd className="font-medium">{formatDate(p.expiryDate)}</dd>
         </div>
         <div className="col-span-2">

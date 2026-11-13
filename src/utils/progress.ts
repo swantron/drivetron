@@ -1,7 +1,6 @@
 import type { Drive } from "@/types";
-import { REQUIRED_HOLD_MONTHS, REQUIRED_NIGHT_MINUTES, REQUIRED_TOTAL_MINUTES, PERMIT_VALID_MONTHS } from "./montana";
+import { getState, type StateRules } from "@/states";
 
-/** Parses YYYY-MM-DD as a local date (not UTC midnight, which is the previous evening in Montana). */
 /**
  * YYYY-MM-DD as a local date. Learner entries aren't shape-checked by the rules, so a missing or
  * malformed value falls back to today rather than an Invalid Date that breaks every calculation.
@@ -47,7 +46,14 @@ export interface Progress {
   skillCounts: Record<string, number>;
 }
 
-export function computeProgress(drives: Drive[], permitDate: string, now: Date = new Date()): Progress {
+export function computeProgress(
+  drives: Drive[],
+  permitDate: string,
+  now: Date = new Date(),
+  rules: StateRules = getState(null)
+): Progress {
+  const REQUIRED_TOTAL_MINUTES = rules.totalMinutes;
+  const REQUIRED_NIGHT_MINUTES = rules.nightMinutes;
   const done = drives.filter((d) => d.endedAt !== null);
   const totalMinutes = done.reduce((s, d) => s + d.dayMinutes + d.nightMinutes, 0);
   const nightMinutes = done.reduce((s, d) => s + d.nightMinutes, 0);
@@ -55,8 +61,8 @@ export function computeProgress(drives: Drive[], permitDate: string, now: Date =
   const nightRemaining = Math.max(0, REQUIRED_NIGHT_MINUTES - nightMinutes);
 
   const permit = parseLocalDate(permitDate);
-  const holdDate = addMonths(permit, REQUIRED_HOLD_MONTHS);
-  const expiryDate = addMonths(permit, PERMIT_VALID_MONTHS);
+  const holdDate = addMonths(permit, rules.holdMonths);
+  const expiryDate = addMonths(permit, rules.permitValidMonths);
 
   // Pace from the permit date (or first drive, if logging started later), at least one week.
   const firstDrive = done.reduce((min, d) => Math.min(min, d.startedAt), Infinity);

@@ -5,22 +5,20 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useInstall } from "@/hooks/useInstall";
 import { useToast } from "@/components/ui/Toast";
-import { FORM_21_1600_URL, OPI_LOG_URL } from "@/utils/montana";
+import { STATES } from "@/states";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "dev";
 const COMMIT = process.env.NEXT_PUBLIC_BUILD_COMMIT ?? "dev";
 const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME;
 
-const MVD_TEEN_URL = "https://mvdmt.gov/new-driver-license/drivers-under-18/";
-const MCA_URL = "https://mca.legmt.gov/bills/2023/mca/61/5/61-5-132.htm";
 
 /** Public: linked from the sign-in screen, so the disclaimer is readable before anyone signs in. */
 export default function AboutPage() {
   const { user } = useAuth();
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 pb-12 pt-[max(1rem,env(safe-area-inset-top))]">
-      <Link href={user ? "/family" : "/login"} className="inline-block py-1 text-sm text-emerald-600">
+      <Link href={user ? "/family" : "/"} className="inline-block py-1 text-sm text-emerald-600">
         ‹ Back
       </Link>
       <header className="flex items-center gap-4">
@@ -28,7 +26,7 @@ export default function AboutPage() {
         <img src="/icons/icon.svg" alt="" className="h-14 w-14" />
         <div>
           <h1 className="text-2xl font-bold">Drivetron</h1>
-          <p className={muted}>Supervised driving log for Montana learner drivers</p>
+          <p className={muted}>Shared supervised driving log for teen drivers and their parents</p>
         </div>
       </header>
       <VersionCard />
@@ -153,42 +151,37 @@ function Disclaimer() {
       <h2 className="font-semibold">Disclaimer</h2>
       <p>
         Drivetron is an independent tool for keeping a practice log. It is <strong>not affiliated with, endorsed by, or
-        approved by</strong> the State of Montana, the Motor Vehicle Division (MVD), or the Office of Public Instruction (OPI).
+        approved by</strong> any state government or motor vehicle agency, including {STATES.map((st) => st.notAffiliatedWith).join("; ")}.
       </p>
       <p>
-        The parent or guardian is responsible for the accuracy of the hours they certify on MVD form 21-1600, which is signed
-        under penalty of law. Review the log before signing.
+        The parent or guardian is responsible for the accuracy of the hours they certify to the state, which is signed under
+        penalty of law. Review the log before signing.
       </p>
       <p>
-        Night hours are worked out as sunset to sunrise at the drive&apos;s approximate location. Montana&apos;s GDL materials
-        don&apos;t define &ldquo;night&rdquo; more precisely, so check any drive close to dusk or dawn, and adjust the night minutes on that drive if needed.
+        Night hours are worked out as sunset to sunrise at the drive&apos;s approximate location. Where a state&apos;s
+        materials don&apos;t define &ldquo;night&rdquo; more precisely, check any drive close to dusk or dawn, and adjust the
+        night minutes on that drive if needed.
       </p>
       <p>
-        Requirements can change. Confirm the current rules with the MVD before your teen applies. Provided as-is, with no
+        Requirements can change. Confirm the current rules with your state before your teen applies. Provided as-is, with no
         warranty.
       </p>
-      <ul className="space-y-1">
-        <li>
-          <a className="text-emerald-600 underline" href={MVD_TEEN_URL} target="_blank" rel="noreferrer">
-            MVD: drivers under 18
-          </a>
-        </li>
-        <li>
-          <a className="text-emerald-600 underline" href={FORM_21_1600_URL} target="_blank" rel="noreferrer">
-            Form 21-1600 (GDL certification)
-          </a>
-        </li>
-        <li>
-          <a className="text-emerald-600 underline" href={OPI_LOG_URL} target="_blank" rel="noreferrer">
-            OPI GDL fact sheet &amp; practice log
-          </a>
-        </li>
-        <li>
-          <a className="text-emerald-600 underline" href={MCA_URL} target="_blank" rel="noreferrer">
-            MCA 61-5-132
-          </a>
-        </li>
-      </ul>
+      {STATES.map((st) => (
+        <div key={st.code}>
+          <p className="font-medium">
+            {st.name} sources <span className={muted}>(checked {st.verified})</span>
+          </p>
+          <ul className="space-y-1">
+            {[...st.sources, st.certification].map((l) => (
+              <li key={l.url}>
+                <a className="text-emerald-700 underline dark:text-emerald-400" href={l.url} target="_blank" rel="noreferrer">
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </section>
   );
 }

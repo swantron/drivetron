@@ -36,6 +36,8 @@ export interface Family {
   members: Record<string, Member>;
   /** Shared with invites/{inviteCode}; someone who knows it can join */
   inviteCode: string;
+  /** USPS code of the state whose rules this log follows. Missing on logs created before multi-state support: Montana. */
+  state?: string;
   /** Last place a drive started — fallback for the night calculation when GPS is unavailable */
   lastLat?: number;
   lastLng?: number;
