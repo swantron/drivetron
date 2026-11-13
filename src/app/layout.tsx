@@ -14,11 +14,11 @@ export const metadata: Metadata = {
   // Family data only — keep it out of search results
   robots: { index: false, follow: false },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Drivetron" },
-  icons: { icon: "/icons/icon.svg", apple: "/icons/icon-192x192.png" },
+  icons: { icon: "/icons/icon.svg", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#059669",
+  themeColor: "#007a55",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

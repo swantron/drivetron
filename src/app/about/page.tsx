@@ -19,7 +19,7 @@ export default function AboutPage() {
   const { user } = useAuth();
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 pb-12 pt-[max(1rem,env(safe-area-inset-top))]">
-      <Link href={user ? "/family" : "/"} className="inline-block py-1 text-sm text-emerald-600">
+      <Link href={user ? "/family" : "/"} className="inline-block py-1 text-sm text-emerald-700 dark:text-emerald-400">
         ‹ Back
       </Link>
       <header className="flex items-center gap-4">

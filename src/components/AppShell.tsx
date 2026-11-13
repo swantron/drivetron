@@ -115,7 +115,7 @@ function BottomNav() {
               <Link
                 href={t.href}
                 className={`flex flex-col items-center gap-1 py-2.5 text-xs font-medium ${
-                  active ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400"
+                  active ? "text-emerald-700 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400"
                 }`}
               >
                 <span className="relative">

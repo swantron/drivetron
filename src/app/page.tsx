@@ -3,6 +3,7 @@ import Link from "next/link";
 import { STATES, holdText } from "@/states";
 import { socialMeta } from "@/lib/site";
 import { formatMinutes } from "@/utils/progress";
+import { PhonePreview } from "@/components/public/PhonePreview";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { LandingRedirect, SIGNED_IN_HINT_SCRIPT } from "@/components/public/LandingRedirect";
 import { JOIN_HREF, SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
@@ -64,32 +65,35 @@ export default function LandingPage() {
       <div className="dt-landing">
         <SiteHeader />
         <main className="mx-auto max-w-5xl px-4">
-          <section className="py-10 sm:py-16">
-            <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
-              The supervised driving log the whole family shares.
-            </h1>
-            <p className="mt-4 max-w-xl text-lg text-gray-600 dark:text-gray-400">
-              Time your teen&apos;s practice drives from any phone, see the same log on every phone in the family, and print it
-              when it&apos;s time for the license test.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href={START_HREF}
-                className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
-              >
-                Start your log — free
-              </Link>
-              <a href="#how" className="rounded-xl border border-gray-300 px-5 py-3 font-medium dark:border-gray-700">
-                How it works
-              </a>
+          <section className="grid items-center gap-10 py-10 sm:py-16 lg:grid-cols-[1fr_19rem]">
+            <div>
+              <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
+                The supervised driving log the whole family shares.
+              </h1>
+              <p className="mt-4 max-w-xl text-lg text-gray-600 dark:text-gray-400">
+                Time your teen&apos;s practice drives from any phone, see the same log on every phone in the family, and print it
+                when it&apos;s time for the license test.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href={START_HREF}
+                  className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
+                >
+                  Start your log — free
+                </Link>
+                <a href="#how" className="rounded-xl border border-gray-300 px-5 py-3 font-medium dark:border-gray-700">
+                  How it works
+                </a>
+              </div>
+              <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                Already invited? Open the link the other parent sent you, or{" "}
+                <Link href={JOIN_HREF} className="font-medium text-emerald-700 underline dark:text-emerald-400">
+                  join with a code
+                </Link>
+                . Each family shares one log.
+              </p>
             </div>
-            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              Already invited? Open the link the other parent sent you, or{" "}
-              <Link href={JOIN_HREF} className="font-medium text-emerald-700 underline dark:text-emerald-400">
-                join with a code
-              </Link>
-              . Each family shares one log.
-            </p>
+            <PhonePreview />
           </section>
 
           <section aria-labelledby="features" className="py-6">
@@ -112,7 +116,7 @@ export default function LandingPage() {
             </h2>
             <ol className="mt-4 grid gap-3 sm:grid-cols-2">
               {steps.map((s, i) => (
-                <li key={s} className="flex gap-3 rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                <li key={s} className="flex gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white">
                     {i + 1}
                   </span>
@@ -131,7 +135,7 @@ export default function LandingPage() {
                 <li key={s.code}>
                   <Link
                     href={`/${s.slug}`}
-                    className="block rounded-2xl border border-gray-200 p-4 hover:border-emerald-600 dark:border-gray-800"
+                    className="block rounded-2xl border border-gray-200 bg-white p-4 hover:border-emerald-700 dark:border-gray-800 dark:bg-gray-900"
                   >
                     <span className="font-semibold">{s.name}</span>
                     <span className="block text-sm text-gray-600 dark:text-gray-400">

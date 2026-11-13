@@ -22,3 +22,5 @@ export function holdText(r: StateRules): string {
   const months = `${r.holdMonths} month${r.holdMonths === 1 ? "" : "s"}`;
   return r.holdExtraDays ? `${months} + ${r.holdExtraDays} day${r.holdExtraDays === 1 ? "" : "s"}` : months;
 }
+
+export const upperFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

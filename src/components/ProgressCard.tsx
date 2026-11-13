@@ -53,7 +53,7 @@ export function ProgressCard() {
             {formatMinutes(p.totalMinutes)} <span className={muted}>/ {formatMinutes(rules.totalMinutes)}</span>
           </span>
         </div>
-        <Bar value={p.totalMinutes} max={REQUIRED_TOTAL_MINUTES} color="bg-emerald-500" />
+        <Bar value={p.totalMinutes} max={REQUIRED_TOTAL_MINUTES} color="bg-emerald-700 dark:bg-emerald-600" />
       </div>
 
       <div>

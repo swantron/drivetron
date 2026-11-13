@@ -47,9 +47,9 @@ function Drives() {
           {p.driveCount} {p.driveCount === 1 ? "drive" : "drives"} · {formatMinutes(p.totalMinutes)} total · {formatMinutes(p.nightMinutes)} night
         </p>
         {!drivesLoaded ? (
-          <p className="py-6 text-center text-gray-500">Loading…</p>
+          <p className="py-6 text-center text-gray-500 dark:text-gray-400">Loading…</p>
         ) : done.length === 0 ? (
-          <p className="py-6 text-center text-gray-500">No drives yet. Start one from Home.</p>
+          <p className="py-6 text-center text-gray-500 dark:text-gray-400">No drives yet. Start one from Home.</p>
         ) : (
           <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {done.map((d) => (

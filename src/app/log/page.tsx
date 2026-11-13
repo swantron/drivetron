@@ -5,7 +5,7 @@ import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
 import { syncedLate } from "@/utils/syncedLate";
-import { holdText } from "@/states";
+import { holdText, upperFirst } from "@/states";
 
 export default function LogPage() {
   return (
@@ -69,11 +69,12 @@ function PrintableLog() {
             <dd className="inline">{formatDate(parseLocalDate(learner.dob))}</dd>
           </div>
           <div>
-            <dt className="inline font-semibold first-letter:uppercase">{rules.permitName} issued: </dt>
+            {/* ::first-letter doesn't apply to inline elements, so capitalize in code */}
+            <dt className="inline font-semibold">{upperFirst(rules.permitName)} issued: </dt>
             <dd className="inline">{formatDate(parseLocalDate(learner.permitDate))}</dd>
           </div>
           <div>
-            <dt className="inline font-semibold">Held {holdText(rules)}: </dt>
+            <dt className="inline font-semibold">Earliest test date ({holdText(rules)} held): </dt>
             <dd className="inline">{formatDate(p.holdDate)}</dd>
           </div>
         </dl>
@@ -97,14 +98,14 @@ function PrintableLog() {
                 <tr key={d.id} className="break-inside-avoid border-b border-gray-300 align-top dark:border-gray-700 print:border-gray-400">
                   <td className="whitespace-nowrap py-1 pr-1.5 sm:pr-2">
                     {start.toLocaleDateString(undefined, { month: "numeric", day: "numeric", year: "2-digit" })}
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       {t(start)}–{t(end)}
                     </div>
                   </td>
                   <td className="break-words py-1 pr-1.5 sm:pr-2">
                     {[...d.conditions, ...d.skills].join(", ") || "—"}
-                    {d.vehicleName && <div className="text-xs text-gray-500">Vehicle: {d.vehicleName}</div>}
-                    {d.notes && <div className="text-xs text-gray-500">{d.notes}</div>}
+                    {d.vehicleName && <div className="text-xs text-gray-500 dark:text-gray-400">Vehicle: {d.vehicleName}</div>}
+                    {d.notes && <div className="text-xs text-gray-500 dark:text-gray-400">{d.notes}</div>}
                   </td>
                   <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">
                     {formatMinutes(d.dayMinutes + d.nightMinutes)}
@@ -119,7 +120,7 @@ function PrintableLog() {
             })}
             {done.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-6 text-center text-gray-500">
+                <td colSpan={5} className="py-6 text-center text-gray-500 dark:text-gray-400">
                   No drives logged yet.
                 </td>
               </tr>
@@ -137,7 +138,7 @@ function PrintableLog() {
           </tfoot>
         </table>
 
-        <p className="mt-3 text-xs text-gray-500">
+        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
           Night = sunset to sunrise at the drive&apos;s location. Init. = initials of the supervising licensed adult.
           {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
           {done.some((d) => d.timesEdited) && <> * Times were edited after the drive was logged.</>}

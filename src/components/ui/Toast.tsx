@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map((toast) => {
           const styles =
             toast.type === "success"
-              ? "bg-green-600"
+              ? "bg-emerald-700"
               : toast.type === "error"
               ? "bg-red-600"
               : "bg-gray-800 dark:bg-gray-700";

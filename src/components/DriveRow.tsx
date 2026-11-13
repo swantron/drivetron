@@ -14,12 +14,12 @@ export function DriveRow({ drive }: { drive: Drive }) {
         <div className="min-w-0">
           <p className="font-medium">
             {start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-            <span className="ml-2 text-sm font-normal text-gray-500">
+            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
               {start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · {drive.supervisorInitials}
               {drive.vehicleName && <> · {drive.vehicleName}</>}
             </span>
           </p>
-          {tags.length > 0 && <p className="truncate text-sm text-gray-500">{tags.join(", ")}</p>}
+          {tags.length > 0 && <p className="truncate text-sm text-gray-500 dark:text-gray-400">{tags.join(", ")}</p>}
         </div>
         <div className="shrink-0 text-right tabular-nums">
           <p className="font-semibold">{formatMinutes(drive.dayMinutes + drive.nightMinutes)}</p>

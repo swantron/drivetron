@@ -183,7 +183,7 @@ function Invite({ family, isOwner }: { family: Family; isOwner: boolean }) {
       </button>
       {isOwner && (
         <button
-          className="w-full text-sm text-gray-500 underline"
+          className="w-full text-sm text-gray-500 dark:text-gray-400 underline"
           onClick={() =>
             rotateInviteCode(family)
               .then(() => showToast("New code made; the old one no longer works", "success"))
@@ -228,8 +228,8 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
             <li key={uid} className="flex items-center justify-between py-2">
               <div>
                 <p className="font-medium">
-                  {m.name} <span className="text-sm text-gray-500">({m.initials})</span>
-                  {uid === myUid && <span className="ml-1 text-xs text-emerald-600">you</span>}
+                  {m.name} <span className="text-sm text-gray-500 dark:text-gray-400">({m.initials})</span>
+                  {uid === myUid && <span className="ml-1 text-xs text-emerald-700 dark:text-emerald-400">you</span>}
                 </p>
                 <p className={muted}>{m.role === "supervisor" ? "Supervising adult" : "Learner"}{uid === family.ownerUid ? " · owner" : ""}</p>
               </div>
@@ -486,7 +486,7 @@ function OwnerControls({ family, myUid }: { family: Family; myUid: string }) {
   return (
     <details className={`${card} group space-y-4`}>
       <summary className="cursor-pointer list-none font-semibold">
-        Hand over or delete this log <span className="text-gray-500 group-open:hidden">›</span>
+        Hand over or delete this log <span className="text-gray-500 dark:text-gray-400 group-open:hidden">›</span>
       </summary>
       <div className="space-y-2">
         <p className={muted}>You own this log, so you approve people and can delete it. You can hand that to another supervising adult; you stay on as a supervisor.</p>

@@ -61,7 +61,7 @@ export default async function StatePage({ params }: Props) {
 
         <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {facts.map((f) => (
-            <div key={f.label} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+            <div key={f.label} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <dt className="text-sm text-gray-600 first-letter:uppercase dark:text-gray-400">{f.label}</dt>
               <dd className="mt-1 text-2xl font-bold">{f.value}</dd>
             </div>

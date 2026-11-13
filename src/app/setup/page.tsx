@@ -166,7 +166,7 @@ function Waiting({ familyId, uid, onGone }: { familyId: string; uid: string; onG
         <p>Your request to join was sent. The parent who set up the log approves it from their Family tab.</p>
         <p className={muted}>This screen updates on its own once you&apos;re approved.</p>
         <button
-          className="w-full text-sm text-gray-500 underline"
+          className="w-full text-sm text-gray-500 dark:text-gray-400 underline"
           onClick={() =>
             withdrawJoinRequest(familyId, uid)
               .then(onGone)
@@ -224,7 +224,7 @@ function JoinForm({ initialCode, onRequested }: { initialCode: string; onRequest
         <legend className={label}>I am</legend>
         <div className="grid grid-cols-2 gap-2">
           {(["supervisor", "learner"] as const).map((r) => (
-            <label key={r} className={`rounded-lg border p-3 text-center text-sm ${role === r ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950" : "border-gray-300 dark:border-gray-700"}`}>
+            <label key={r} className={`rounded-lg border p-3 text-center text-sm ${role === r ? "border-emerald-700 bg-emerald-50 dark:bg-emerald-950" : "border-gray-300 dark:border-gray-700"}`}>
               <input type="radio" name="role" className="sr-only" checked={role === r} onChange={() => setRole(r)} />
               {r === "supervisor" ? "A supervising adult" : "The learner driver"}
             </label>

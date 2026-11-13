@@ -147,7 +147,7 @@ export function DriveTimer() {
         {(isSupervisor || activeDrive.createdBy === user.uid) && (
           <button
             onClick={discard}
-            className={`mt-6 rounded-lg px-3 py-2 text-sm ${discardArmed ? "bg-red-50 font-semibold text-red-700 dark:bg-red-950 dark:text-red-300" : "text-gray-500 underline"}`}
+            className={`mt-6 rounded-lg px-3 py-2 text-sm ${discardArmed ? "bg-red-50 font-semibold text-red-700 dark:bg-red-950 dark:text-red-300" : "text-gray-500 dark:text-gray-400 underline"}`}
           >
             {discardArmed ? "Tap again to discard this drive" : "Discard — started by mistake"}
           </button>

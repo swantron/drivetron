@@ -37,12 +37,12 @@ function EditDrive() {
   const id = params.get("id");
   const { family, allDrives, drivesLoaded, learner, isSupervisor } = useFamily();
   if (!family || !learner) return null;
-  if (id && !drivesLoaded) return <p className="py-10 text-center text-gray-500">Loading…</p>;
+  if (id && !drivesLoaded) return <p className="py-10 text-center text-gray-500 dark:text-gray-400">Loading…</p>;
   const drive = id ? allDrives.find((d) => d.id === id) : undefined;
-  if (id && !drive) return <p className="py-10 text-center text-gray-500">That drive was deleted.</p>;
+  if (id && !drive) return <p className="py-10 text-center text-gray-500 dark:text-gray-400">That drive was deleted.</p>;
   if (!drive && !isSupervisor) {
     return (
-      <p className="py-10 text-center text-gray-500">
+      <p className="py-10 text-center text-gray-500 dark:text-gray-400">
         Past drives are added by a supervising adult. Use Start drive on the Home tab to time a drive.
       </p>
     );
