@@ -231,6 +231,17 @@ function DataCard() {
         tab, and can delete the whole log there, which erases it for everyone.
       </p>
       <p>
+        Full details: the{" "}
+        <Link className="text-emerald-700 underline dark:text-emerald-400" href="/privacy">
+          privacy policy
+        </Link>{" "}
+        and{" "}
+        <Link className="text-emerald-700 underline dark:text-emerald-400" href="/terms">
+          terms of use
+        </Link>
+        .
+      </p>
+      <p>
         Questions, a correction to a state&apos;s rules, or a request to delete your data:{" "}
         <a className="text-emerald-700 underline dark:text-emerald-400" href={`mailto:${CONTACT_EMAIL}`}>
           {CONTACT_EMAIL}

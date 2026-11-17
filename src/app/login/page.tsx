@@ -41,8 +41,17 @@ function Login() {
       <LoginButton />
       <p className={`${muted} max-w-xs`}>
         Built around each state&apos;s teen driver rules. Not affiliated with any state government or motor vehicle agency.{" "}
+        By signing in you agree to the{" "}
+        <Link href="/terms" className="underline">
+          terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="underline">
+          privacy policy
+        </Link>
+        .{" "}
         <Link href="/about" className="underline">
-          About &amp; privacy
+          About
         </Link>
       </p>
     </main>

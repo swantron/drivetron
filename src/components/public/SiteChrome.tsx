@@ -46,7 +46,16 @@ export function SiteFooter() {
           <ul className="mt-1 space-y-1">
             <li>
               <Link href="/about" className="underline">
-                About, install &amp; privacy
+                About &amp; install
+              </Link>
+            </li>
+            <li>
+              <Link href="/privacy" className="underline">
+                Privacy
+              </Link>{" "}
+              ·{" "}
+              <Link href="/terms" className="underline">
+                Terms
               </Link>
             </li>
             <li>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useFamily } from "@/components/FamilyProvider";
 import { FREE_HOURS_TEXT, PRICE_LABEL, unlockUrl } from "@/lib/pricing";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
@@ -31,7 +32,10 @@ export function UnlockCard() {
             <a href="mailto:support@drivetron.app" className="underline">
               support@drivetron.app
             </a>
-            .
+            .{" "}
+            <Link href="/terms" className="underline">
+              Terms
+            </Link>
           </p>
         </>
       ) : (
