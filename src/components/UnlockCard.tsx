@@ -2,9 +2,28 @@
 
 import Link from "next/link";
 import { useFamily } from "@/components/FamilyProvider";
-import { FREE_HOURS_TEXT, PRICE_LABEL, unlockUrl } from "@/lib/pricing";
+import { CONTACT_EMAIL } from "@/lib/site";
+import { FREE_HOURS_TEXT, FREE_WARN_MINUTES, PRICE_LABEL, unlockUrl } from "@/lib/pricing";
+import { rememberPendingUnlock } from "@/lib/pendingUnlock";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
 import { firstName } from "@/utils/learners";
+import { formatMinutes } from "@/utils/progress";
+import { nowMs } from "@/utils/time";
+
+/** The link to Stripe for the selected learner. Remembers the learner so the return page can follow the unlock. */
+function UnlockLink({ className, children }: { className: string; children: React.ReactNode }) {
+  const { family, learner } = useFamily();
+  if (!family || !learner) return null;
+  return (
+    <a
+      href={unlockUrl(family.id, learner.id)}
+      className={className}
+      onClick={() => rememberPendingUnlock(family.id, learner.id, nowMs())}
+    >
+      {children}
+    </a>
+  );
+}
 
 /**
  * Shown in place of "Start drive" once a learner has used the free hours. Logged drives stay
@@ -24,13 +43,11 @@ export function UnlockCard() {
       </p>
       {isSupervisor ? (
         <>
-          <a href={unlockUrl(family.id, learner.id)} className={`${primaryBtn} block text-center`}>
-            Unlock for {PRICE_LABEL}
-          </a>
+          <UnlockLink className={`${primaryBtn} block text-center`}>Unlock for {PRICE_LABEL}</UnlockLink>
           <p className={muted}>
             Secure checkout by Stripe. It unlocks on every family phone within a minute of paying. Problems or refunds:{" "}
-            <a href="mailto:support@drivetron.app" className="underline">
-              support@drivetron.app
+            <a href={`mailto:${CONTACT_EMAIL}`} className="underline">
+              {CONTACT_EMAIL}
             </a>
             .{" "}
             <Link href="/terms" className="underline">
@@ -43,5 +60,25 @@ export function UnlockCard() {
       )}
       <p className={muted}>Everything logged so far stays here, and the printable log still works.</p>
     </section>
+  );
+}
+
+/** A heads-up in the last stretch of the free hours, so the paywall isn't a surprise. */
+export function FreeHoursNotice() {
+  const { learner, freeLeft, isSupervisor } = useFamily();
+  if (!learner || freeLeft === null || freeLeft === 0 || freeLeft > FREE_WARN_MINUTES) return null;
+  const name = firstName(learner.name);
+  return (
+    <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100" data-testid="free-hours-notice">
+      <p>
+        <strong>{formatMinutes(freeLeft)}</strong> of free logging left for {name}. After that, a one-time {PRICE_LABEL}{" "}
+        unlocks the rest of the log for the whole family.
+      </p>
+      {isSupervisor ? (
+        <UnlockLink className="mt-1 inline-block font-semibold underline">Unlock now</UnlockLink>
+      ) : (
+        <p className="mt-1">A parent or guardian can unlock it from their phone.</p>
+      )}
+    </div>
   );
 }

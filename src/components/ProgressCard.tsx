@@ -4,6 +4,7 @@ import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes } from "@/utils/progress";
 import { card, muted } from "@/components/ui/styles";
 import { holdText } from "@/states";
+import { FreeHoursNotice } from "@/components/UnlockCard";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = Math.min(100, (value / max) * 100);
@@ -45,6 +46,8 @@ export function ProgressCard() {
           </p>
         </div>
       ) : null}
+
+      <FreeHoursNotice />
 
       <div>
         <div className="mb-1 flex items-baseline justify-between">

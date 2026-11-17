@@ -124,17 +124,29 @@ function JoinRequestRow({ familyId, req }: { familyId: string; req: JoinRequest 
 }
 
 function LearnerSummary() {
-  const { learners, rules } = useFamily();
+  const { learners, rules, unlocks } = useFamily();
   return (
     <section className={`${card} space-y-2`}>
       <h2 className="font-semibold">Learners</h2>
       <ul className="text-sm">
         {learners.map((l) => (
-          <li key={l.id}>{l.name}</li>
+          <li key={l.id}>
+            {l.name}
+            {unlocks?.has(l.id) && <UnlockedBadge />}
+          </li>
         ))}
       </ul>
       <p className={muted}>{rules.name} rules. A supervising adult manages learner details and license dates.</p>
     </section>
+  );
+}
+
+/** A paid unlock, so a second parent can see it's done and doesn't pay twice. */
+function UnlockedBadge() {
+  return (
+    <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+      Unlocked ✓
+    </span>
   );
 }
 
@@ -267,7 +279,7 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
 }
 
 function Learners({ familyId }: { familyId: string }) {
-  const { learners, allDrives, rules } = useFamily();
+  const { learners, allDrives, rules, unlocks } = useFamily();
   const { showToast } = useToast();
   const [adding, setAdding] = useState(false);
   return (
@@ -300,6 +312,7 @@ function Learners({ familyId }: { familyId: string }) {
           initial={l}
           driveCount={allDrives.filter((d) => driveLearnerId(d) === l.id).length}
           canRemove={learners.length > 1}
+          unlocked={!!unlocks?.has(l.id)}
         />
       ))}
       {adding ? (
@@ -319,6 +332,7 @@ function LearnerForm({
   initial,
   driveCount = 0,
   canRemove = false,
+  unlocked = false,
   onDone,
 }: {
   familyId: string;
@@ -327,6 +341,8 @@ function LearnerForm({
   initial?: Learner;
   driveCount?: number;
   canRemove?: boolean;
+  /** Has a paid unlock */
+  unlocked?: boolean;
   onDone?: () => void;
 }) {
   const { showToast } = useToast();
@@ -359,7 +375,12 @@ function LearnerForm({
           <input type="date" className={input} required value={permitDate} onChange={(e) => setPermitDate(e.target.value)} />
         </div>
       </div>
-      {id && <p className={muted}>{driveCount === 1 ? "1 drive" : `${driveCount} drives`} logged</p>}
+      {id && (
+        <p className={muted}>
+          {driveCount === 1 ? "1 drive" : `${driveCount} drives`} logged
+          {unlocked && <UnlockedBadge />}
+        </p>
+      )}
       <div className="flex gap-2">
         {dirty && <button className={secondaryBtn}>{id ? "Save" : "Add learner"}</button>}
         {!id && (

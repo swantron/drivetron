@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { migrateLegacyLearner, subscribeToDrives, subscribeToMyFamily, subscribeToUnlocks } from "@/lib/firebase/firestore";
-import { needsUnlock } from "@/lib/pricing";
+import { freeMinutesLeft } from "@/lib/pricing";
 import { driveLearnerId, learnersOf, vehiclesOf, type LearnerWithId, type VehicleWithId } from "@/utils/learners";
 import type { Drive, Family, Member } from "@/types";
 import { getState, type StateRules } from "@/states";
@@ -34,6 +34,10 @@ interface FamilyContextValue {
   rules: StateRules;
   /** The selected learner has used the free hours and needs the paid unlock to log more */
   locked: boolean;
+  /** Free minutes the selected learner has left, or null when the paywall doesn't apply to them */
+  freeLeft: number | null;
+  /** Learner ids with a paid unlock (null until loaded) */
+  unlocks: ReadonlySet<string> | null;
 }
 
 const LEARNER_KEY = "drivetron.learnerId";
@@ -128,7 +132,8 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const learner = learners.find((l) => l.id === pickedLearnerId) ?? learners[0] ?? null;
   const drives = learner ? allDrives.filter((d) => driveLearnerId(d) === learner.id) : [];
   const loggedMinutes = drives.reduce((s, d) => s + (d.endedAt !== null ? d.dayMinutes + d.nightMinutes : 0), 0);
-  const locked = !!family && !!learner && !!unlocks && needsUnlock(family, learner.id, loggedMinutes, unlocks);
+  const freeLeft = family && learner && unlocks ? freeMinutesLeft(family, learner.id, loggedMinutes, unlocks) : null;
+  const locked = freeLeft === 0;
 
   const value: FamilyContextValue = {
     loaded: fam !== null,
@@ -147,6 +152,8 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     isOwner: !!uid && family?.ownerUid === uid,
     rules: getState(family?.state),
     locked,
+    freeLeft,
+    unlocks,
   };
 
   return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>;

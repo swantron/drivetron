@@ -37,8 +37,25 @@ export function needsUnlock(
   unlocked: ReadonlySet<string>,
   paywallOn = PAYWALL_ON
 ): boolean {
-  if (!paywallOn) return false;
-  if (family.createdAt < FREE_FOREVER_BEFORE) return false;
-  if (unlocked.has(learnerId)) return false;
-  return loggedMinutes >= FREE_MINUTES;
+  return freeMinutesLeft(family, learnerId, loggedMinutes, unlocked, paywallOn) === 0;
+}
+
+/** Start warning that the free hours are running out this many minutes before they do. */
+export const FREE_WARN_MINUTES = 2 * 60;
+
+/**
+ * Free minutes this learner has left before the unlock is needed, or null when the paywall doesn't
+ * apply to them at all (paywall off, a log from before launch, or already unlocked).
+ */
+export function freeMinutesLeft(
+  family: Pick<Family, "createdAt">,
+  learnerId: string,
+  loggedMinutes: number,
+  unlocked: ReadonlySet<string>,
+  paywallOn = PAYWALL_ON
+): number | null {
+  if (!paywallOn) return null;
+  if (family.createdAt < FREE_FOREVER_BEFORE) return null;
+  if (unlocked.has(learnerId)) return null;
+  return Math.max(0, FREE_MINUTES - loggedMinutes);
 }

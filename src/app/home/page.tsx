@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DriveTimer } from "@/components/DriveTimer";
 import { ProgressCard } from "@/components/ProgressCard";
 import { DriveRow } from "@/components/DriveRow";
+import { UnlockReturn } from "@/components/UnlockReturn";
 import { useFamily } from "@/components/FamilyProvider";
 import { card } from "@/components/ui/styles";
 import { firstName } from "@/utils/learners";
@@ -27,6 +29,10 @@ function Home() {
         <img src="/icons/icon.svg" alt="Drivetron" className="h-8 w-8 shrink-0" />
         {learner ? `${firstName(learner.name)}’s driving log` : "Driving log"}
       </h1>
+      {/* Back from Stripe checkout (/home?unlocked=1) */}
+      <Suspense fallback={null}>
+        <UnlockReturn />
+      </Suspense>
       <DriveTimer />
       <ProgressCard />
       {recent.length > 0 && (

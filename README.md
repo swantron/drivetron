@@ -89,6 +89,12 @@ Families created before multi-learner support stored one learner in top-level `l
 are kept so copies still running the old version keep working. Drives without a `learnerId` belong
 to `primary`.
 
+## Backups
+
+Firestore point-in-time recovery is on (7 days of history, to the minute), plus a daily backup kept
+7 days (`gcloud firestore backups schedules list --database='(default)'`). To restore, use
+`gcloud firestore databases restore` into a new database, or a PITR read/export, then copy back what's needed.
+
 ## One-time setup (mt-services-swantron project)
 
 1. Firestore: create the database (Native mode).
@@ -105,10 +111,16 @@ Each learner's first 10 hours are free; then a one-time unlock (`src/lib/pricing
 before `FREE_FOREVER_BEFORE` stay free. The gate is in the app, since rules can't add up drives;
 logged drives always stay viewable and printable, and a running timer can always be stopped.
 
-Flow: the unlock button opens a Stripe Payment Link with `client_reference_id=<familyId>-<learnerId>`.
-Stripe calls `stripeWebhook` (`functions/src/index.ts`), which checks the signature, the Payment
-Link id, the amount and the reference, then writes `families/{fid}/unlocks/{learnerId}` and a
-`payments/{sessionId}` record. Clients can never write either.
+Flow: the unlock button opens a Stripe Payment Link with `client_reference_id=<familyId>-<learnerId>`
+(and remembers the learner on that device). Stripe calls `stripeWebhook` (`functions/src/index.ts`,
+logic in `webhook.ts`), which checks the signature, the Payment Link id, the amount and the reference,
+then writes `families/{fid}/unlocks/{learnerId}` and a `payments/{sessionId}` record. Clients can never
+write either. Stripe sends the buyer back to `/home?unlocked=1`, which follows the unlock until it lands.
+
+Monitoring: Stripe emails on webhook delivery failures (Settings → Communication preferences → API).
+A Cloud Monitoring alert policy, "Drivetron: stripeWebhook error", emails support@ on any ERROR log from
+the function, e.g. `Paid checkout for a missing family or learner` (a `payments` record with
+`matched: false`: refund it in Stripe, or write the unlock by hand).
 
 Turning it on:
 
