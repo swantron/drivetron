@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CONTACT_EMAIL, socialMeta } from "@/lib/site";
+import { CONTACT_EMAIL, OPERATOR, socialMeta } from "@/lib/site";
 import { LegalPage } from "@/components/public/LegalPage";
 
 const title = "Privacy policy — Drivetron";
@@ -23,6 +23,10 @@ export default function PrivacyPage() {
         Drivetron is a supervised-driving log shared by a family: parents or other supervising adults, and the teen learning to
         drive. This page explains what it stores, why, who can see it, and how to get it deleted. The short version: it keeps
         what a driving log needs, shows it only to your family, and has no ads, analytics, or tracking.
+      </p>
+      <p>
+        Drivetron is run by {OPERATOR}, a business based in Montana (&ldquo;we&rdquo; and &ldquo;us&rdquo; below), which is
+        responsible for the data described here.
       </p>
 
       <h2>What we store</h2>

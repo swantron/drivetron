@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CONTACT_EMAIL, socialMeta } from "@/lib/site";
+import { CONTACT_EMAIL, OPERATOR, socialMeta } from "@/lib/site";
 import { FREE_HOURS_TEXT, PRICE_LABEL } from "@/lib/pricing";
 import { LegalPage } from "@/components/public/LegalPage";
 
@@ -21,7 +21,8 @@ export default function TermsPage() {
   return (
     <LegalPage title="Terms of use">
       <p>
-        These terms apply when you use Drivetron at drivetron.app or as an installed app. By signing in you agree to them and
+        Drivetron is run by {OPERATOR}, a business based in Montana (&ldquo;we&rdquo; and &ldquo;us&rdquo; below). These
+        terms apply when you use Drivetron at drivetron.app or as an installed app. By signing in you agree to them and
         to the <Link href="/privacy">privacy policy</Link>. If you&apos;re under 18, a parent or guardian needs to agree to them
         for you, and to set up or approve your place in a family log.
       </p>
@@ -93,7 +94,9 @@ export default function TermsPage() {
       <p>These terms are governed by the laws of the State of Montana, USA.</p>
 
       <h2>Contact</h2>
-      <p>Questions about these terms: {mail}.</p>
+      <p>
+        {OPERATOR}, Bozeman, Montana. Questions about these terms: {mail}.
+      </p>
     </LegalPage>
   );
 }

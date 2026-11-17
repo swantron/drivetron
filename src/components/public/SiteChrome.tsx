@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { STATES } from "@/states";
-import { CONTACT_EMAIL } from "@/lib/site";
+import { CONTACT_EMAIL, OPERATOR } from "@/lib/site";
 
 export const START_HREF = "/login?next=%2Fsetup";
 /** For a second parent or the teen: one family shares one log, so they join rather than start one. */
@@ -65,6 +65,7 @@ export function SiteFooter() {
             </li>
           </ul>
           <p className="mt-3 text-xs">Not affiliated with any state government or motor vehicle agency.</p>
+          <p className="mt-1 text-xs">Drivetron is a product of {OPERATOR}, Montana.</p>
         </div>
       </div>
     </footer>
