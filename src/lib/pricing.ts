@@ -16,8 +16,8 @@ export const FREE_HOURS_TEXT = `${FREE_MINUTES / 60} hours`;
 /** Shown in the app; the charged amount is set on the Payment Link (and checked by the function) */
 export const PRICE_LABEL = "$9.99";
 
-/** Logs created before paid unlocks launched stay free for good. */
-export const FREE_FOREVER_BEFORE = Date.UTC(2026, 11, 1);
+/** Logs created before paid unlocks launched (Nov 17, 2026) stay free for good. Never move this later. */
+export const FREE_FOREVER_BEFORE = Date.UTC(2026, 10, 18);
 
 export function unlockUrl(familyId: string, learnerId: string): string {
   const url = new URL(PAYMENT_LINK);

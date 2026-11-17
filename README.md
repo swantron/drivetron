@@ -124,3 +124,6 @@ Turning it on:
 5. Test with Stripe's test mode first (a test Payment Link and test webhook secret), then switch both to live.
 6. Set the repo variable `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` to the link's `https://buy.stripe.com/…` URL and
    set `FREE_FOREVER_BEFORE` to the launch date. Until that variable is set there's no paywall anywhere.
+
+Live since Nov 17, 2026 (`FREE_FOREVER_BEFORE` = Nov 18 UTC). The function is in live mode: to test again with
+the sandbox, swap `STRIPE_PAYMENT_LINK_ID` and the signing secret back, redeploy, then restore both.
