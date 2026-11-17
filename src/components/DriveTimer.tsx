@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useNow } from "@/hooks/useNow";
 import { useFamily } from "@/components/FamilyProvider";
+import { UnlockCard } from "@/components/UnlockCard";
 import { useToast } from "@/components/ui/Toast";
 import { addDrive, patchDrive, removeDrive, updateFamily } from "@/lib/firebase/firestore";
 import { getLocation, driveCoords } from "@/utils/location";
@@ -27,7 +28,7 @@ function clock(ms: number) {
 
 export function DriveTimer() {
   const { user } = useAuth();
-  const { family, learner, drives, vehicles, activeDrive, isSupervisor } = useFamily();
+  const { family, learner, drives, vehicles, activeDrive, isSupervisor, rules, locked } = useFamily();
   const { showToast } = useToast();
   const router = useRouter();
   const now = useNow(1000, activeDrive !== null);
@@ -100,7 +101,7 @@ export function DriveTimer() {
       return;
     }
     const { lat, lng } = driveCoords(activeDrive, family);
-    const split = splitDayNight(activeDrive.startedAt, endedAt, lat, lng);
+    const split = splitDayNight(activeDrive.startedAt, endedAt, lat, lng, rules.nightOffsetMinutes);
     if (split.dayMinutes + split.nightMinutes === 0) {
       // Under a minute: almost certainly a mis-tap, and a 0m row is just clutter on the printed log.
       removeDrive(family.id, activeDrive.id, onError);
@@ -155,6 +156,9 @@ export function DriveTimer() {
       </section>
     );
   }
+
+  // Past the free hours: a running drive (above) can still be stopped, but no new ones.
+  if (locked) return <UnlockCard />;
 
   return (
     <section className={card}>

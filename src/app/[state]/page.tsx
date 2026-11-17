@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { STATES, getStateBySlug, holdText } from "@/states";
 import { socialMeta } from "@/lib/site";
+import { PAYWALL_ON } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
 
 /** "50 hours" rather than "50h", for page titles and prose. */
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!s) return {};
   const hours = `${hoursText(s.totalMinutes)}, ${hoursText(s.nightMinutes)} at night`;
   const title = `${s.name} supervised driving log: ${hours} | Drivetron`;
-  const description = `${s.name} teen drivers need ${hours}, with the ${s.permitName} held at least ${holdText(s)}. Here are the rules, and a free log the whole family can share.`;
+  const description = `${s.name} teen drivers need ${hours}, with the ${s.permitName} held at least ${holdText(s)}. Here are the rules, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
   return {
     title,
     description,
@@ -40,7 +41,7 @@ export default async function StatePage({ params }: Props) {
     { label: "Supervised hours", value: formatMinutes(s.totalMinutes) },
     { label: "At night", value: formatMinutes(s.nightMinutes) },
     { label: `Hold the ${s.permitName}`, value: holdText(s) },
-    { label: `${s.permitName} valid for`, value: `${s.permitValidMonths} months` },
+    ...(s.permitValidMonths === null ? [] : [{ label: `${s.permitName} valid for`, value: `${s.permitValidMonths} months` }]),
   ];
   return (
     <>
@@ -54,12 +55,12 @@ export default async function StatePage({ params }: Props) {
         </nav>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{s.name} supervised driving log</h1>
         <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
-          Under {s.name}&apos;s {s.program} rules, a teen on a {s.permitName} needs {hoursText(s.totalMinutes)} of supervised
+          Under {s.name}&apos;s {s.program} rules, a teen on {/^[aeiou]/i.test(s.permitName) ? "an" : "a"} {s.permitName} needs {hoursText(s.totalMinutes)} of supervised
           driving, {hoursText(s.nightMinutes)} of it at night, before moving to the next license. A parent or guardian
           certifies the hours on {s.certification.label}.
         </p>
 
-        <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <dl className={`mt-6 grid grid-cols-2 gap-3 ${facts.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
           {facts.map((f) => (
             <div key={f.label} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <dt className="text-sm text-gray-600 first-letter:uppercase dark:text-gray-400">{f.label}</dt>
@@ -72,7 +73,7 @@ export default async function StatePage({ params }: Props) {
           <h2 className="text-xl font-bold">Track the {hoursText(s.totalMinutes)} with Drivetron</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
             <li>One log shared by both parents and your teen, on iPhone or Android.</li>
-            <li>Night minutes counted from sunset and sunrise where you drove.</li>
+            <li>Night minutes counted from sunset and sunrise where you drove{s.nightOffsetMinutes ? `, using ${s.name}\u2019s definition` : ""}.</li>
             <li>A printable log{s.practiceLog ? ` laid out like ${s.name}'s own practice log` : ""}, ready to sign.</li>
           </ul>
           {s.logAtTest && <p className="mt-3 text-gray-700 dark:text-gray-300">{s.logAtTest} Drivetron&apos;s log opens on your phone, or prints.</p>}
@@ -80,7 +81,7 @@ export default async function StatePage({ params }: Props) {
             href={START_HREF}
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
           >
-            Start your {s.name} log — free
+            Start your {s.name} log — free{PAYWALL_ON ? " to start" : ""}
           </Link>
         </section>
 
@@ -113,7 +114,8 @@ export default async function StatePage({ params }: Props) {
         <section className="mt-10">
           <h2 className="text-2xl font-bold">Official sources</h2>
           <ul className="mt-2 space-y-1">
-            {[s.certification, ...(s.practiceLog ? [s.practiceLog] : []), ...s.sources]
+            {/* Sources first, so a link they share with the certification keeps the source's label */}
+            {[...s.sources, s.certification, ...(s.practiceLog ? [s.practiceLog] : [])]
               .filter((l, i, all) => all.findIndex((x) => x.url === l.url) === i)
               .map((l) => (
                 <li key={l.url}>

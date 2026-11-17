@@ -5,7 +5,7 @@ import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
 import { card, muted, primaryBtn } from "@/components/ui/styles";
 import { syncedLate } from "@/utils/syncedLate";
-import { holdText, upperFirst } from "@/states";
+import { holdText, nightRangeText, upperFirst } from "@/states";
 
 export default function LogPage() {
   return (
@@ -139,7 +139,7 @@ function PrintableLog() {
         </table>
 
         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          Night = sunset to sunrise at the drive&apos;s location. Init. = initials of the supervising licensed adult.
+          Night = {nightRangeText(rules)} at the drive&apos;s location. Init. = initials of the supervising licensed adult.
           {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
           {done.some((d) => d.timesEdited) && <> * Times were edited after the drive was logged.</>}
           {done.some(syncedLate) && (

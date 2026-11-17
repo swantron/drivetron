@@ -56,5 +56,9 @@ firestore-debug.log
 firebase-debug.log
 ui-debug.log
 
+# cloud functions build
+/functions/node_modules/
+/functions/lib/
+
 # firebase deploy cache
 .firebase/

@@ -34,7 +34,8 @@ export interface Progress {
   /** Earliest date the permit has been held long enough (the state's hold period) */
   holdDate: Date;
   /** Learner license expiry */
-  expiryDate: Date;
+  /** null when the state gives the permit no term of its own */
+  expiryDate: Date | null;
   /** When the hours will be done at the current pace; null if not enough history */
   projectedHoursDate: Date | null;
   /** Average logged minutes per week since the permit date */
@@ -63,7 +64,7 @@ export function computeProgress(
   const permit = parseLocalDate(permitDate);
   const holdDate = addMonths(permit, rules.holdMonths);
   holdDate.setDate(holdDate.getDate() + (rules.holdExtraDays ?? 0));
-  const expiryDate = addMonths(permit, rules.permitValidMonths);
+  const expiryDate = rules.permitValidMonths === null ? null : addMonths(permit, rules.permitValidMonths);
 
   // Pace from the permit date (or first drive, if logging started later), at least one week.
   const firstDrive = done.reduce((min, d) => Math.min(min, d.startedAt), Infinity);

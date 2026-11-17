@@ -265,11 +265,12 @@ export async function transferOwnership(familyId: string, toUid: string) {
  */
 export async function deleteLog(family: Family) {
   const db = getFirebaseDb();
-  const [drives, requests] = await Promise.all([
+  const [drives, requests, unlocks] = await Promise.all([
     getDocsFromServer(drivesCol(family.id)),
     getDocsFromServer(collection(db, "families", family.id, "joinRequests")),
+    getDocsFromServer(collection(db, "families", family.id, "unlocks")),
   ]);
-  const refs = [...drives.docs, ...requests.docs].map((d) => d.ref);
+  const refs = [...drives.docs, ...requests.docs, ...unlocks.docs].map((d) => d.ref);
   for (let i = 0; i < refs.length; i += 400) {
     const batch = writeBatch(db);
     refs.slice(i, i + 400).forEach((r) => batch.delete(r));
@@ -291,6 +292,11 @@ export async function rotateInviteCode(family: Family): Promise<string> {
   batch.delete(doc(db, "invites", family.inviteCode));
   await batch.commit();
   return code;
+}
+
+/** Ids of the learners whose unlock has been paid (written by the Stripe webhook function). */
+export function subscribeToUnlocks(familyId: string, onData: (learnerIds: string[]) => void, onError: (e: Error) => void): Unsubscribe {
+  return onSnapshot(collection(getFirebaseDb(), "families", familyId, "unlocks"), (snap) => onData(snap.docs.map((d) => d.id)), onError);
 }
 
 export function subscribeToDrives(

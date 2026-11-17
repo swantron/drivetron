@@ -61,6 +61,20 @@ describe("splitDayNight", () => {
     expect(nightMinutes).toBeLessThan(50);
   });
 
+  it("narrows night by a state's offset at both ends (California darkness)", () => {
+    // 4pm to midnight MST on Nov 9: sunset ~5pm, so plain night ~7h; darkness starts 30 minutes later
+    const start = utc("2026-11-09T23:00:00Z");
+    const end = utc("2026-11-10T07:00:00Z");
+    const plain = splitDayNight(start, end, LAT, LNG);
+    const dark = splitDayNight(start, end, LAT, LNG, 30);
+    expect(dark.dayMinutes + dark.nightMinutes).toBe(480);
+    expect(plain.nightMinutes - dark.nightMinutes).toBe(30);
+    // 5:30–6:30am MST on Jan 15: sunrise ~8:05, so all night either way
+    expect(splitDayNight(utc("2026-01-15T12:30:00Z"), utc("2026-01-15T13:30:00Z"), LAT, LNG, 30).nightMinutes).toBe(60);
+    // 7:30–8:30am: darkness ends ~7:35, so only a few minutes count
+    expect(splitDayNight(utc("2026-01-15T14:30:00Z"), utc("2026-01-15T15:30:00Z"), LAT, LNG, 30).nightMinutes).toBeLessThan(15);
+  });
+
   it("returns zero for an empty or reversed range", () => {
     expect(splitDayNight(1000, 1000, LAT, LNG)).toEqual({ dayMinutes: 0, nightMinutes: 0 });
     expect(splitDayNight(2000, 1000, LAT, LNG)).toEqual({ dayMinutes: 0, nightMinutes: 0 });

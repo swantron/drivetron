@@ -7,6 +7,7 @@ import { useInstall } from "@/hooks/useInstall";
 import { useToast } from "@/components/ui/Toast";
 import { STATES } from "@/states";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { FREE_HOURS_TEXT, PAYWALL_ON, PRICE_LABEL } from "@/lib/pricing";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "dev";
@@ -32,6 +33,7 @@ export default function AboutPage() {
       </header>
       <VersionCard />
       <InstallCard />
+      {PAYWALL_ON && <Pricing />}
       <Disclaimer />
       <DataCard />
     </main>
@@ -146,6 +148,30 @@ function InstallCard() {
   );
 }
 
+function Pricing() {
+  return (
+    <section className={`${card} space-y-3 text-sm`}>
+      <h2 className="font-semibold">Pricing and refunds</h2>
+      <p>
+        Each teen&apos;s first {FREE_HOURS_TEXT} of logged driving are free. After that, a one-time {PRICE_LABEL} per teen
+        unlocks the rest of their log for the whole family. No subscription. Payment is handled by Stripe; Drivetron never sees
+        your card.
+      </p>
+      <p>
+        Logs started before paid unlocks launched stay free. Your logged drives are never locked away: viewing and printing
+        always work.
+      </p>
+      <p>
+        Not what you needed? Email{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`} className="underline">
+          {CONTACT_EMAIL}
+        </a>{" "}
+        within 30 days of paying for a full refund.
+      </p>
+    </section>
+  );
+}
+
 function Disclaimer() {
   return (
     <section className={`${card} space-y-3 text-sm`}>
@@ -159,7 +185,8 @@ function Disclaimer() {
         penalty of law. Review the log before signing.
       </p>
       <p>
-        Night hours are worked out as sunset to sunrise at the drive&apos;s approximate location. Where a state&apos;s
+        Night hours are worked out as sunset to sunrise at the drive&apos;s approximate location, or the state&apos;s own
+        definition where it has one (California: half an hour after sunset to half an hour before sunrise). Where a state&apos;s
         materials don&apos;t define &ldquo;night&rdquo; more precisely, check any drive close to dusk or dawn, and adjust the
         night minutes on that drive if needed.
       </p>

@@ -1,4 +1,4 @@
-import { DEFAULT_STATE, STATES, getState, getStateBySlug, holdText } from "@/states";
+import { DEFAULT_STATE, STATES, getState, getStateBySlug, holdText, nightRangeText } from "@/states";
 import { computeProgress } from "@/utils/progress";
 
 describe("state rules", () => {
@@ -17,7 +17,8 @@ describe("state rules", () => {
       expect(s.nightMinutes).toBeLessThanOrEqual(s.totalMinutes);
       expect(s.holdMonths).toBeGreaterThan(0);
       expect(s.holdExtraDays).toBeGreaterThanOrEqual(0);
-      expect(s.permitValidMonths).toBeGreaterThanOrEqual(s.holdMonths);
+      expect(s.nightOffsetMinutes).toBeGreaterThanOrEqual(0);
+      if (s.permitValidMonths !== null) expect(s.permitValidMonths).toBeGreaterThanOrEqual(s.holdMonths);
       expect(s.sources.length).toBeGreaterThan(0);
       for (const l of [...s.sources, s.certification]) expect(l.url).toMatch(/^https:\/\//);
       expect(s.verified).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -29,6 +30,18 @@ describe("state rules", () => {
     expect(getState("ZZ").code).toBe("MT");
     expect(getStateBySlug("montana")?.code).toBe("MT");
     expect(getStateBySlug("home")).toBeUndefined();
+  });
+
+  it("finds California by code and slug, with a plain 6-month hold and darkness offset", () => {
+    const ca = getStateBySlug("california")!;
+    expect(ca.code).toBe("CA");
+    expect(getState("CA")).toBe(ca);
+    expect(holdText(ca)).toBe("6 months");
+    expect(nightRangeText(ca)).toBe("30 minutes after sunset to 30 minutes before sunrise");
+    expect(nightRangeText(getState("MT"))).toBe("sunset to sunrise");
+    expect(computeProgress([], "2026-08-31", new Date(2026, 10, 9), ca).expiryDate).toBeNull();
+    const p = computeProgress([], "2026-08-31", new Date(2026, 10, 9), ca);
+    expect([p.holdDate.getFullYear(), p.holdDate.getMonth(), p.holdDate.getDate()]).toEqual([2027, 1, 28]); // Feb 28, 2027
   });
 
   it("drives progress from the state's own figures", () => {

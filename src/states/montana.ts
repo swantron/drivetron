@@ -15,6 +15,7 @@ export const montana: StateRules = {
   permitValidMonths: 12,
   supervisor: "a licensed parent or guardian, or a licensed adult the parent or guardian authorizes",
   nightDefinition: null,
+  nightOffsetMinutes: 0,
   practiceNote: "Montana asks for practice in varied weather, traffic, and road conditions.",
   certification: {
     label: "MVD form 21-1600",

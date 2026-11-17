@@ -23,12 +23,14 @@ export interface StateRules {
   holdMonths: number;
   /** Days on top of holdMonths, for states that say e.g. "6 months + 1 day" (otherwise 0) */
   holdExtraDays: number;
-  /** How long the permit is valid */
-  permitValidMonths: number;
+  /** How long the permit is valid, or null when the state doesn't give the permit its own term */
+  permitValidMonths: number | null;
   /** Who may supervise, in the state's words */
   supervisor: string;
   /** How the state defines "night", or null when its materials don't */
   nightDefinition: string | null;
+  /** Night starts this many minutes after sunset and ends this many before sunrise (0 = sunset to sunrise) */
+  nightOffsetMinutes: number;
   /** What the state asks to practice, shown above the conditions checklist */
   practiceNote: string;
   /** The parent's certification of the hours */

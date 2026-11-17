@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { STATES, holdText } from "@/states";
 import { socialMeta } from "@/lib/site";
+import { FREE_HOURS_TEXT, PAYWALL_ON, PRICE_LABEL } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
 import { PhonePreview } from "@/components/public/PhonePreview";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
@@ -79,7 +80,7 @@ export default function LandingPage() {
                   href={START_HREF}
                   className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
                 >
-                  Start your log — free
+                  Start your log — free{PAYWALL_ON ? " to start" : ""}
                 </Link>
                 <a href="#how" className="rounded-xl border border-gray-300 px-5 py-3 font-medium dark:border-gray-700">
                   How it works
@@ -150,7 +151,16 @@ export default function LandingPage() {
 
           <section className="mt-6 rounded-2xl bg-emerald-50 p-6 dark:bg-emerald-950">
             <h2 className="text-xl font-bold">Free to start</h2>
-            <p className="mt-1 text-gray-700 dark:text-gray-300">Set up your family&apos;s log in a couple of minutes with a Google account.</p>
+            <p className="mt-1 text-gray-700 dark:text-gray-300">
+              Set up your family&apos;s log in a couple of minutes with a Google account.
+              {PAYWALL_ON && (
+                <>
+                  {" "}
+                  The first {FREE_HOURS_TEXT} for each teen are free; after that it&apos;s a one-time {PRICE_LABEL} per
+                  teen for the rest of their log. No subscription, no ads.
+                </>
+              )}
+            </p>
             <Link
               href={START_HREF}
               className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"

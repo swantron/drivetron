@@ -17,7 +17,7 @@ export default function DrivesPage() {
 }
 
 function Drives() {
-  const { learner, drives, drivesLoaded, isSupervisor, rules } = useFamily();
+  const { learner, drives, drivesLoaded, isSupervisor, rules, locked } = useFamily();
   if (!learner) return null;
   const done = drives.filter((d) => d.endedAt !== null);
   const p = computeProgress(drives, learner.permitDate, new Date(), rules);
@@ -28,7 +28,7 @@ function Drives() {
 
   return (
     <div className="space-y-4">
-      {isSupervisor && (
+      {isSupervisor && !locked && (
         <Link href="/drives/edit" className={`${primaryBtn} block text-center`}>
           Add a past drive
         </Link>

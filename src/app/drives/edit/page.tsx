@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamily } from "@/components/FamilyProvider";
+import { UnlockCard } from "@/components/UnlockCard";
 import { useToast } from "@/components/ui/Toast";
 import { Chips, toggle } from "@/components/ui/Chips";
 import { addDrive, removeDrive, saveDrive, saveVehicle } from "@/lib/firebase/firestore";
@@ -35,11 +36,13 @@ export default function EditDrivePage() {
 function EditDrive() {
   const params = useSearchParams();
   const id = params.get("id");
-  const { family, allDrives, drivesLoaded, learner, isSupervisor } = useFamily();
+  const { family, allDrives, drivesLoaded, learner, isSupervisor, locked } = useFamily();
   if (!family || !learner) return null;
   if (id && !drivesLoaded) return <p className="py-10 text-center text-gray-500 dark:text-gray-400">Loading…</p>;
   const drive = id ? allDrives.find((d) => d.id === id) : undefined;
   if (id && !drive) return <p className="py-10 text-center text-gray-500 dark:text-gray-400">That drive was deleted.</p>;
+  // Past the free hours: existing drives stay editable, new ones need the unlock
+  if (!drive && locked) return <UnlockCard />;
   if (!drive && !isSupervisor) {
     return (
       <p className="py-10 text-center text-gray-500 dark:text-gray-400">
@@ -78,7 +81,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const { showToast } = useToast();
   const router = useRouter();
   const supervisors = supervisorsOf(family);
-  const { learners, learner: selectedLearner, vehicles, drives: learnerDrives, isSupervisor } = useFamily();
+  const { learners, learner: selectedLearner, vehicles, drives: learnerDrives, isSupervisor, rules } = useFamily();
   // Mirrors firestore.rules: learners edit only their own drives, and only tags once it's finished.
   const ownDrive = !drive || drive.createdBy === user?.uid;
   const canEdit = isSupervisor || ownDrive;
@@ -131,7 +134,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
     ? null
     : untouched
     ? { dayMinutes: drive!.dayMinutes, nightMinutes: drive!.nightMinutes }
-    : splitDayNight(range.start, range.end, coords.lat, coords.lng);
+    : splitDayNight(range.start, range.end, coords.lat, coords.lng, rules.nightOffsetMinutes);
   const total = computed ? computed.dayMinutes + computed.nightMinutes : 0;
   const nightMinutes =
     nightOverride !== null && nightOverride !== "" ? Math.max(0, Math.min(total, Math.round(Number(nightOverride)))) : computed?.nightMinutes ?? 0;

@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { migrateLegacyLearner, subscribeToDrives, subscribeToMyFamily } from "@/lib/firebase/firestore";
+import { migrateLegacyLearner, subscribeToDrives, subscribeToMyFamily, subscribeToUnlocks } from "@/lib/firebase/firestore";
+import { needsUnlock } from "@/lib/pricing";
 import { driveLearnerId, learnersOf, vehiclesOf, type LearnerWithId, type VehicleWithId } from "@/utils/learners";
 import type { Drive, Family, Member } from "@/types";
 import { getState, type StateRules } from "@/states";
@@ -31,6 +32,8 @@ interface FamilyContextValue {
   isOwner: boolean;
   /** The state rules this log follows (Montana for logs created before multi-state support) */
   rules: StateRules;
+  /** The selected learner has used the free hours and needs the paid unlock to log more */
+  locked: boolean;
 }
 
 const LEARNER_KEY = "drivetron.learnerId";
@@ -88,6 +91,18 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   }, [familyId, retry]);
 
   const allDrives = driveState && driveState.familyId === familyId ? driveState.drives : [];
+
+  // Paid unlocks. Until they load, nobody is treated as locked (a family that paid never sees the gate flash).
+  const [unlockState, setUnlockState] = useState<{ familyId: string; ids: Set<string> } | null>(null);
+  useEffect(() => {
+    if (!familyId) return;
+    return subscribeToUnlocks(
+      familyId,
+      (ids) => setUnlockState({ familyId, ids: new Set(ids) }),
+      (e) => console.warn("unlocks subscription failed", e.message)
+    );
+  }, [familyId, retry]);
+  const unlocks = unlockState && unlockState.familyId === familyId ? unlockState.ids : null;
   const family = fam?.family ?? null;
 
   // Families from before multi-learner support get their learner moved into the learners map.
@@ -112,6 +127,8 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const learners = family ? learnersOf(family) : [];
   const learner = learners.find((l) => l.id === pickedLearnerId) ?? learners[0] ?? null;
   const drives = learner ? allDrives.filter((d) => driveLearnerId(d) === learner.id) : [];
+  const loggedMinutes = drives.reduce((s, d) => s + (d.endedAt !== null ? d.dayMinutes + d.nightMinutes : 0), 0);
+  const locked = !!family && !!learner && !!unlocks && needsUnlock(family, learner.id, loggedMinutes, unlocks);
 
   const value: FamilyContextValue = {
     loaded: fam !== null,
@@ -129,6 +146,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     isSupervisor: !!uid && family?.members[uid]?.role === "supervisor",
     isOwner: !!uid && family?.ownerUid === uid,
     rules: getState(family?.state),
+    locked,
   };
 
   return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>;

@@ -86,6 +86,11 @@ service cloud.firestore {
       allow delete: if signedIn() && family(resource.data.familyId).ownerUid == request.auth.uid;
     }
 
+    // Payment ledger, written only by the Stripe webhook function. No client access.
+    match /payments/{sessionId} {
+      allow read, write: if false;
+    }
+
     match /families/{fid} {
       allow read: if signedIn() && request.auth.uid in resource.data.memberUids;
 
@@ -179,6 +184,14 @@ service cloud.firestore {
              })
           && request.resource.data.createdAt is int;
         allow delete: if signedIn() && (request.auth.uid == uid || family(fid).ownerUid == request.auth.uid);
+      }
+
+      // A learner's paid unlock (past the free hours). Written only by the Stripe webhook function
+      // (Admin SDK, which bypasses rules); members read it, and the owner deletes it with the log.
+      match /unlocks/{learnerId} {
+        allow read: if isMember(fid);
+        allow create, update: if false;
+        allow delete: if signedIn() && family(fid).ownerUid == request.auth.uid;
       }
 
       match /drives/{did} {

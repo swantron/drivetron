@@ -27,7 +27,7 @@ export function ProgressCard() {
   // The day they can test is whichever comes last: the hours or the hold period.
   const readyDate =
     p.projectedHoursDate && (p.projectedHoursDate > p.holdDate ? p.projectedHoursDate : p.holdDate);
-  const behindExpiry = readyDate && readyDate > p.expiryDate;
+  const behindExpiry = readyDate && p.expiryDate && readyDate > p.expiryDate;
   const totalToGo = Math.max(0, REQUIRED_TOTAL_MINUTES - p.totalMinutes);
   const nightToGo = Math.max(0, REQUIRED_NIGHT_MINUTES - p.nightMinutes);
 
@@ -86,10 +86,12 @@ export function ProgressCard() {
             {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Hold of {holdText(rules)} · {daysToHold} days</span>}
           </dd>
         </div>
-        <div>
-          <dt className={`${muted} first-letter:uppercase`}>{rules.permitName} expires</dt>
-          <dd className="font-medium">{formatDate(p.expiryDate)}</dd>
-        </div>
+        {p.expiryDate && (
+          <div>
+            <dt className={`${muted} first-letter:uppercase`}>{rules.permitName} expires</dt>
+            <dd className="font-medium">{formatDate(p.expiryDate)}</dd>
+          </div>
+        )}
         <div className="col-span-2">
           <dt className={muted}>Projected test-ready</dt>
           <dd className="font-medium">
@@ -103,7 +105,7 @@ export function ProgressCard() {
           </dd>
           {behindExpiry && (
             <p className="mt-1 text-amber-700 dark:text-amber-400">
-              That&apos;s after the learner license expires ({formatDate(p.expiryDate)}) — pick up the pace.
+              That&apos;s after the {rules.permitName} expires ({formatDate(p.expiryDate!)}) — pick up the pace.
             </p>
           )}
         </div>

@@ -61,6 +61,8 @@ families/{familyId}/drives/{id} learnerId, vehicleId/vehicleName, startedAt, end
                                syncedAt (server time the drive first arrived)
 families/{familyId}/joinRequests/{uid}  name, initials, role, code, email (verified against the token)
 invites/{code}                 { familyId }  (get-only lookup for joining)
+families/{familyId}/unlocks/{learnerId}  sessionId, at  (paid unlock; written only by the webhook function)
+payments/{checkoutSessionId}   familyId, learnerId, amount, matched  (server-only ledger)
 ```
 
 All access control is in `firestore.rules`, with emulator tests in `rules-tests/`. The trust model:
@@ -96,3 +98,29 @@ to `primary`.
    `drivetron.app` and `www.drivetron.app` (DNS records at the registrar).
 5. Workload identity: allow this repo in the `github-oidc` provider's attribute condition, and give
    `github-action-deploy@` the Firebase Rules Admin role so it can deploy `firestore.rules`.
+
+## Payments ("free to start")
+
+Each learner's first 10 hours are free; then a one-time unlock (`src/lib/pricing.ts`). Logs created
+before `FREE_FOREVER_BEFORE` stay free. The gate is in the app, since rules can't add up drives;
+logged drives always stay viewable and printable, and a running timer can always be stopped.
+
+Flow: the unlock button opens a Stripe Payment Link with `client_reference_id=<familyId>-<learnerId>`.
+Stripe calls `stripeWebhook` (`functions/src/index.ts`), which checks the signature, the Payment
+Link id, the amount and the reference, then writes `families/{fid}/unlocks/{learnerId}` and a
+`payments/{sessionId}` record. Clients can never write either.
+
+Turning it on:
+
+1. Firebase: upgrade the project to Blaze, and set a budget alert (Billing → Budgets).
+2. Stripe: create a product "Drivetron unlock" ($9.99, one-time) and a Payment Link for it. Set the
+   link's confirmation to redirect to `https://drivetron.app/home`. Put its `plink_…` id in
+   `functions/.env.mt-services-swantron`.
+3. Stripe → Developers → Webhooks: add an endpoint at the function's URL for
+   `checkout.session.completed` and `checkout.session.async_payment_succeeded`, then store its
+   signing secret: `firebase functions:secrets:set STRIPE_WEBHOOK_SECRET --project mt-services-swantron`.
+4. Deploy the function by hand (CI only builds it): `firebase deploy --only functions --project mt-services-swantron`.
+   The first deploy enables the APIs it needs; the function URL is printed at the end.
+5. Test with Stripe's test mode first (a test Payment Link and test webhook secret), then switch both to live.
+6. Set the repo variable `NEXT_PUBLIC_STRIPE_PAYMENT_LINK` to the link's `https://buy.stripe.com/…` URL and
+   set `FREE_FOREVER_BEFORE` to the launch date. Until that variable is set there's no paywall anywhere.

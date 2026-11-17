@@ -431,3 +431,38 @@ describe("drives", () => {
     await assertFails(setDoc(doc(fs, "families/f1/drives/e"), typedIn("someoneelse")));
   });
 });
+
+describe("paid unlocks", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const fs = ctx.firestore();
+      await updateDoc(doc(fs, "families/f1"), { memberUids: ["parent", "mom", "teen"], "members.mom": member("Mom"), "members.teen": member("Teen", "learner") });
+      await setDoc(doc(fs, "families/f1/unlocks/primary"), { sessionId: "cs_1", at: 1 });
+      await setDoc(doc(fs, "payments/cs_1"), { familyId: "f1", learnerId: "primary" });
+    });
+  });
+
+  it("lets members read the family's unlocks, and nobody else", async () => {
+    await assertSucceeds(getDocs(collection(db("teen"), "families/f1/unlocks")));
+    await assertSucceeds(getDoc(doc(db("mom"), "families/f1/unlocks/primary")));
+    await assertFails(getDoc(doc(db("stranger"), "families/f1/unlocks/primary")));
+  });
+
+  it("never lets a client grant itself an unlock, even the owner", async () => {
+    for (const uid of ["parent", "mom", "teen", "stranger"]) {
+      await assertFails(setDoc(doc(db(uid), "families/f1/unlocks/other"), { sessionId: "fake", at: 1 }));
+      await assertFails(updateDoc(doc(db(uid), "families/f1/unlocks/primary"), { sessionId: "fake" }));
+    }
+  });
+
+  it("lets only the owner delete an unlock (when deleting the log)", async () => {
+    await assertFails(deleteDoc(doc(db("mom"), "families/f1/unlocks/primary")));
+    await assertFails(deleteDoc(doc(db("teen"), "families/f1/unlocks/primary")));
+    await assertSucceeds(deleteDoc(doc(db("parent"), "families/f1/unlocks/primary")));
+  });
+
+  it("keeps the payment ledger server-only", async () => {
+    await assertFails(getDoc(doc(db("parent"), "payments/cs_1")));
+    await assertFails(setDoc(doc(db("parent"), "payments/cs_2"), { familyId: "f1" }));
+  });
+});
