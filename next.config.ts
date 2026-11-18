@@ -39,6 +39,9 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_BUILD_COMMIT: commit(),
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+    // Always defined, so emulator-only code (the QA sign-in list) is dropped from production builds
+    // at compile time instead of shipping as an unused chunk.
+    NEXT_PUBLIC_FIREBASE_EMULATORS: process.env.NEXT_PUBLIC_FIREBASE_EMULATORS ?? "0",
   },
   images: {
     unoptimized: true,

@@ -3,6 +3,7 @@
 import { useFamily } from "@/components/FamilyProvider";
 import { card, muted } from "@/components/ui/styles";
 import { sourceLinks, upperFirst } from "@/states";
+import { formatDate, parseLocalDate } from "@/utils/progress";
 
 /**
  * The family's state's official forms and pages: the certification form first, then everything the
@@ -15,7 +16,7 @@ export function StateResources() {
     <section className={`${card} space-y-2 print:hidden`}>
       <h2 className="font-semibold">{rules.name} rules and forms</h2>
       <p className={muted}>
-        Who can supervise: {rules.supervisor}. Checked against these on {rules.verified}; confirm with the state before your
+        Who can supervise: {rules.supervisor}. Checked against these on {formatDate(parseLocalDate(rules.verified))}; confirm with the state before your
         teen applies.
       </p>
       <ul className="space-y-1.5 text-sm">

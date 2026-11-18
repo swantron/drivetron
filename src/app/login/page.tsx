@@ -8,6 +8,14 @@ import { LoginButton } from "@/components/auth/LoginButton";
 import { EmailLinkSignIn } from "@/components/auth/EmailLinkSignIn";
 import { muted } from "@/components/ui/styles";
 import { safeNext } from "@/utils/safeNext";
+import dynamic from "next/dynamic";
+
+// Emulator builds only. The inlined env check folds to false in production, so the QA list (and its
+// fake addresses) never reaches the production bundle.
+const QaSignIn =
+  process.env.NEXT_PUBLIC_FIREBASE_EMULATORS === "1"
+    ? dynamic(() => import("@/components/auth/QaSignIn").then((m) => m.QaSignIn), { ssr: false })
+    : () => null;
 
 export default function LoginPage() {
   return (
@@ -42,6 +50,7 @@ function Login() {
       <LoginButton />
       {/* The link comes back here with the same `next`, so it lands where Google sign-in would */}
       <EmailLinkSignIn continueUrl={typeof window === "undefined" ? "" : `${window.location.origin}/login?next=${encodeURIComponent(dest)}`} />
+      <QaSignIn />
       <p className={`${muted} max-w-xs`}>
         Built around each state&apos;s teen driver rules. Not affiliated with any state government or motor vehicle agency.{" "}
         By signing in you agree to the{" "}

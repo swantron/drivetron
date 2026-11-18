@@ -53,8 +53,14 @@ Local end-to-end against emulators:
 firebase emulators:start --only auth,firestore --project demo-drivetron
 NEXT_PUBLIC_FIREBASE_EMULATORS=1 NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-drivetron \
   NEXT_PUBLIC_FIREBASE_API_KEY=fake NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=localhost npm run dev
-# In the browser console: await __devSignIn("parent@test.dev", "Pat Parent")
+npm run seed:qa   # QA families, one or more per state (src/lib/qa.ts)
 ```
+
+`/login` then lists the QA people as one-tap sign-ins, with what each family is set up to show (the
+Texas daily limit, Pennsylvania's bad-weather hours, a Montana hold ending tomorrow, drives waiting
+for a parent's OK, and so on). The list only exists in emulator builds. Rerun `seed:qa` after restarting
+the emulators or running `test:rules`, which clear them. Any other fake user: in the browser console,
+`await __devSignIn("parent@test.dev", "Pat Parent")`.
 
 ## Data
 

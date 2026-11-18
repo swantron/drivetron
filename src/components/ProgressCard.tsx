@@ -32,6 +32,10 @@ export function ProgressCard() {
   const behindExpiry = readyDate && p.expiryDate && readyDate > p.expiryDate;
   const totalToGo = Math.max(0, REQUIRED_TOTAL_MINUTES - p.totalMinutes);
   const nightToGo = Math.max(0, REQUIRED_NIGHT_MINUTES - p.nightMinutes);
+  const stillToGo = [
+    nightToGo > 0 && `${formatMinutes(nightToGo)} at night`,
+    p.weatherRemaining > 0 && `${formatMinutes(p.weatherRemaining)} in bad weather`,
+  ].filter((s): s is string => !!s);
 
   return (
     <section className={`${card} space-y-4`}>
@@ -94,11 +98,10 @@ export function ProgressCard() {
         <div>
           <dt className={muted}>Still to drive</dt>
           <dd className="font-medium">
-            {p.hoursDone ? "Done ✓" : formatMinutes(totalToGo)}
-            {!p.hoursDone && (nightToGo > 0 || p.weatherRemaining > 0) && (
-              <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
-                incl. {[nightToGo > 0 && `${formatMinutes(nightToGo)} at night`, p.weatherRemaining > 0 && `${formatMinutes(p.weatherRemaining)} in bad weather`].filter(Boolean).join(", ")}
-              </span>
+            {/* Total done but night or bad weather short: name what's left instead of "0m" */}
+            {p.hoursDone ? "Done ✓" : totalToGo > 0 ? formatMinutes(totalToGo) : stillToGo.join(", ")}
+            {!p.hoursDone && totalToGo > 0 && stillToGo.length > 0 && (
+              <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">incl. {stillToGo.join(", ")}</span>
             )}
           </dd>
         </div>
@@ -111,7 +114,7 @@ export function ProgressCard() {
           <dt className={muted}>Earliest test date</dt>
           <dd className="font-medium">
             {holdPassed ? "Reached ✓" : formatDate(p.holdDate)}
-            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Hold of {holdText(rules)} · {daysToHold} days</span>}
+            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Hold of {holdText(rules)} · {daysToHold} {daysToHold === 1 ? "day" : "days"}</span>}
           </dd>
         </div>
         {p.expiryDate && (
@@ -129,10 +132,11 @@ export function ProgressCard() {
               ? formatDate(readyDate)
               : p.driveCount < 2
               ? "Log a couple of drives to see a date"
-              : p.nightRemaining > 0 && p.nightMinutes === 0
-              ? "Needs some night driving to project"
-              : "Needs some bad-weather driving to project"}
+              : "Needs some night driving to project"}
           </dd>
+          {!p.eligible && readyDate && p.weatherRemaining > 0 && (
+            <p className={`${muted} mt-1`}>Plus {formatMinutes(p.weatherRemaining)} in bad weather, whenever the weather allows.</p>
+          )}
           {behindExpiry && (
             <p className="mt-1 text-amber-700 dark:text-amber-400">
               That&apos;s after the {rules.permitName} expires ({formatDate(p.expiryDate!)}) — pick up the pace.

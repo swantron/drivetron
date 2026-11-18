@@ -130,11 +130,8 @@ export function computeProgress(
     const nightShare = totalMinutes > 0 ? nightMinutes / totalMinutes : 0;
     const weeksForTotal = totalRemaining / minutesPerWeek;
     const weeksForNight = nightRemaining === 0 ? 0 : nightShare > 0 ? nightRemaining / (minutesPerWeek * nightShare) : Infinity;
-    // Bad-weather hours the same way, from the share of driving in bad weather so far.
-    const weatherShare = totalMinutes > 0 ? weatherMinutes / totalMinutes : 0;
-    const weeksForWeather =
-      weatherRemaining === 0 ? 0 : weatherShare > 0 ? weatherRemaining / (minutesPerWeek * weatherShare) : Infinity;
-    const weeksNeeded = Math.max(weeksForTotal, weeksForNight, weeksForWeather);
+    // Bad-weather hours aren't projected: they wait on the weather, not the pace. The card notes them.
+    const weeksNeeded = Math.max(weeksForTotal, weeksForNight);
     if (Number.isFinite(weeksNeeded)) {
       projectedHoursDate = new Date(now.getTime() + weeksNeeded * 7 * 86400000);
     }
