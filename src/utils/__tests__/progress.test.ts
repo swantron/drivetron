@@ -117,12 +117,12 @@ describe("daily limit (Texas: 2 hours a day)", () => {
     const p = computeProgress(drives, "2026-10-01", new Date(2026, 10, 4), tx);
     expect(p.totalMinutes).toBe(120 + 120 + 45);
     expect(p.nightMinutes).toBe(60 + 120);
-    expect(p.overDailyLimitMinutes).toBe(60 + 30);
+    expect(p.overLimitMinutes).toBe(60 + 30);
   });
   it("has no effect for states without one", () => {
     const drives = [drive(new Date(2026, 10, 1, 9), 200, 100)];
     const p = computeProgress(drives, "2026-10-01", new Date(2026, 10, 4), getState("MT"));
-    expect([p.totalMinutes, p.nightMinutes, p.overDailyLimitMinutes]).toEqual([300, 100, 0]);
+    expect([p.totalMinutes, p.nightMinutes, p.overLimitMinutes]).toEqual([300, 100, 0]);
   });
 });
 
@@ -144,5 +144,21 @@ describe("bad-weather hours (Pennsylvania: 5)", () => {
   it("is zero for states that don't require it", () => {
     const p = computeProgress([drive(new Date(2026, 10, 2, 18), 30, 0, { conditions: ["Rain"] })], "2026-01-01", new Date(2026, 10, 4), getState("MT"));
     expect([p.weatherMinutes, p.weatherRemaining]).toEqual([0, 0]);
+  });
+});
+
+describe("weekly limit (North Carolina: 10 hours a week)", () => {
+  const nc = getState("NC");
+  it("counts at most 10 hours per Sunday-to-Saturday week, night first", () => {
+    const drives = [
+      // Week of Sun Nov 1, 2026: 12h logged (2h night) → 10h counts, 2h night
+      ...[2, 3, 4, 5, 6, 7].map((day) => drive(new Date(2026, 10, day, 10), day === 7 ? 0 : 120, day === 7 ? 120 : 0)),
+      // Sun Nov 8 starts a new week: 3h counts in full
+      drive(new Date(2026, 10, 8, 10), 180, 0),
+    ];
+    const p = computeProgress(drives, "2026-06-01", new Date(2026, 10, 10), nc);
+    expect(p.totalMinutes).toBe(600 + 180);
+    expect(p.nightMinutes).toBe(120);
+    expect(p.overLimitMinutes).toBe(120);
   });
 });

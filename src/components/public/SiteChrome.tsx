@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { STATES } from "@/states";
 import { CONTACT_EMAIL, OPERATOR } from "@/lib/site";
+import { HeaderAction } from "./HeaderAction";
 
 export const START_HREF = "/login?next=%2Fsetup";
 /** For a second parent or the teen: one family shares one log, so they join rather than start one. */
@@ -14,9 +15,7 @@ export function SiteHeader() {
         <img src="/icons/icon.svg" alt="" className="h-8 w-8" />
         Drivetron
       </Link>
-      <Link href="/login" className="rounded-lg px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-        Sign in
-      </Link>
+      <HeaderAction />
     </header>
   );
 }

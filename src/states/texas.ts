@@ -28,7 +28,7 @@ export const texas: StateRules = {
     "Texas's Behind-the-Wheel Instruction Guide defines nighttime as from half an hour after sunset to half an hour before sunrise. Drivetron uses those times at the drive's location.",
   nightOffsetMinutes: 30,
   // DES150N: "Only two (2) hours of behind-the-wheel instruction per day will count towards the 30 hours"
-  dailyCountMinutes: 2 * 60,
+  countLimit: { minutes: 2 * 60, per: "day" },
   practiceNote:
     "Texas's 30-hour log works through lessons from starting and stopping, backing and parking up to city and expressway driving.",
   certification: {

@@ -60,6 +60,18 @@ export const QA_FAMILIES: QaFamily[] = [
     people: trio("pa", "Pennsylvania", "Paula", "Pete", "Piper"),
   },
   {
+    id: "qa-nc",
+    state: "NC",
+    checks: "A 12-hour week counts 10 (the weekly limit): the Home note, the Drives summary, and the printed log's \"counts toward\" row.",
+    people: trio("nc", "Carolina", "Nora", "Nate", "Nia"),
+  },
+  {
+    id: "qa-ga",
+    state: "GA",
+    checks: "The \"12 months + 1 day\" hold ends in 3 days, with 6 of 6 night hours done and a two-year permit.",
+    people: trio("ga", "Georgia", "Gina", "Greg", "Gabe"),
+  },
+  {
     id: "qa-pa-done",
     state: "PA",
     checks: "Everything done and the hold passed: the eligible banner and the DL-180C link.",

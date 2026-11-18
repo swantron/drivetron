@@ -15,8 +15,14 @@ import { california } from "../src/states/california.ts";
 import { ohio } from "../src/states/ohio.ts";
 import { texas } from "../src/states/texas.ts";
 import { pennsylvania } from "../src/states/pennsylvania.ts";
+import { florida } from "../src/states/florida.ts";
+import { georgia } from "../src/states/georgia.ts";
+import { northCarolina } from "../src/states/northCarolina.ts";
+import { illinois } from "../src/states/illinois.ts";
 
-const RULES = Object.fromEntries([montana, california, ohio, texas, pennsylvania].map((r) => [r.code, r]));
+const RULES = Object.fromEntries(
+  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois].map((r) => [r.code, r])
+);
 const PROJECT = "demo-drivetron";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1";
 const DB = `http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/documents`;
@@ -127,6 +133,22 @@ const PLANS = {
     d(40, 13, 60, { tags: ["Rain", "City traffic"] });
     d(12, 13, 60, { tags: ["Snow", "Residential"] });
     return { permitDate: ymd(daysAgo(200)) };
+  },
+  "qa-nc": (d) => {
+    for (let i = 0; i < 10; i++) d(150 - i * 10, 10, 90, { tags: ["Clear", "Residential"] });
+    // Six 2-hour drives in one Sunday-to-Saturday week, three weeks back: 12h, 10 count
+    const sunday = daysAgo(21 + daysAgo(0).getDay());
+    const back = Math.round((today - sunday) / DAY);
+    for (let i = 0; i < 6; i++) d(back - i, i === 5 ? 21.5 : 9, 120, { tags: ["Clear", "Highway"], notes: i === 0 ? "Start of a 12-hour week: 10 count." : "" });
+    return { permitDate: ymd(daysAgo(200)) };
+  },
+  "qa-ga": (d) => {
+    for (let i = 0; i < 20; i++) d(350 - i * 15, 11, 75, { tags: ["Clear", "City traffic"] });
+    for (let i = 0; i < 4; i++) d(300 - i * 60, 21.5, 90, { tags: ["Clear", "Highway"] });
+    // 12 months + 1 day from this date is 3 days out
+    const permit = monthsAgo(12);
+    permit.setDate(permit.getDate() + 2);
+    return { permitDate: ymd(permit) };
   },
   "qa-pa-done": (d) => {
     for (let i = 0; i < 38; i++) d(210 - i * 5, 10, 90, { tags: ["Clear", "Residential"] });

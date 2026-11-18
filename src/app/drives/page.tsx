@@ -45,7 +45,7 @@ function Drives() {
       <section className={card}>
         <p className={muted}>
           {p.driveCount} {p.driveCount === 1 ? "drive" : "drives"} · {formatMinutes(p.totalMinutes)} total · {formatMinutes(p.nightMinutes)} night
-          {p.overDailyLimitMinutes > 0 && <> · {formatMinutes(p.overDailyLimitMinutes)} over the daily limit</>}
+          {p.overLimitMinutes > 0 && <> · {formatMinutes(p.overLimitMinutes)} over the {rules.countLimit!.per === "day" ? "daily" : "weekly"} limit</>}
         </p>
         {!drivesLoaded ? (
           <p className="py-6 text-center text-gray-500 dark:text-gray-400">Loading…</p>

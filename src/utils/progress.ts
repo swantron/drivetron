@@ -27,16 +27,17 @@ export function addMonths(date: Date, months: number): Date {
 }
 
 /**
- * Minutes that count toward the state's hours. With a daily limit (Texas: 2 hours a day), each
- * calendar day, by the drive's local start date, counts up to the limit; night counts first within
- * it, since the parent fills in the state's log and would put the night time on it.
+ * Minutes that count toward the state's hours. With a limit (Texas: 2 hours a day; North Carolina:
+ * 10 hours a week), each calendar day or Sunday-to-Saturday week, by the drive's local start date,
+ * counts up to it; night counts first within it, since the parent fills in the state's log and
+ * would put the night time on it.
  */
 export function countedMinutes(
   done: Drive[],
-  dailyLimit?: number
+  limit?: StateRules["countLimit"]
 ): { totalMinutes: number; nightMinutes: number; weatherMinutes: number } {
   const len = (d: Drive) => d.dayMinutes + d.nightMinutes;
-  if (!dailyLimit) {
+  if (!limit) {
     return {
       totalMinutes: done.reduce((s, d) => s + len(d), 0),
       nightMinutes: done.reduce((s, d) => s + d.nightMinutes, 0),
@@ -46,6 +47,8 @@ export function countedMinutes(
   const days = new Map<string, { total: number; night: number; weather: number }>();
   for (const d of done) {
     const s = new Date(d.startedAt);
+    // A week is keyed by its Sunday
+    if (limit.per === "week") s.setDate(s.getDate() - s.getDay());
     const key = `${s.getFullYear()}-${s.getMonth()}-${s.getDate()}`;
     const day = days.get(key) ?? { total: 0, night: 0, weather: 0 };
     day.total += len(d);
@@ -57,19 +60,19 @@ export function countedMinutes(
   let nightMinutes = 0;
   let weatherMinutes = 0;
   for (const day of days.values()) {
-    totalMinutes += Math.min(day.total, dailyLimit);
-    nightMinutes += Math.min(day.night, dailyLimit);
-    weatherMinutes += Math.min(day.weather, dailyLimit);
+    totalMinutes += Math.min(day.total, limit.minutes);
+    nightMinutes += Math.min(day.night, limit.minutes);
+    weatherMinutes += Math.min(day.weather, limit.minutes);
   }
   return { totalMinutes, nightMinutes, weatherMinutes };
 }
 
 export interface Progress {
-  /** Minutes that count toward the state's hours (after any daily limit) */
+  /** Minutes that count toward the state's hours (after any daily or weekly limit) */
   totalMinutes: number;
   nightMinutes: number;
-  /** Driving logged beyond the state's daily limit, which doesn't count (0 without a limit) */
-  overDailyLimitMinutes: number;
+  /** Driving logged beyond the state's daily or weekly limit, which doesn't count (0 without one) */
+  overLimitMinutes: number;
   totalRemaining: number;
   nightRemaining: number;
   /** Minutes on drives tagged with bad weather, for states that require some (else 0) */
@@ -102,7 +105,7 @@ export function computeProgress(
   const REQUIRED_NIGHT_MINUTES = rules.nightMinutes;
   const done = drives.filter((d) => d.endedAt !== null);
   const loggedMinutes = done.reduce((s, d) => s + d.dayMinutes + d.nightMinutes, 0);
-  const counted = countedMinutes(done, rules.dailyCountMinutes);
+  const counted = countedMinutes(done, rules.countLimit);
   const { totalMinutes, nightMinutes } = counted;
   const weatherMinutes = rules.weatherMinutes ? counted.weatherMinutes : 0;
   const totalRemaining = Math.max(0, REQUIRED_TOTAL_MINUTES - totalMinutes);
@@ -147,7 +150,7 @@ export function computeProgress(
   return {
     totalMinutes,
     nightMinutes,
-    overDailyLimitMinutes: loggedMinutes - totalMinutes,
+    overLimitMinutes: loggedMinutes - totalMinutes,
     totalRemaining,
     nightRemaining,
     weatherMinutes,

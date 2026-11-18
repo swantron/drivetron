@@ -1,6 +1,10 @@
 import { california } from "./california";
 import { montana } from "./montana";
 import { ohio } from "./ohio";
+import { florida } from "./florida";
+import { georgia } from "./georgia";
+import { illinois } from "./illinois";
+import { northCarolina } from "./northCarolina";
 import { pennsylvania } from "./pennsylvania";
 import { texas } from "./texas";
 import type { StateRules } from "./types";
@@ -8,7 +12,7 @@ import type { StateRules } from "./types";
 export type { StateRules, Link } from "./types";
 
 /** Every supported state. Adding one here adds its public page and makes it selectable. */
-export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania];
+export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois];
 
 /** Logs created before multi-state support have no `state`; they're all Montana. */
 export const DEFAULT_STATE = "MT";
@@ -41,6 +45,14 @@ export function sourceLinks(r: StateRules): { label: string; url: string }[] {
   return [...r.sources, r.certification, ...(r.practiceLog ? [r.practiceLog] : [])].filter(
     (l, i, all) => all.findIndex((x) => x.url === l.url) === i
   );
+}
+
+/** "2h a day", for the state's limit on practice that counts; null when it has none. */
+export function countLimitText(r: StateRules): string | null {
+  if (!r.countLimit) return null;
+  const { minutes, per } = r.countLimit;
+  const h = minutes / 60;
+  return `${Number.isInteger(h) ? `${h}h` : `${minutes}m`} a ${per}`;
 }
 
 export const upperFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

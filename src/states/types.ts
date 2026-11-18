@@ -31,8 +31,11 @@ export interface StateRules {
   nightDefinition: string | null;
   /** Night starts this many minutes after sunset and ends this many before sunrise (0 = sunset to sunrise) */
   nightOffsetMinutes: number;
-  /** Most practice that counts toward the hours on any one day (Texas: 2 hours); unset = no limit */
-  dailyCountMinutes?: number;
+  /**
+   * Most practice that counts toward the hours per calendar day (Texas: 2 hours a day) or per
+   * Sunday-to-Saturday week (North Carolina: 10 hours a week); unset = no limit
+   */
+  countLimit?: { minutes: number; per: "day" | "week" };
   /** Bad-weather minutes required, counted from drives tagged with bad weather (Pennsylvania: 5 hours); unset = none */
   weatherMinutes?: number;
   /** What the state asks to practice, shown above the conditions checklist */

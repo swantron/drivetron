@@ -1,4 +1,4 @@
-import { DEFAULT_STATE, STATES, getState, getStateBySlug, holdText, nightRangeText } from "@/states";
+import { DEFAULT_STATE, STATES, countLimitText, getState, getStateBySlug, holdText, nightRangeText } from "@/states";
 import { computeProgress } from "@/utils/progress";
 
 describe("state rules", () => {
@@ -58,7 +58,7 @@ describe("state rules", () => {
   it("finds Texas: 30 hours, a learner license good until 18, and a 2-hour daily limit", () => {
     const tx = getStateBySlug("texas")!;
     expect(getState("TX")).toBe(tx);
-    expect([tx.totalMinutes, tx.nightMinutes, tx.dailyCountMinutes]).toEqual([30 * 60, 10 * 60, 120]);
+    expect([tx.totalMinutes, tx.nightMinutes, tx.countLimit]).toEqual([30 * 60, 10 * 60, { minutes: 120, per: "day" }]);
     expect(nightRangeText(tx)).toBe("30 minutes after sunset to 30 minutes before sunrise");
     const p = computeProgress([], "2026-11-18", new Date(2026, 10, 18), tx);
     expect(p.expiryDate).toBeNull();
@@ -75,6 +75,30 @@ describe("state rules", () => {
     expect(p.expiryDate).toEqual(new Date(2027, 10, 18));
     expect(p.holdDate).toEqual(new Date(2027, 4, 18));
     expect(p.weatherRemaining).toBe(5 * 60);
+  });
+
+  it("finds the 2026-11-18 batch: Florida, Georgia, North Carolina, Illinois", () => {
+    const fl = getStateBySlug("florida")!;
+    const ga = getStateBySlug("georgia")!;
+    const nc = getStateBySlug("north-carolina")!;
+    const il = getStateBySlug("illinois")!;
+    expect([fl, ga, nc, il].map((s) => s.code)).toEqual(["FL", "GA", "NC", "IL"]);
+    expect([fl, ga, nc, il].map((s) => [s.totalMinutes / 60, s.nightMinutes / 60])).toEqual([[50, 10], [40, 6], [60, 10], [50, 10]]);
+    const now = new Date(2026, 10, 18);
+    // Florida: 12 months, no permit term of its own
+    expect(computeProgress([], "2026-11-18", now, fl).holdDate).toEqual(new Date(2027, 10, 18));
+    expect(computeProgress([], "2026-11-18", now, fl).expiryDate).toBeNull();
+    // Georgia: one year and one day; the permit is good for two years
+    expect(holdText(ga)).toBe("12 months + 1 day");
+    expect(computeProgress([], "2026-11-18", now, ga).holdDate).toEqual(new Date(2027, 10, 19));
+    expect(computeProgress([], "2026-11-18", now, ga).expiryDate).toEqual(new Date(2028, 10, 18));
+    // North Carolina: nine months, 10 hours a week
+    expect(computeProgress([], "2026-11-18", now, nc).holdDate).toEqual(new Date(2027, 7, 18));
+    expect(countLimitText(nc)).toBe("10h a week");
+    expect(countLimitText(getState("TX"))).toBe("2h a day");
+    expect(countLimitText(getState("MT"))).toBeNull();
+    // Illinois: nine months, permit valid 24
+    expect(computeProgress([], "2026-11-18", now, il).expiryDate).toEqual(new Date(2028, 10, 18));
   });
 
   it("drives progress from the state's own figures", () => {

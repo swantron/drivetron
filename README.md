@@ -1,8 +1,8 @@
 # Drivetron
 
 Supervised driving log for teen drivers and their parents, served at **[drivetron.app](https://drivetron.app)**.
-Supports Montana, California, Ohio, Texas and Pennsylvania; each state's rules are data in `src/states/`, sourced from the
-state's own pages and statutes, with a public page per state (`/montana`, `/california`, `/ohio`, `/texas`, `/pennsylvania`).
+Supports Montana, California, Ohio, Texas, Pennsylvania, Florida, Georgia, North Carolina and Illinois; each state's rules are data in `src/states/`, sourced from the
+state's own pages and statutes, with a public page per state (`/montana`, `/california`, `/ohio`, `/texas`, `/pennsylvania`, `/florida`, `/georgia`, `/north-carolina`, `/illinois`).
 
 It started with Montana's GDL learner stage: hold the learner license for 6 months and log 50 supervised
 hours, 10 of them at night (MCA 61-5-132), certified on MVD form 21-1600. The states point families at
@@ -57,7 +57,7 @@ npm run seed:qa   # QA families, one or more per state (src/lib/qa.ts)
 ```
 
 `/login` then lists the QA people as one-tap sign-ins, with what each family is set up to show (the
-Texas daily limit, Pennsylvania's bad-weather hours, a Montana hold ending tomorrow, drives waiting
+Texas daily and North Carolina weekly limits, Pennsylvania's bad-weather hours, a Montana hold ending tomorrow, drives waiting
 for a parent's OK, and so on). The list only exists in emulator builds. Rerun `seed:qa` after restarting
 the emulators or running `test:rules`, which clear them. Any other fake user: in the browser console,
 `await __devSignIn("parent@test.dev", "Pat Parent")`.

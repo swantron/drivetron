@@ -3,7 +3,7 @@
 import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes } from "@/utils/progress";
 import { card, muted } from "@/components/ui/styles";
-import { holdText } from "@/states";
+import { countLimitText, holdText } from "@/states";
 import { FreeHoursNotice } from "@/components/UnlockCard";
 import { BAD_WEATHER } from "@/utils/practice";
 
@@ -87,10 +87,10 @@ export function ProgressCard() {
         </div>
       ) : null}
 
-      {p.overDailyLimitMinutes > 0 && (
+      {p.overLimitMinutes > 0 && (
         <p className={muted}>
-          {rules.name} counts up to {formatMinutes(rules.dailyCountMinutes!)} of practice a day, so{" "}
-          {formatMinutes(p.overDailyLimitMinutes)} of driving isn&apos;t in these totals.
+          {rules.name} counts practice up to {countLimitText(rules)}, so {formatMinutes(p.overLimitMinutes)} of driving
+          isn&apos;t in these totals.
         </p>
       )}
 
