@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useInstall } from "@/hooks/useInstall";
 import { useToast } from "@/components/ui/Toast";
@@ -14,6 +14,19 @@ import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "dev";
 const COMMIT = process.env.NEXT_PUBLIC_BUILD_COMMIT ?? "dev";
 const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME;
+const noop = () => () => {};
+
+/**
+ * The release time in this device's time zone. Rendered only in the browser: the static export
+ * formats on the build server (UTC), and a different string there breaks hydration (React #418).
+ */
+function useReleased(): string | null {
+  return useSyncExternalStore(
+    noop,
+    () => (BUILD_TIME ? new Date(BUILD_TIME).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : null),
+    () => null
+  );
+}
 
 
 /** Public: linked from the sign-in screen, so the disclaimer is readable before anyone signs in. */
@@ -46,7 +59,7 @@ export default function AboutPage() {
 function VersionCard() {
   const { showToast } = useToast();
   const [checking, setChecking] = useState(false);
-  const built = BUILD_TIME ? new Date(BUILD_TIME) : null;
+  const released = useReleased();
 
   // The service worker already updates on each fresh launch; this lets someone pull a new
   // version into an app that's been sitting open in the background.
@@ -93,10 +106,10 @@ function VersionCard() {
         <dd className="font-medium">{VERSION}</dd>
         <dt className={muted}>Build</dt>
         <dd className="font-mono">{COMMIT}</dd>
-        {built && (
+        {released && (
           <>
             <dt className={muted}>Released</dt>
-            <dd>{built.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</dd>
+            <dd>{released}</dd>
           </>
         )}
       </dl>
