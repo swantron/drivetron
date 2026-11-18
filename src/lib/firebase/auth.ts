@@ -1,12 +1,15 @@
 import {
+  deleteUser,
   GoogleAuthProvider,
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
   signInWithEmailLink,
   signInWithPopup,
   signOut as firebaseSignOut,
+  type User,
 } from "firebase/auth";
-import { getFirebaseAuth } from "./config";
+import { clearIndexedDbPersistence, terminate } from "firebase/firestore";
+import { getFirebaseAuth, getFirebaseDb } from "./config";
 
 export async function signInWithGoogle() {
   return signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider());
@@ -53,4 +56,34 @@ export async function finishEmailSignIn(email: string, href: string) {
     // nothing to clear
   }
   return cred;
+}
+
+/**
+ * Firebase only deletes an account that signed in recently (about five minutes), so the deletion page
+ * asks for a fresh sign-in first instead of failing halfway through.
+ */
+const RECENT_MS = 4 * 60 * 1000;
+export function signedInRecently(user: User, now: number): boolean {
+  const at = Date.parse(user.metadata.lastSignInTime ?? "");
+  return Number.isFinite(at) && now - at < RECENT_MS;
+}
+
+/** Deletes the signed-in Firebase Auth account, then this device's cached copy of the log and settings. */
+export async function deleteMyAccount() {
+  const user = getFirebaseAuth().currentUser;
+  if (!user) throw new Error("Not signed in");
+  await deleteUser(user);
+  try {
+    const db = getFirebaseDb();
+    await terminate(db);
+    await clearIndexedDbPersistence(db);
+  } catch {
+    // Another tab still has the cache open; it holds nothing the deleted account can read
+  }
+  try {
+    for (const key of Object.keys(localStorage)) if (key.startsWith("drivetron.")) localStorage.removeItem(key);
+    sessionStorage.clear();
+  } catch {
+    // Storage blocked: nothing to clear
+  }
 }

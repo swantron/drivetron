@@ -29,7 +29,7 @@ import { driveLearnerId, firstName, learnersOf, newId } from "@/utils/learners";
 import { signOut } from "@/lib/firebase/auth";
 import { initialsOf } from "@/utils/progress";
 import type { Family, Learner, Member } from "@/types";
-import { card, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
+import { card, dangerBtn, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 export default function FamilyPage() {
   return (
@@ -64,6 +64,9 @@ function FamilySettings() {
       </button>
       <Link href="/about" className={`${secondaryBtn} block text-center`}>
         About &amp; install
+      </Link>
+      <Link href="/delete-account" className="block text-center text-sm text-red-600 underline">
+        Delete my account
       </Link>
       <p className={`${muted} text-center`}>
         Drivetron {process.env.NEXT_PUBLIC_APP_VERSION} · Not affiliated with {rules.notAffiliatedWith}.
@@ -155,7 +158,7 @@ function LeaveFamily({ familyId, uid }: { familyId: string; uid: string }) {
   const [confirm, setConfirm] = useState(false);
   return (
     <button
-      className={`${secondaryBtn} ${confirm ? "border-red-600 text-red-600" : ""}`}
+      className={confirm ? dangerBtn : secondaryBtn}
       onClick={() =>
         confirm
           ? leaveFamily(familyId, uid).catch((e) => showToast(writeErrorMessage(e, "Couldn't leave. Are you online?"), "error"))
@@ -539,7 +542,7 @@ function OwnerControls({ family, myUid }: { family: Family; myUid: string }) {
         <label className={label} htmlFor="confirmDelete">Type DELETE to confirm</label>
         <input id="confirmDelete" className={input} autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} />
         <button
-          className={`${secondaryBtn} border-red-600 text-red-600`}
+          className={dangerBtn}
           disabled={typed.trim().toUpperCase() !== "DELETE" || deleting}
           onClick={del}
         >

@@ -1,0 +1,11 @@
+# Build output and local SDK paths
+.gradle/
+build/
+app/build/
+local.properties
+*.apk
+*.aab
+*.idsig
+# The upload signing key never goes in git: keep it (and its passwords) in a password manager
+*.keystore
+*.jks

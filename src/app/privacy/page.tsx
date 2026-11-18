@@ -108,9 +108,11 @@ export default function PrivacyPage() {
       <h2>Keeping and deleting data</h2>
       <p>
         Your log is kept until it&apos;s deleted. The family owner can delete the whole log from the Family tab, which erases
-        its drives, members, and invite codes for everyone right away. To delete your sign-in account too, or anything else,
-        email {mail} and we&apos;ll do it within 30 days. Payment records are kept as long as tax and accounting rules
-        require, even after a log is deleted.
+        its drives, members, and invite codes for everyone right away. Anyone can delete their own account, right away,
+        at <Link href="/delete-account">drivetron.app/delete-account</Link> or from the Family tab; drives they supervised
+        stay in the family&apos;s log as part of the teen&apos;s record. If you can&apos;t sign in, or want anything else
+        deleted, email {mail} and we&apos;ll do it within 30 days. Payment records are kept as long as tax and accounting
+        rules require, even after a log is deleted.
       </p>
       <p>
         You can see everything in your log in the app, and print it or save it as a PDF. For a copy of anything else we hold

@@ -9,6 +9,7 @@ import { card, muted, primaryBtn } from "@/components/ui/styles";
 import { firstName } from "@/utils/learners";
 import { formatMinutes } from "@/utils/progress";
 import { nowMs } from "@/utils/time";
+import { usePlayApp } from "@/lib/platform";
 
 /** The link to Stripe for the selected learner. Remembers the learner so the return page can follow the unlock. */
 function UnlockLink({ className, children }: { className: string; children: React.ReactNode }) {
@@ -31,8 +32,22 @@ function UnlockLink({ className, children }: { className: string; children: Reac
  */
 export function UnlockCard() {
   const { family, learner, isSupervisor } = useFamily();
+  const playApp = usePlayApp();
   if (!family || !learner) return null;
   const name = firstName(learner.name);
+
+  // Google Play app: no price, no checkout, no pointer to one (Play payments policy; see lib/platform.ts)
+  if (playApp) {
+    return (
+      <section className={`${card} space-y-3`} data-testid="unlock-card">
+        <h2 className="text-lg font-bold">{name} has used the free hours</h2>
+        <p className="text-gray-700 dark:text-gray-300">
+          Logging more of {name}&apos;s drives needs an unlock, which isn&apos;t available in the Android app.
+        </p>
+        <p className={muted}>Everything logged so far stays here, and the printable log still works.</p>
+      </section>
+    );
+  }
 
   return (
     <section className={`${card} space-y-3`} data-testid="unlock-card">
@@ -66,8 +81,16 @@ export function UnlockCard() {
 /** A heads-up in the last stretch of the free hours, so the paywall isn't a surprise. */
 export function FreeHoursNotice() {
   const { learner, freeLeft, isSupervisor } = useFamily();
+  const playApp = usePlayApp();
   if (!learner || freeLeft === null || freeLeft === 0 || freeLeft > FREE_WARN_MINUTES) return null;
   const name = firstName(learner.name);
+  if (playApp) {
+    return (
+      <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100" data-testid="free-hours-notice">
+        <strong>{formatMinutes(freeLeft)}</strong> of free logging left for {name}.
+      </div>
+    );
+  }
   return (
     <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100" data-testid="free-hours-notice">
       <p>

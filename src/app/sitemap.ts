@@ -11,5 +11,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...STATES.map((s) => ({ url: `${base}/${s.slug}`, lastModified: s.verified, changeFrequency: "monthly" as const, priority: 0.8 })),
     { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.2 },
     { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${base}/delete-account`, changeFrequency: "yearly", priority: 0.1 },
   ];
 }

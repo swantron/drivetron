@@ -18,7 +18,7 @@ import { CONDITIONS, SKILLS } from "@/utils/practice";
 import type { Drive, Family } from "@/types";
 import { nowMs } from "@/utils/time";
 import { writeErrorMessage } from "@/utils/errors";
-import { card, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
+import { card, dangerBtn, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
 const MAX_MINUTES = 16 * 60;
 const NEW_VEHICLE = "__new";
@@ -347,7 +347,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
         <button
           type="button"
           onClick={() => (confirmDelete ? del() : setConfirmDelete(true))}
-          className={`${secondaryBtn} ${confirmDelete ? "border-red-600 text-red-600" : ""}`}
+          className={confirmDelete ? dangerBtn : secondaryBtn}
         >
           {confirmDelete ? "Tap again to delete" : "Delete drive"}
         </button>

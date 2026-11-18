@@ -7,6 +7,7 @@ import { useInstall } from "@/hooks/useInstall";
 import { useToast } from "@/components/ui/Toast";
 import { STATES, sourceLinks } from "@/states";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { usePlayApp } from "@/lib/platform";
 import { FREE_HOURS_TEXT, PAYWALL_ON, PRICE_LABEL } from "@/lib/pricing";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
@@ -18,6 +19,8 @@ const BUILD_TIME = process.env.NEXT_PUBLIC_BUILD_TIME;
 /** Public: linked from the sign-in screen, so the disclaimer is readable before anyone signs in. */
 export default function AboutPage() {
   const { user } = useAuth();
+  // The Google Play app doesn't show the price (Play payments policy; see lib/platform.ts)
+  const playApp = usePlayApp();
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 pb-12 pt-[max(1rem,env(safe-area-inset-top))]">
       <Link href={user ? "/family" : "/"} className="inline-block py-1 text-sm text-emerald-700 dark:text-emerald-400">
@@ -33,7 +36,7 @@ export default function AboutPage() {
       </header>
       <VersionCard />
       <InstallCard />
-      {PAYWALL_ON && <Pricing />}
+      {PAYWALL_ON && !playApp && <Pricing />}
       <Disclaimer />
       <DataCard />
     </main>
@@ -238,6 +241,13 @@ function DataCard() {
         and{" "}
         <Link className="text-emerald-700 underline dark:text-emerald-400" href="/terms">
           terms of use
+        </Link>
+        .
+      </p>
+      <p>
+        Delete your account any time at{" "}
+        <Link className="text-emerald-700 underline dark:text-emerald-400" href="/delete-account">
+          drivetron.app/delete-account
         </Link>
         .
       </p>
