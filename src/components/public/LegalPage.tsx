@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { SiteFooter, SiteHeader } from "@/components/public/SiteChrome";
 
 /** Date shown on /privacy and /terms. Bump it whenever either page changes in substance. */
-export const LEGAL_UPDATED = "November 16, 2026";
+export const LEGAL_UPDATED = "November 17, 2026";
 
 /** Shared layout for the privacy policy and terms: plain prose, the public site's header and footer. */
 export function LegalPage({ title, children }: { title: string; children: ReactNode }) {

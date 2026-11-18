@@ -152,7 +152,7 @@ export default function LandingPage() {
           <section className="mt-6 rounded-2xl bg-emerald-50 p-6 dark:bg-emerald-950">
             <h2 className="text-xl font-bold">Free to start</h2>
             <p className="mt-1 text-gray-700 dark:text-gray-300">
-              Set up your family&apos;s log in a couple of minutes with a Google account.
+              Set up your family&apos;s log in a couple of minutes with a Google account or just an email address.
               {PAYWALL_ON && (
                 <>
                   {" "}

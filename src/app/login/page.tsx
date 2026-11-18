@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { LoginButton } from "@/components/auth/LoginButton";
+import { EmailLinkSignIn } from "@/components/auth/EmailLinkSignIn";
 import { muted } from "@/components/ui/styles";
 import { safeNext } from "@/utils/safeNext";
 
@@ -39,6 +40,8 @@ function Login() {
         </p>
       </div>
       <LoginButton />
+      {/* The link comes back here with the same `next`, so it lands where Google sign-in would */}
+      <EmailLinkSignIn continueUrl={typeof window === "undefined" ? "" : `${window.location.origin}/login?next=${encodeURIComponent(dest)}`} />
       <p className={`${muted} max-w-xs`}>
         Built around each state&apos;s teen driver rules. Not affiliated with any state government or motor vehicle agency.{" "}
         By signing in you agree to the{" "}

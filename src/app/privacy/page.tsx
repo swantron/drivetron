@@ -32,8 +32,9 @@ export default function PrivacyPage() {
       <h2>What we store</h2>
       <ul>
         <li>
-          <strong>Your Google sign-in:</strong> your name, email address, and a Google account id. Drivetron uses Google
-          sign-in only and never sees your Google password.
+          <strong>Your sign-in:</strong> your email address and an account id. With Google sign-in, also your name from
+          Google; Drivetron never sees your Google password. With email sign-in there&apos;s no password at all: we email you
+          a one-time link.
         </li>
         <li>
           <strong>The family log:</strong> each teen&apos;s name, date of birth, and permit date; the family&apos;s state;
@@ -70,8 +71,9 @@ export default function PrivacyPage() {
       <h2>Services we use</h2>
       <ul>
         <li>
-          <strong>Google Firebase</strong> (Google Cloud) stores the log, runs sign-in, hosts the site, and keeps standard
-          server logs (such as IP addresses) for security and reliability. Data is stored in the United States.
+          <strong>Google Firebase</strong> (Google Cloud) stores the log, runs sign-in (including sending email sign-in
+          links), hosts the site, and keeps standard server logs (such as IP addresses) for security and reliability. Data
+          is stored in the United States.
         </li>
         <li>
           <strong>Google reCAPTCHA</strong> checks that requests come from the real app rather than a bot. Google&apos;s{" "}

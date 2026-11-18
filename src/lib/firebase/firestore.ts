@@ -81,7 +81,7 @@ export interface JoinRequest {
   role: Member["role"];
   code: string;
   createdAt: number;
-  /** The requester's Google account address, verified by the rules. Missing on old requests. */
+  /** The requester's sign-in address (Google or email link), verified by the rules. Missing on old requests. */
   email?: string | null;
 }
 

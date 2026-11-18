@@ -104,8 +104,8 @@ function JoinRequestRow({ familyId, req }: { familyId: string; req: JoinRequest 
     <li className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-950">
       <div>
         <p className="font-medium">{req.name}</p>
-        {/* The name is whatever they typed; the address is their actual Google account */}
-        {req.email ? <p className={`${muted} break-all`}>{req.email}</p> : <p className={muted}>Google account address not shown</p>}
+        {/* The name is whatever they typed; the address is the one they actually signed in with */}
+        {req.email ? <p className={`${muted} break-all`}>{req.email}</p> : <p className={muted}>Sign-in address not shown</p>}
       </div>
       <select className={input} value={role} onChange={(e) => setRole(e.target.value as Member["role"])} aria-label={`Role for ${req.name}`}>
         <option value="supervisor">Supervising adult — can add and edit any drive</option>

@@ -29,7 +29,7 @@ Not affiliated with the State of Montana, MVD, or OPI.
 
 ## Stack
 
-Next.js 15 static export, Tailwind 4, Firebase Auth (Google) and Firestore, Serwist PWA.
+Next.js 15 static export, Tailwind 4, Firebase Auth (Google, or an emailed sign-in link) and Firestore, Serwist PWA.
 Hosted as a second Firebase Hosting site (`drive-mt-services`) in the `mt-services-swantron` project,
 at drivetron.app (www.drivetron.app and the original drive.mt.services redirect to it). Domains are
 registered at Squarespace.
@@ -41,6 +41,7 @@ registered at Squarespace.
 - `npm test`: unit tests (night split, progress math)
 - `npm run test:rules`: Firestore rules tests against the emulator (needs Java)
 - `npm run lint`
+- `npm run stats`: sign-ups, learners reaching the free-hours limit, and paid unlocks (counts only; uses your gcloud login)
 
 Local end-to-end against emulators:
 
@@ -98,7 +99,8 @@ Firestore point-in-time recovery is on (7 days of history, to the minute), plus 
 ## One-time setup (mt-services-swantron project)
 
 1. Firestore: create the database (Native mode).
-2. Authentication: enable the Google provider, and add `drivetron.app` to authorized domains.
+2. Authentication: enable the Google provider and Email/Password with **Email link (passwordless sign-in)**,
+   and add `drivetron.app` to authorized domains.
 3. Register a web app, and put its config in the repo's Actions **variables** (`NEXT_PUBLIC_FIREBASE_*`).
 4. Hosting: `firebase hosting:sites:create drive-mt-services`, then add the custom domains
    `drivetron.app` and `www.drivetron.app` (DNS records at the registrar).

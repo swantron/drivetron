@@ -47,7 +47,7 @@ export default function TermsPage() {
         </li>
         <li>Enter true information. Don&apos;t use Drivetron to record drives that didn&apos;t happen.</li>
         <li>Never use the app while driving. The teen driving shouldn&apos;t touch the phone; start and stop drives while parked.</li>
-        <li>Keep your Google account secure, and share your family&apos;s invite code only with people you mean to let in.</li>
+        <li>Keep your Google account or email account secure, and share your family&apos;s invite code only with people you mean to let in.</li>
         <li>Don&apos;t try to get into other families&apos; logs, overload the service, or get around its limits.</li>
       </ul>
 

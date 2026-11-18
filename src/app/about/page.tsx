@@ -143,7 +143,7 @@ function InstallCard() {
           )}
         </>
       )}
-      <p className={muted}>Everyone in the family installs it on their own phone and signs in with their own Google account.</p>
+      <p className={muted}>Everyone in the family installs it on their own phone and signs in with their own Google account or email address.</p>
     </section>
   );
 }
