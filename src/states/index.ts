@@ -1,11 +1,12 @@
 import { california } from "./california";
 import { montana } from "./montana";
+import { ohio } from "./ohio";
 import type { StateRules } from "./types";
 
 export type { StateRules, Link } from "./types";
 
 /** Every supported state. Adding one here adds its public page and makes it selectable. */
-export const STATES: StateRules[] = [montana, california];
+export const STATES: StateRules[] = [montana, california, ohio];
 
 /** Logs created before multi-state support have no `state`; they're all Montana. */
 export const DEFAULT_STATE = "MT";
@@ -28,6 +29,16 @@ export function holdText(r: StateRules): string {
 export function nightRangeText(r: StateRules): string {
   const m = r.nightOffsetMinutes;
   return m ? `${m} minutes after sunset to ${m} minutes before sunrise` : "sunset to sunrise";
+}
+
+/**
+ * Every official link for a state, for "sources" lists: the sources first, so a link they share with
+ * the certification form or practice log keeps the source's descriptive label, then no duplicates.
+ */
+export function sourceLinks(r: StateRules): { label: string; url: string }[] {
+  return [...r.sources, r.certification, ...(r.practiceLog ? [r.practiceLog] : [])].filter(
+    (l, i, all) => all.findIndex((x) => x.url === l.url) === i
+  );
 }
 
 export const upperFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

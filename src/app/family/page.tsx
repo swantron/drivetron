@@ -63,7 +63,7 @@ function FamilySettings() {
         Sign out
       </button>
       <Link href="/about" className={`${secondaryBtn} block text-center`}>
-        About, install &amp; privacy
+        About &amp; install
       </Link>
       <p className={`${muted} text-center`}>
         Drivetron {process.env.NEXT_PUBLIC_APP_VERSION} · Not affiliated with {rules.notAffiliatedWith}.

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useInstall } from "@/hooks/useInstall";
 import { useToast } from "@/components/ui/Toast";
-import { STATES } from "@/states";
+import { STATES, sourceLinks } from "@/states";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { FREE_HOURS_TEXT, PAYWALL_ON, PRICE_LABEL } from "@/lib/pricing";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
@@ -200,7 +200,7 @@ function Disclaimer() {
             {st.name} sources <span className={muted}>(checked {st.verified})</span>
           </p>
           <ul className="space-y-1">
-            {[...st.sources, st.certification].map((l) => (
+            {sourceLinks(st).map((l) => (
               <li key={l.url}>
                 <a className="text-emerald-700 underline dark:text-emerald-400" href={l.url} target="_blank" rel="noreferrer">
                   {l.label}

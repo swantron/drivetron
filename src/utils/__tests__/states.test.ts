@@ -44,6 +44,17 @@ describe("state rules", () => {
     expect([p.holdDate.getFullYear(), p.holdDate.getMonth(), p.holdDate.getDate()]).toEqual([2027, 1, 28]); // Feb 28, 2027
   });
 
+  it("finds Ohio, with a one-year permit and nighttime from the affidavit", () => {
+    const oh = getStateBySlug("ohio")!;
+    expect(getState("OH")).toBe(oh);
+    expect([oh.totalMinutes, oh.nightMinutes]).toEqual([50 * 60, 10 * 60]);
+    expect(holdText(oh)).toBe("6 months");
+    expect(nightRangeText(oh)).toBe("30 minutes after sunset to 30 minutes before sunrise");
+    const p = computeProgress([], "2026-11-17", new Date(2026, 10, 17), oh);
+    expect(p.expiryDate).toEqual(new Date(2027, 10, 17));
+    expect(p.holdDate).toEqual(new Date(2027, 4, 17));
+  });
+
   it("drives progress from the state's own figures", () => {
     const strict = { ...getState("MT"), totalMinutes: 60 * 60, nightMinutes: 15 * 60, holdMonths: 9 };
     const p = computeProgress([], "2026-11-01", new Date(2026, 10, 9), strict);

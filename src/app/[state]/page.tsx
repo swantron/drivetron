@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { STATES, getStateBySlug, holdText } from "@/states";
+import { STATES, getStateBySlug, holdText, sourceLinks } from "@/states";
 import { socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
@@ -74,7 +74,11 @@ export default async function StatePage({ params }: Props) {
           <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
             <li>One log shared by both parents and your teen, on iPhone or Android.</li>
             <li>Night minutes counted from sunset and sunrise where you drove{s.nightOffsetMinutes ? `, using ${s.name}\u2019s definition` : ""}.</li>
-            <li>A printable log{s.practiceLog ? ` laid out like ${s.name}'s own practice log` : ""}, ready to sign.</li>
+            <li>
+              {s.practiceLog
+                ? `A printable log laid out like ${s.name}'s own practice log, ready to sign.`
+                : "A printable log of every drive, with day and night minutes split out."}
+            </li>
           </ul>
           {s.logAtTest && <p className="mt-3 text-gray-700 dark:text-gray-300">{s.logAtTest} Drivetron&apos;s log opens on your phone, or prints.</p>}
           <Link
@@ -114,16 +118,13 @@ export default async function StatePage({ params }: Props) {
         <section className="mt-10">
           <h2 className="text-2xl font-bold">Official sources</h2>
           <ul className="mt-2 space-y-1">
-            {/* Sources first, so a link they share with the certification keeps the source's label */}
-            {[...s.sources, s.certification, ...(s.practiceLog ? [s.practiceLog] : [])]
-              .filter((l, i, all) => all.findIndex((x) => x.url === l.url) === i)
-              .map((l) => (
-                <li key={l.url}>
-                  <a href={l.url} className="text-emerald-700 underline dark:text-emerald-400" target="_blank" rel="noreferrer">
-                    {l.label}
-                  </a>
-                </li>
-              ))}
+            {sourceLinks(s).map((l) => (
+              <li key={l.url}>
+                <a href={l.url} className="text-emerald-700 underline dark:text-emerald-400" target="_blank" rel="noreferrer">
+                  {l.label}
+                </a>
+              </li>
+            ))}
           </ul>
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
             Checked against these sources on {s.verified}. Requirements can change, so confirm with the state before your teen
