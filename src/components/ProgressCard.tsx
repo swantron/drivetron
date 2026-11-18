@@ -5,6 +5,7 @@ import { computeProgress, formatDate, formatMinutes } from "@/utils/progress";
 import { card, muted } from "@/components/ui/styles";
 import { holdText } from "@/states";
 import { FreeHoursNotice } from "@/components/UnlockCard";
+import { BAD_WEATHER } from "@/utils/practice";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = Math.min(100, (value / max) * 100);
@@ -69,6 +70,19 @@ export function ProgressCard() {
         <Bar value={p.nightMinutes} max={REQUIRED_NIGHT_MINUTES} color="bg-indigo-500" />
       </div>
 
+      {rules.weatherMinutes ? (
+        <div>
+          <div className="mb-1 flex items-baseline justify-between">
+            <span className="font-semibold">Bad weather</span>
+            <span className="tabular-nums">
+              {formatMinutes(p.weatherMinutes)} <span className={muted}>/ {formatMinutes(rules.weatherMinutes)}</span>
+            </span>
+          </div>
+          <Bar value={p.weatherMinutes} max={rules.weatherMinutes} color="bg-sky-600" />
+          <p className={`${muted} mt-1 text-xs`}>Drives tagged {BAD_WEATHER.join(", ").replace(/, ([^,]*)$/, " or $1")}.</p>
+        </div>
+      ) : null}
+
       {p.overDailyLimitMinutes > 0 && (
         <p className={muted}>
           {rules.name} counts up to {formatMinutes(rules.dailyCountMinutes!)} of practice a day, so{" "}
@@ -81,7 +95,11 @@ export function ProgressCard() {
           <dt className={muted}>Still to drive</dt>
           <dd className="font-medium">
             {p.hoursDone ? "Done ✓" : formatMinutes(totalToGo)}
-            {!p.hoursDone && nightToGo > 0 && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">incl. {formatMinutes(nightToGo)} at night</span>}
+            {!p.hoursDone && (nightToGo > 0 || p.weatherRemaining > 0) && (
+              <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                incl. {[nightToGo > 0 && `${formatMinutes(nightToGo)} at night`, p.weatherRemaining > 0 && `${formatMinutes(p.weatherRemaining)} in bad weather`].filter(Boolean).join(", ")}
+              </span>
+            )}
           </dd>
         </div>
         <div>
@@ -111,7 +129,9 @@ export function ProgressCard() {
               ? formatDate(readyDate)
               : p.driveCount < 2
               ? "Log a couple of drives to see a date"
-              : "Needs some night driving to project"}
+              : p.nightRemaining > 0 && p.nightMinutes === 0
+              ? "Needs some night driving to project"
+              : "Needs some bad-weather driving to project"}
           </dd>
           {behindExpiry && (
             <p className="mt-1 text-amber-700 dark:text-amber-400">

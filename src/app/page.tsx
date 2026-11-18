@@ -140,7 +140,7 @@ export default function LandingPage() {
                   >
                     <span className="font-semibold">{s.name}</span>
                     <span className="block text-sm text-gray-600 dark:text-gray-400">
-                      {formatMinutes(s.totalMinutes)} supervised · {formatMinutes(s.nightMinutes)} at night · hold {holdText(s)}
+                      {formatMinutes(s.totalMinutes)} supervised · {formatMinutes(s.nightMinutes)} at night{s.weatherMinutes ? ` · ${formatMinutes(s.weatherMinutes)} bad weather` : ""} · hold {holdText(s)}
                     </span>
                   </Link>
                 </li>

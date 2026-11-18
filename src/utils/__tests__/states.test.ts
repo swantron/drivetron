@@ -66,6 +66,17 @@ describe("state rules", () => {
     expect(tx.practiceLog).toBeUndefined();
   });
 
+  it("finds Pennsylvania: 65 hours with 5 in bad weather, a one-year permit, sunset to sunrise", () => {
+    const pa = getStateBySlug("pennsylvania")!;
+    expect(getState("PA")).toBe(pa);
+    expect([pa.totalMinutes, pa.nightMinutes, pa.weatherMinutes]).toEqual([65 * 60, 10 * 60, 5 * 60]);
+    expect(nightRangeText(pa)).toBe("sunset to sunrise");
+    const p = computeProgress([], "2026-11-18", new Date(2026, 10, 18), pa);
+    expect(p.expiryDate).toEqual(new Date(2027, 10, 18));
+    expect(p.holdDate).toEqual(new Date(2027, 4, 18));
+    expect(p.weatherRemaining).toBe(5 * 60);
+  });
+
   it("drives progress from the state's own figures", () => {
     const strict = { ...getState("MT"), totalMinutes: 60 * 60, nightMinutes: 15 * 60, holdMonths: 9 };
     const p = computeProgress([], "2026-11-01", new Date(2026, 10, 9), strict);

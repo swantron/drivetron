@@ -1,13 +1,14 @@
 import { california } from "./california";
 import { montana } from "./montana";
 import { ohio } from "./ohio";
+import { pennsylvania } from "./pennsylvania";
 import { texas } from "./texas";
 import type { StateRules } from "./types";
 
 export type { StateRules, Link } from "./types";
 
 /** Every supported state. Adding one here adds its public page and makes it selectable. */
-export const STATES: StateRules[] = [montana, california, ohio, texas];
+export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania];
 
 /** Logs created before multi-state support have no `state`; they're all Montana. */
 export const DEFAULT_STATE = "MT";

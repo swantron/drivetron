@@ -22,7 +22,7 @@ type Props = { params: Promise<{ state: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = getStateBySlug((await params).state);
   if (!s) return {};
-  const hours = `${hoursText(s.totalMinutes)}, ${hoursText(s.nightMinutes)} at night`;
+  const hours = `${hoursText(s.totalMinutes)}, ${hoursText(s.nightMinutes)} at night${s.weatherMinutes ? `, ${hoursText(s.weatherMinutes)} in bad weather` : ""}`;
   const title = `${s.name} supervised driving log: ${hours} | Drivetron`;
   const description = `${s.name} teen drivers need ${hours}, with the ${s.permitName} held at least ${holdText(s)}. Here are the rules, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
   return {
@@ -40,6 +40,7 @@ export default async function StatePage({ params }: Props) {
   const facts = [
     { label: "Supervised hours", value: formatMinutes(s.totalMinutes) },
     { label: "At night", value: formatMinutes(s.nightMinutes) },
+    ...(s.weatherMinutes ? [{ label: "In bad weather", value: formatMinutes(s.weatherMinutes) }] : []),
     { label: `Hold the ${s.permitName}`, value: holdText(s) },
     ...(s.permitValidMonths === null ? [] : [{ label: `${s.permitName} valid for`, value: `${s.permitValidMonths} months` }]),
   ];
@@ -56,7 +57,8 @@ export default async function StatePage({ params }: Props) {
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{s.name} supervised driving log</h1>
         <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
           Under {s.name}&apos;s {s.program} rules, a teen on {/^[aeiou]/i.test(s.permitName) ? "an" : "a"} {s.permitName} needs {hoursText(s.totalMinutes)} of supervised
-          driving, {hoursText(s.nightMinutes)} of it at night, before moving to the next license. A parent or guardian
+          driving, {hoursText(s.nightMinutes)} of it at night
+          {s.weatherMinutes ? <> and {hoursText(s.weatherMinutes)} in bad weather</> : null}, before moving to the next license. A parent or guardian
           certifies the hours on {s.certification.label}.
         </p>
 

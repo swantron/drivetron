@@ -125,3 +125,24 @@ describe("daily limit (Texas: 2 hours a day)", () => {
     expect([p.totalMinutes, p.nightMinutes, p.overDailyLimitMinutes]).toEqual([300, 100, 0]);
   });
 });
+
+describe("bad-weather hours (Pennsylvania: 5)", () => {
+  const pa = getState("PA");
+  it("counts whole drives tagged with any weather but Clear, and holds back hoursDone until they're in", () => {
+    const drives = [
+      drive(new Date(2026, 10, 1, 9), 60 * 60, 0, { conditions: ["Clear", "Highway"] }),
+      drive(new Date(2026, 10, 2, 18), 0, 10 * 60, { conditions: ["Rain"] }),
+      drive(new Date(2026, 10, 3, 9), 90, 0, { conditions: ["Snow", "Fog"] }),
+    ];
+    const p = computeProgress(drives, "2026-01-01", new Date(2026, 10, 4), pa);
+    expect(p.weatherMinutes).toBe(10 * 60 + 90);
+    expect(p.weatherRemaining).toBe(0);
+    expect(p.hoursDone).toBe(true);
+    const dry = computeProgress(drives.slice(0, 1).concat(drive(new Date(2026, 10, 2, 18), 0, 10 * 60, { conditions: ["Clear"] })), "2026-01-01", new Date(2026, 10, 4), pa);
+    expect([dry.weatherMinutes, dry.weatherRemaining, dry.hoursDone, dry.eligible]).toEqual([0, 300, false, false]);
+  });
+  it("is zero for states that don't require it", () => {
+    const p = computeProgress([drive(new Date(2026, 10, 2, 18), 30, 0, { conditions: ["Rain"] })], "2026-01-01", new Date(2026, 10, 4), getState("MT"));
+    expect([p.weatherMinutes, p.weatherRemaining]).toEqual([0, 0]);
+  });
+});

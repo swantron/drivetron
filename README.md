@@ -1,8 +1,8 @@
 # Drivetron
 
 Supervised driving log for teen drivers and their parents, served at **[drivetron.app](https://drivetron.app)**.
-Supports Montana, California and Ohio; each state's rules are data in `src/states/`, sourced from the
-state's own pages and statutes, with a public page per state (`/montana`, `/california`, `/ohio`).
+Supports Montana, California, Ohio, Texas and Pennsylvania; each state's rules are data in `src/states/`, sourced from the
+state's own pages and statutes, with a public page per state (`/montana`, `/california`, `/ohio`, `/texas`, `/pennsylvania`).
 
 It started with Montana's GDL learner stage: hold the learner license for 6 months and log 50 supervised
 hours, 10 of them at night (MCA 61-5-132), certified on MVD form 21-1600. The states point families at

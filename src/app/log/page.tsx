@@ -8,6 +8,8 @@ import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 import { syncedLate } from "@/utils/syncedLate";
+import { BAD_WEATHER } from "@/utils/practice";
+import { StateResources } from "@/components/StateResources";
 import { holdText, nightRangeText, upperFirst } from "@/states";
 
 export default function LogPage() {
@@ -83,6 +85,7 @@ function PrintableLog() {
           <h2 className="text-lg font-bold uppercase tracking-wide">Practice Driving Log</h2>
           <p>
             {rules.name} {rules.program} — {formatMinutes(rules.totalMinutes)} supervised, including {formatMinutes(rules.nightMinutes)} at night
+            {rules.weatherMinutes ? <> and {formatMinutes(rules.weatherMinutes)} in bad weather</> : null}
           </p>
         </header>
 
@@ -179,6 +182,13 @@ function PrintableLog() {
           </tfoot>
         </table>
 
+        {rules.weatherMinutes ? (
+          <p className="mt-2 font-bold">
+            IN BAD WEATHER: {formatMinutes(p.weatherMinutes)}{" "}
+            <span className="font-normal">(drives tagged {BAD_WEATHER.join(", ")})</span>
+          </p>
+        ) : null}
+
         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
           Night = {nightRangeText(rules)} at the drive&apos;s location. Init. = initials of the supervising licensed adult.
           {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
@@ -202,6 +212,8 @@ function PrintableLog() {
           ))}
         </div>
       </article>
+
+      <StateResources />
     </div>
   );
 }

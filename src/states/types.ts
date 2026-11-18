@@ -33,6 +33,8 @@ export interface StateRules {
   nightOffsetMinutes: number;
   /** Most practice that counts toward the hours on any one day (Texas: 2 hours); unset = no limit */
   dailyCountMinutes?: number;
+  /** Bad-weather minutes required, counted from drives tagged with bad weather (Pennsylvania: 5 hours); unset = none */
+  weatherMinutes?: number;
   /** What the state asks to practice, shown above the conditions checklist */
   practiceNote: string;
   /** The parent's certification of the hours */
