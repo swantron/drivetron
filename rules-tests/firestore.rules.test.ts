@@ -432,6 +432,85 @@ describe("drives", () => {
   });
 });
 
+describe("drives: parent sign-off", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const fs = ctx.firestore();
+      await updateDoc(doc(fs, "families/f1"), {
+        memberUids: ["parent", "teen", "coparent"],
+        "members.teen": member("Teen", "learner"),
+        "members.coparent": member("Coparent"),
+      });
+      await setDoc(doc(fs, "families/f1/drives/teenDone"), drive("teen"));
+      await setDoc(doc(fs, "families/f1/drives/teenLive"), { ...drive("teen"), endedAt: null, dayMinutes: 0, nightMinutes: 0 });
+    });
+  });
+  const d = drive("teen");
+  const signOff = (uid = "coparent", name = "Coparent", initials = "CO") => ({
+    uid,
+    name,
+    initials,
+    at: Date.now(),
+    startedAt: d.startedAt,
+    endedAt: d.endedAt,
+    dayMinutes: d.dayMinutes,
+    nightMinutes: d.nightMinutes,
+    supervisorUid: d.supervisorUid,
+  });
+  const path = "families/f1/drives/teenDone";
+
+  it("lets any supervising adult confirm a drive in their own name", async () => {
+    await assertSucceeds(updateDoc(doc(db("coparent"), path), { signedOff: signOff(), updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(db("parent"), path), { signedOff: signOff("parent", "Parent", "PA"), updatedAt: 3 }));
+  });
+
+  it("rejects a learner confirming, or a confirmation in someone else's name", async () => {
+    await assertFails(updateDoc(doc(db("teen"), path), { signedOff: signOff("teen", "Teen", "TE"), updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db("teen"), path), { signedOff: signOff(), updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db("parent"), path), { signedOff: signOff(), updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db("coparent"), path), { signedOff: signOff("coparent", "Officer Friendly"), updatedAt: 2 }));
+  });
+
+  it("only confirms the times the drive actually has", async () => {
+    await assertFails(updateDoc(doc(db("coparent"), path), { signedOff: { ...signOff(), dayMinutes: 300 }, updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db("coparent"), path), { signedOff: { ...signOff(), supervisorUid: "coparent" }, updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db("coparent"), path), { signedOff: { ...signOff(), at: Date.now() + 5 * HOUR }, updatedAt: 2 }));
+    await assertFails(updateDoc(doc(db("coparent"), path), { signedOff: { ...signOff(), extra: true }, updatedAt: 2 }));
+    // A running timer has nothing to confirm yet
+    await assertFails(
+      updateDoc(doc(db("coparent"), "families/f1/drives/teenLive"), { signedOff: { ...signOff(), endedAt: null, dayMinutes: 0, nightMinutes: 0 }, updatedAt: 2 })
+    );
+  });
+
+  it("confirms several drives in one batch (Confirm all)", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const fs = ctx.firestore();
+      for (const id of ["t2", "t3", "t4", "t5", "t6"]) await setDoc(doc(fs, `families/f1/drives/${id}`), drive("teen"));
+    });
+    const fs = db("coparent");
+    const batch = writeBatch(fs);
+    for (const id of ["teenDone", "t2", "t3", "t4", "t5", "t6"]) batch.update(doc(fs, `families/f1/drives/${id}`), { signedOff: signOff(), updatedAt: 2 });
+    await assertSucceeds(batch.commit());
+  });
+
+  it("can't be created with a drive", async () => {
+    await assertFails(setDoc(doc(db("parent"), "families/f1/drives/n1"), { ...typedIn("parent"), signedOff: signOff("parent", "Parent", "PA") }));
+  });
+
+  it("keeps a learner from removing a confirmation but lets them tag the drive", async () => {
+    await updateDoc(doc(db("coparent"), path), { signedOff: signOff(), updatedAt: 2 });
+    await assertFails(updateDoc(doc(db("teen"), path), { signedOff: null, updatedAt: 3 }));
+    await assertSucceeds(updateDoc(doc(db("teen"), path), { notes: "merged onto I-90", updatedAt: 3 }));
+    await assertSucceeds(updateDoc(doc(db("parent"), path), { signedOff: null, updatedAt: 4 }));
+  });
+
+  it("still accepts a supervisor's edit that leaves an old confirmation behind (older app copies)", async () => {
+    await updateDoc(doc(db("coparent"), path), { signedOff: signOff(), updatedAt: 2 });
+    // The app shows that confirmation as void, since the times no longer match it
+    await assertSucceeds(updateDoc(doc(db("parent"), path), { endedAt: d.endedAt + HOUR, dayMinutes: 105, timesEdited: true, updatedAt: 3 }));
+  });
+});
+
 describe("paid unlocks", () => {
   beforeEach(async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {

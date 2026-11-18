@@ -42,7 +42,8 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Drives:</strong> start and end times, day and night minutes, the supervising adult, the vehicle, condition
-          and skill tags, notes, and whether a drive was timed, typed in, or edited.
+          and skill tags, notes, whether a drive was timed, typed in, or edited, and which supervising adult confirmed it and
+          when.
         </li>
         <li>
           <strong>Location:</strong> when a drive starts, one location reading rounded to about 1 km, used only to work out
@@ -115,8 +116,9 @@ export default function PrivacyPage() {
         rules require, even after a log is deleted.
       </p>
       <p>
-        You can see everything in your log in the app, and print it or save it as a PDF. For a copy of anything else we hold
-        about you, or a correction, email {mail}.
+        You can see everything in your log in the app, print it or save it as a PDF, and download it from the Family tab, as
+        a spreadsheet of the drives or a file with everything in the log. For a copy of anything else we hold about you, or
+        a correction, email {mail}.
       </p>
 
       <h2>Security</h2>

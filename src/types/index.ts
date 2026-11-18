@@ -79,6 +79,25 @@ export interface Drive {
    * was started offline, or backdated, and the printed log marks it.
    */
   syncedAt?: { toMillis(): number } | null;
+  /**
+   * A supervising adult's confirmation of a drive someone else logged (usually the teen's own
+   * timer). It records the times it confirmed, so it stops counting if they change afterward.
+   */
+  signedOff?: SignOff | null;
+}
+
+/** Doc field drives/{id}.signedOff. The rules check it names the signer and matches the drive. */
+export interface SignOff {
+  uid: string;
+  name: string;
+  initials: string;
+  /** When it was confirmed (epoch ms) */
+  at: number;
+  startedAt: number;
+  endedAt: number;
+  dayMinutes: number;
+  nightMinutes: number;
+  supervisorUid: string;
 }
 
 /** What the app writes; syncedAt is always set by the server. */

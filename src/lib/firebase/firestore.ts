@@ -20,7 +20,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { getFirebaseDb } from "./config";
-import type { Drive, DriveInput, Family, Learner, Member, Vehicle } from "@/types";
+import type { Drive, DriveInput, Family, Learner, Member, SignOff, Vehicle } from "@/types";
 import { PRIMARY_LEARNER } from "@/utils/learners";
 
 const familiesCol = () => collection(getFirebaseDb(), "families");
@@ -332,6 +332,17 @@ export function saveDrive(familyId: string, id: string, drive: DriveInput, onErr
 
 export function patchDrive(familyId: string, id: string, patch: Partial<DriveInput>, onError?: (e: Error) => void) {
   fireAndForget(updateDoc(doc(drivesCol(familyId), id), { ...patch, updatedAt: Date.now() }), onError);
+}
+
+/**
+ * A supervising adult confirming finished drives (a teen's own timers, usually). One batch, so
+ * "Confirm all" lands together; fire-and-forget like other drive writes.
+ */
+export function confirmDrives(familyId: string, signOffs: { id: string; signOff: SignOff }[], onError?: (e: Error) => void) {
+  const db = getFirebaseDb();
+  const batch = writeBatch(db);
+  for (const { id, signOff } of signOffs) batch.update(doc(drivesCol(familyId), id), { signedOff: signOff, updatedAt: signOff.at });
+  fireAndForget(batch.commit(), onError);
 }
 
 export function removeDrive(familyId: string, id: string, onError?: (e: Error) => void) {

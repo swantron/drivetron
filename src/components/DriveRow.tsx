@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Drive } from "@/types";
 import { formatMinutes } from "@/utils/progress";
+import { needsConfirming } from "@/utils/signoff";
 
 export function DriveRow({ drive }: { drive: Drive }) {
   const start = new Date(drive.startedAt);
@@ -20,6 +21,7 @@ export function DriveRow({ drive }: { drive: Drive }) {
             </span>
           </p>
           {tags.length > 0 && <p className="truncate text-sm text-gray-500 dark:text-gray-400">{tags.join(", ")}</p>}
+          {needsConfirming(drive) && <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Not confirmed yet</p>}
         </div>
         <div className="shrink-0 text-right tabular-nums">
           <p className="font-semibold">{formatMinutes(drive.dayMinutes + drive.nightMinutes)}</p>

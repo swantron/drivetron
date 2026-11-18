@@ -36,13 +36,13 @@ export function ProgressCard() {
     <section className={`${card} space-y-4`}>
       {p.eligible ? (
         <div className="rounded-xl bg-emerald-50 p-3 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-          <p className="font-semibold">Ready for the restricted license 🎉</p>
+          <p className="font-semibold">Hours and waiting period done 🎉</p>
           <p className="text-sm">
             Print the log, then sign{" "}
             <a className="underline" href={rules.certification.url} target="_blank" rel="noreferrer">
               {rules.certification.label}
             </a>{" "}
-            and bring both to the exam station.
+            and bring both when your teen applies for the next license.
           </p>
         </div>
       ) : null}

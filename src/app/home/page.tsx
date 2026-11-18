@@ -7,6 +7,7 @@ import { DriveTimer } from "@/components/DriveTimer";
 import { ProgressCard } from "@/components/ProgressCard";
 import { DriveRow } from "@/components/DriveRow";
 import { UnlockReturn } from "@/components/UnlockReturn";
+import { ConfirmCard } from "@/components/ConfirmDrives";
 import { useFamily } from "@/components/FamilyProvider";
 import { card } from "@/components/ui/styles";
 import { firstName } from "@/utils/learners";
@@ -34,6 +35,7 @@ function Home() {
         <UnlockReturn />
       </Suspense>
       <DriveTimer />
+      <ConfirmCard />
       <ProgressCard />
       {recent.length > 0 && (
         <section className={card}>

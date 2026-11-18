@@ -13,6 +13,9 @@ rules_version = '2';
 // - Times can't be in the future (judged by the server clock), a timer can't be relabelled as
 //   typed-in or back, and a learner's timer records when the server first saw it (syncedAt), so a
 //   drive that claims to have started long before it reached the server is marked on the log.
+// - A supervisor can confirm a finished drive someone else logged (signedOff). The confirmation
+//   names its signer and copies the times it vouches for, so it can't be forged by a learner or
+//   carried over to different hours: the app treats it as void once the drive no longer matches.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -199,7 +202,7 @@ service cloud.firestore {
           return d.keys().hasOnly(['learnerId', 'vehicleId', 'vehicleName', 'startedAt', 'endedAt', 'dayMinutes',
                                    'nightMinutes', 'supervisorUid', 'supervisorName', 'supervisorInitials',
                                    'conditions', 'skills', 'notes', 'lat', 'lng', 'manual', 'timesEdited',
-                                   'createdBy', 'updatedAt', 'syncedAt'])
+                                   'createdBy', 'updatedAt', 'syncedAt', 'signedOff'])
             && d.startedAt is int
             && d.startedAt <= latestAllowedMs()
             && (d.endedAt == null || d.endedAt <= latestAllowedMs())
@@ -235,6 +238,32 @@ service cloud.firestore {
             && d.supervisorInitials == family(fid).members[d.supervisorUid].initials;
         }
 
+        // A supervising adult confirming this drive, as it now stands, in their own name.
+        function validSignOff(d) {
+          return d.signedOff is map
+            && d.signedOff.keys().hasOnly(['uid', 'name', 'initials', 'at', 'startedAt', 'endedAt', 'dayMinutes',
+                                           'nightMinutes', 'supervisorUid'])
+            && d.signedOff.uid == request.auth.uid
+            && isSupervisor(fid)
+            && d.signedOff.name == family(fid).members[request.auth.uid].name
+            && d.signedOff.initials == family(fid).members[request.auth.uid].initials
+            && d.signedOff.at is int && d.signedOff.at <= latestAllowedMs()
+            && d.endedAt != null
+            && d.signedOff.startedAt == d.startedAt
+            && d.signedOff.endedAt == d.endedAt
+            && d.signedOff.dayMinutes == d.dayMinutes
+            && d.signedOff.nightMinutes == d.nightMinutes
+            && d.signedOff.supervisorUid == d.supervisorUid;
+        }
+
+        // Only a supervisor adds, replaces or withdraws a confirmation. Older copies of the app
+        // don't send the field at all, which leaves it as it was.
+        function signOffOk() {
+          return request.resource.data.get('signedOff', null) == resource.data.get('signedOff', null)
+            || (isSupervisor(fid)
+                && (request.resource.data.get('signedOff', null) == null || validSignOff(request.resource.data)));
+        }
+
         function supervisorChanged() {
           return request.resource.data.supervisorUid != resource.data.supervisorUid
             || request.resource.data.supervisorName != resource.data.supervisorName
@@ -265,6 +294,8 @@ service cloud.firestore {
           && validSupervisor(request.resource.data)
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.get('timesEdited', false) == false
+          // Confirmation comes after the fact, on a drive that already exists
+          && request.resource.data.get('signedOff', null) == null
           // A timer starts running; anything created already finished is a typed-in drive and says so
           && request.resource.data.manual == (request.resource.data.endedAt != null)
           // When present, syncedAt is the server's receipt time (serverTimestamp())
@@ -279,6 +310,7 @@ service cloud.firestore {
           && request.resource.data.get('syncedAt', null) == resource.data.get('syncedAt', null)
           && (!supervisorChanged() || validSupervisor(request.resource.data))
           && auditOk()
+          && signOffOk()
           && (
             isSupervisor(fid)
             || (

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { DataExport } from "@/components/DataExport";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
@@ -53,21 +54,28 @@ function FamilySettings() {
       <Vehicles familyId={family.id} />
       {!isOwner && <LeaveFamily familyId={family.id} uid={user.uid} />}
       {isOwner && <OwnerControls family={family} myUid={user.uid} />}
-      <button
-        className={secondaryBtn}
-        onClick={async () => {
-          await signOut();
-          router.replace("/login");
-        }}
-      >
-        Sign out
-      </button>
-      <Link href="/about" className={`${secondaryBtn} block text-center`}>
-        About &amp; install
-      </Link>
-      <Link href="/delete-account" className="block text-center text-sm text-red-600 underline">
-        Delete my account
-      </Link>
+      <DataExport />
+      <section className={`${card} space-y-3`}>
+        <div>
+          <h2 className="font-semibold">Account</h2>
+          {user.email && <p className={`${muted} break-all`}>Signed in as {user.email}</p>}
+        </div>
+        <Link href="/about" className={`${secondaryBtn} block text-center`}>
+          About &amp; install
+        </Link>
+        <button
+          className={secondaryBtn}
+          onClick={async () => {
+            await signOut();
+            router.replace("/login");
+          }}
+        >
+          Sign out
+        </button>
+        <Link href="/delete-account" className="block py-1 text-center text-sm text-red-600 underline dark:text-red-400">
+          Delete my account
+        </Link>
+      </section>
       <p className={`${muted} text-center`}>
         Drivetron {process.env.NEXT_PUBLIC_APP_VERSION} · Not affiliated with {rules.notAffiliatedWith}.
       </p>

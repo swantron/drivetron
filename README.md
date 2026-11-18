@@ -26,6 +26,9 @@ Not affiliated with any state government or motor vehicle agency.
 - **Multiple learners** (siblings) in one family log, each with their own permit date, progress, timer,
   and printable log. Each device remembers which learner it's showing.
 - **Vehicles**: a family garage. Each drive records the car, defaulting to the one that learner used last.
+- **Parent sign-off.** Drives a teen timed on their own phone wait for a supervising adult to confirm
+  them (one at a time or all at once from Home); the printed log marks confirmed and unconfirmed drives.
+- **Data export** from the Family tab: a spreadsheet (CSV) of every drive, or a JSON file of the whole log.
 - **Offline.** An installable PWA with Firestore's persistent cache.
 
 ## Stack
@@ -60,7 +63,8 @@ families/{familyId}            learners{id: name/dob/permitDate}, vehicles{id: n
                                members{uid: name/initials/role}, inviteCode
 families/{familyId}/drives/{id} learnerId, vehicleId/vehicleName, startedAt, endedAt (null = timer running),
                                dayMinutes, nightMinutes, supervisor, tags, notes, manual, timesEdited,
-                               syncedAt (server time the drive first arrived)
+                               syncedAt (server time the drive first arrived),
+                               signedOff (a supervisor's confirmation: who, when, and the times it vouches for)
 families/{familyId}/joinRequests/{uid}  name, initials, role, code, email (verified against the token)
 invites/{code}                 { familyId }  (get-only lookup for joining)
 families/{familyId}/unlocks/{learnerId}  sessionId, at  (paid unlock; written only by the webhook function)

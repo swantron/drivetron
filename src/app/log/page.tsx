@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
+import { useExport } from "@/components/DataExport";
+import { confirmationOf, needsConfirming } from "@/utils/signoff";
 import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
-import { card, muted, primaryBtn } from "@/components/ui/styles";
+import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 import { syncedLate } from "@/utils/syncedLate";
 import { holdText, nightRangeText, upperFirst } from "@/states";
 
@@ -21,9 +24,12 @@ export default function LogPage() {
  * and a summary with what form 21-1600 certifies.
  */
 function PrintableLog() {
-  const { learner, drives, rules } = useFamily();
+  const { learner, drives, rules, isSupervisor } = useFamily();
+  const exp = useExport();
   if (!learner) return null;
   const done = drives.filter((d) => d.endedAt !== null).sort((a, b) => a.startedAt - b.startedAt);
+  const unconfirmed = done.filter(needsConfirming).length;
+  const confirmedLater = done.some((d) => confirmationOf(d) === "confirmed");
   const p = computeProgress(drives, learner.permitDate, new Date(), rules);
 
   return (
@@ -46,9 +52,27 @@ function PrintableLog() {
           </a>{" "}
           when your teen applies.
         </p>
+        {unconfirmed > 0 && (
+          <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+            {unconfirmed === 1 ? "1 drive isn't" : `${unconfirmed} drives aren't`} confirmed by a supervising adult yet, and
+            the log marks {unconfirmed === 1 ? "it" : "them"}.{" "}
+            {isSupervisor ? (
+              <Link href="/home" className="font-semibold underline">
+                Confirm on Home
+              </Link>
+            ) : (
+              "A parent or guardian can confirm from their phone."
+            )}
+          </p>
+        )}
         <button className={primaryBtn} onClick={() => window.print()}>
           Print / Save as PDF
         </button>
+        {exp && (
+          <button className={secondaryBtn} onClick={exp.csv}>
+            Download as a spreadsheet
+          </button>
+        )}
       </div>
 
       <article className={`${card} overflow-x-auto text-sm print:border-0 print:p-0 print:shadow-none`}>
@@ -114,7 +138,11 @@ function PrintableLog() {
                     {syncedLate(d) && <sup title="Reached the server well after its start time">‡</sup>}
                   </td>
                   <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">{d.nightMinutes ? formatMinutes(d.nightMinutes) : ""}</td>
-                  <td className="py-1 text-center font-medium">{d.supervisorInitials}</td>
+                  <td className="py-1 text-center font-medium">
+                    {d.supervisorInitials}
+                    {confirmationOf(d) === "confirmed" && <sup title={`Confirmed by ${d.signedOff?.name}`}>✓</sup>}
+                    {needsConfirming(d) && <sup title="Not confirmed by a supervising adult">?</sup>}
+                  </td>
                 </tr>
               );
             })}
@@ -142,6 +170,8 @@ function PrintableLog() {
           Night = {nightRangeText(rules)} at the drive&apos;s location. Init. = initials of the supervising licensed adult.
           {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
           {done.some((d) => d.timesEdited) && <> * Times were edited after the drive was logged.</>}
+          {confirmedLater && <> ✓ Logged on another phone and confirmed afterward by a supervising adult.</>}
+          {unconfirmed > 0 && <> ? Logged on another phone and not yet confirmed by a supervising adult.</>}
           {done.some(syncedLate) && (
             <> ‡ Timed, but first saved more than 15 minutes after its start — usually started without signal; check the start time.</>
           )}

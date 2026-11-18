@@ -22,7 +22,8 @@ export function Chips({
             className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
               on
                 ? "border-emerald-700 bg-emerald-700 text-white"
-                : "border-gray-300 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                : // View-only: fade what wasn't picked so the picked ones read at a glance
+                  "border-gray-300 bg-white text-gray-700 disabled:opacity-40 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             }`}
           >
             {o}

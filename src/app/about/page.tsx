@@ -231,7 +231,8 @@ function DataCard() {
       </p>
       <p className={muted}>
         Data is stored in Google Firebase. The family owner can remove members and make a new invite code from the Family
-        tab, and can delete the whole log there, which erases it for everyone.
+        tab, and can delete the whole log there, which erases it for everyone. Anyone in the log can download it from the
+        Family tab.
       </p>
       <p>
         Full details: the{" "}

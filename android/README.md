@@ -72,6 +72,8 @@ the website, so a web deploy updates it.
   > • Progress toward your state's hours and permit hold, with a projected test-ready date.
   > • Teens can time their own drives but can't type in past ones or stretch the times, and anything
   > edited afterward is marked, so the hours are ones a parent can sign for.
+  > • Drives your teen times on their own phone wait for your OK, and the log shows which you confirmed.
+  > • Download the whole log as a spreadsheet any time.
   > • A printable log with totals and signature lines.
   > • Works offline and syncs when you're back in coverage.
   >
@@ -81,8 +83,9 @@ the website, so a web deploy updates it.
   > Drivetron is not affiliated with any state government or motor vehicle agency. Confirm current
   > requirements with your state.
 
-- **Graphics:** icon 512×512 (`store_icon.png`, generated), feature graphic 1024×500, and 2–8 phone
-  screenshots taken from a demo family, never a real one.
+- **Graphics** (in `store-assets/`): icon 512×512 (`store_icon.png`), feature graphic 1024×500
+  (`feature-graphic.png`), and six 1080×1920 phone screenshots (`phone-*.png`) taken on the emulator
+  build from a made-up demo family (the Riveras), never a real one. Retake them when the UI changes.
 
 ## Data safety (draft answers, from the privacy policy)
 

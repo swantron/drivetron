@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamily } from "@/components/FamilyProvider";
 import { UnlockCard } from "@/components/UnlockCard";
+import { ConfirmationNote } from "@/components/ConfirmDrives";
 import { useToast } from "@/components/ui/Toast";
 import { Chips, toggle } from "@/components/ui/Chips";
 import { addDrive, removeDrive, saveDrive, saveVehicle } from "@/lib/firebase/firestore";
@@ -209,15 +210,21 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
     <form onSubmit={save} className="space-y-4">
       <fieldset disabled={!canEdit} className="min-w-0 space-y-4">
       <h1 className="text-2xl font-bold">
-        {finished ? `Nice — ${formatMinutes(total)} logged` : forgot ? "When did the drive end?" : drive ? "Edit drive" : "Add a past drive"}
+        {finished ? `Nice — ${formatMinutes(total)} logged` : forgot ? "When did the drive end?" : drive ? (canEdit ? "Edit drive" : "Drive") : "Add a past drive"}
       </h1>
-      {finished && <p className={muted}>Tag what you practiced. It helps spot what still needs work.</p>}
+      {finished && (
+        <p className={muted}>
+          Tag what you practiced. It helps spot what still needs work.
+          {!isSupervisor && " A parent or guardian confirms the drive from their phone."}
+        </p>
+      )}
       {forgot && <p className="text-amber-700 dark:text-amber-400">The timer ran over 16 hours. Enter the real end time.</p>}
       {!canEdit && <p className="rounded-lg bg-gray-100 p-3 text-sm dark:bg-gray-900">Logged by a supervisor, so it&apos;s view-only for you.</p>}
       {canEdit && !canEditTimes && (
         <p className={muted}>Times on a finished drive can only be changed by a supervising adult. You can still add tags and notes.</p>
       )}
       {drive?.timesEdited && <p className="text-sm text-amber-700 dark:text-amber-400">Times on this drive were edited after it was logged. The printed log marks it.</p>}
+      {drive && !finished && <ConfirmationNote drive={drive} />}
 
       <section className={`${card} space-y-3`}>
         <div className="grid grid-cols-3 gap-2">
@@ -343,6 +350,11 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
         </div>
       )}
       </fieldset>
+      {!canEdit && (
+        <button type="button" className={secondaryBtn} onClick={() => router.back()}>
+          Back
+        </button>
+      )}
       {drive && canDelete && (
         <button
           type="button"
