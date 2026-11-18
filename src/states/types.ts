@@ -31,6 +31,8 @@ export interface StateRules {
   nightDefinition: string | null;
   /** Night starts this many minutes after sunset and ends this many before sunrise (0 = sunset to sunrise) */
   nightOffsetMinutes: number;
+  /** Most practice that counts toward the hours on any one day (Texas: 2 hours); unset = no limit */
+  dailyCountMinutes?: number;
   /** What the state asks to practice, shown above the conditions checklist */
   practiceNote: string;
   /** The parent's certification of the hours */

@@ -31,6 +31,9 @@ function PrintableLog() {
   const unconfirmed = done.filter(needsConfirming).length;
   const confirmedLater = done.some((d) => confirmationOf(d) === "confirmed");
   const p = computeProgress(drives, learner.permitDate, new Date(), rules);
+  // The rows show every minute driven; with a daily limit, a second total shows what counts.
+  const loggedTotal = done.reduce((s, d) => s + d.dayMinutes + d.nightMinutes, 0);
+  const loggedNight = done.reduce((s, d) => s + d.nightMinutes, 0);
 
   return (
     <div className="space-y-4">
@@ -159,10 +162,20 @@ function PrintableLog() {
               <td className="py-1 pr-2" colSpan={2}>
                 TOTAL TIME ({p.driveCount} {p.driveCount === 1 ? "drive" : "drives"})
               </td>
-              <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.totalMinutes)}</td>
-              <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.nightMinutes)}</td>
+              <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(loggedTotal)}</td>
+              <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(loggedNight)}</td>
               <td />
             </tr>
+            {p.overDailyLimitMinutes > 0 && (
+              <tr className="font-bold">
+                <td className="py-1 pr-2" colSpan={2}>
+                  COUNTS TOWARD THE {rules.totalMinutes / 60} HOURS (up to {formatMinutes(rules.dailyCountMinutes!)} a day)
+                </td>
+                <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.totalMinutes)}</td>
+                <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.nightMinutes)}</td>
+                <td />
+              </tr>
+            )}
           </tfoot>
         </table>
 

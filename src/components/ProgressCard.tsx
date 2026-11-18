@@ -69,6 +69,13 @@ export function ProgressCard() {
         <Bar value={p.nightMinutes} max={REQUIRED_NIGHT_MINUTES} color="bg-indigo-500" />
       </div>
 
+      {p.overDailyLimitMinutes > 0 && (
+        <p className={muted}>
+          {rules.name} counts up to {formatMinutes(rules.dailyCountMinutes!)} of practice a day, so{" "}
+          {formatMinutes(p.overDailyLimitMinutes)} of driving isn&apos;t in these totals.
+        </p>
+      )}
+
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <dt className={muted}>Still to drive</dt>

@@ -25,9 +25,42 @@ export function addMonths(date: Date, months: number): Date {
   return out;
 }
 
+/**
+ * Minutes that count toward the state's hours. With a daily limit (Texas: 2 hours a day), each
+ * calendar day, by the drive's local start date, counts up to the limit; night counts first within
+ * it, since the parent fills in the state's log and would put the night time on it.
+ */
+export function countedMinutes(done: Drive[], dailyLimit?: number): { totalMinutes: number; nightMinutes: number } {
+  if (!dailyLimit) {
+    return {
+      totalMinutes: done.reduce((s, d) => s + d.dayMinutes + d.nightMinutes, 0),
+      nightMinutes: done.reduce((s, d) => s + d.nightMinutes, 0),
+    };
+  }
+  const days = new Map<string, { total: number; night: number }>();
+  for (const d of done) {
+    const s = new Date(d.startedAt);
+    const key = `${s.getFullYear()}-${s.getMonth()}-${s.getDate()}`;
+    const day = days.get(key) ?? { total: 0, night: 0 };
+    day.total += d.dayMinutes + d.nightMinutes;
+    day.night += d.nightMinutes;
+    days.set(key, day);
+  }
+  let totalMinutes = 0;
+  let nightMinutes = 0;
+  for (const day of days.values()) {
+    totalMinutes += Math.min(day.total, dailyLimit);
+    nightMinutes += Math.min(day.night, dailyLimit);
+  }
+  return { totalMinutes, nightMinutes };
+}
+
 export interface Progress {
+  /** Minutes that count toward the state's hours (after any daily limit) */
   totalMinutes: number;
   nightMinutes: number;
+  /** Driving logged beyond the state's daily limit, which doesn't count (0 without a limit) */
+  overDailyLimitMinutes: number;
   totalRemaining: number;
   nightRemaining: number;
   driveCount: number;
@@ -56,8 +89,8 @@ export function computeProgress(
   const REQUIRED_TOTAL_MINUTES = rules.totalMinutes;
   const REQUIRED_NIGHT_MINUTES = rules.nightMinutes;
   const done = drives.filter((d) => d.endedAt !== null);
-  const totalMinutes = done.reduce((s, d) => s + d.dayMinutes + d.nightMinutes, 0);
-  const nightMinutes = done.reduce((s, d) => s + d.nightMinutes, 0);
+  const loggedMinutes = done.reduce((s, d) => s + d.dayMinutes + d.nightMinutes, 0);
+  const { totalMinutes, nightMinutes } = countedMinutes(done, rules.dailyCountMinutes);
   const totalRemaining = Math.max(0, REQUIRED_TOTAL_MINUTES - totalMinutes);
   const nightRemaining = Math.max(0, REQUIRED_NIGHT_MINUTES - nightMinutes);
 
@@ -98,6 +131,7 @@ export function computeProgress(
   return {
     totalMinutes,
     nightMinutes,
+    overDailyLimitMinutes: loggedMinutes - totalMinutes,
     totalRemaining,
     nightRemaining,
     driveCount: done.length,

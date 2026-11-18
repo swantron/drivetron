@@ -1,4 +1,5 @@
 import type { Drive } from "@/types";
+import { getState } from "@/states";
 import { addMonths, computeProgress, formatMinutes, initialsOf, parseLocalDate } from "../progress";
 
 function drive(startedAt: Date, dayMinutes: number, nightMinutes: number, extra: Partial<Drive> = {}): Drive {
@@ -101,5 +102,26 @@ describe("formatting", () => {
   it("makes initials", () => {
     expect(initialsOf("joe swanson")).toBe("JS");
     expect(initialsOf("  Mary Jane Watson Parker ")).toBe("MJW");
+  });
+});
+
+describe("daily limit (Texas: 2 hours a day)", () => {
+  const tx = getState("TX");
+  it("counts at most the limit per calendar day, night first, and reports the rest", () => {
+    const drives = [
+      drive(new Date(2026, 10, 1, 9), 90, 0),
+      drive(new Date(2026, 10, 1, 17), 30, 60), // same day: 3h total, 1h night → counts 2h, 1h night
+      drive(new Date(2026, 10, 2, 18), 0, 150), // 2.5h at night → counts 2h night
+      drive(new Date(2026, 10, 3, 10), 45, 0),
+    ];
+    const p = computeProgress(drives, "2026-10-01", new Date(2026, 10, 4), tx);
+    expect(p.totalMinutes).toBe(120 + 120 + 45);
+    expect(p.nightMinutes).toBe(60 + 120);
+    expect(p.overDailyLimitMinutes).toBe(60 + 30);
+  });
+  it("has no effect for states without one", () => {
+    const drives = [drive(new Date(2026, 10, 1, 9), 200, 100)];
+    const p = computeProgress(drives, "2026-10-01", new Date(2026, 10, 4), getState("MT"));
+    expect([p.totalMinutes, p.nightMinutes, p.overDailyLimitMinutes]).toEqual([300, 100, 0]);
   });
 });

@@ -55,6 +55,17 @@ describe("state rules", () => {
     expect(p.holdDate).toEqual(new Date(2027, 4, 17));
   });
 
+  it("finds Texas: 30 hours, a learner license good until 18, and a 2-hour daily limit", () => {
+    const tx = getStateBySlug("texas")!;
+    expect(getState("TX")).toBe(tx);
+    expect([tx.totalMinutes, tx.nightMinutes, tx.dailyCountMinutes]).toEqual([30 * 60, 10 * 60, 120]);
+    expect(nightRangeText(tx)).toBe("30 minutes after sunset to 30 minutes before sunrise");
+    const p = computeProgress([], "2026-11-18", new Date(2026, 10, 18), tx);
+    expect(p.expiryDate).toBeNull();
+    expect(p.holdDate).toEqual(new Date(2027, 4, 18));
+    expect(tx.practiceLog).toBeUndefined();
+  });
+
   it("drives progress from the state's own figures", () => {
     const strict = { ...getState("MT"), totalMinutes: 60 * 60, nightMinutes: 15 * 60, holdMonths: 9 };
     const p = computeProgress([], "2026-11-01", new Date(2026, 10, 9), strict);

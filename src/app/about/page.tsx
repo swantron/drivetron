@@ -202,7 +202,8 @@ function Disclaimer() {
       </p>
       <p>
         Night hours are worked out as sunset to sunrise at the drive&apos;s approximate location, or the state&apos;s own
-        definition where it has one (California: half an hour after sunset to half an hour before sunrise). Where a state&apos;s
+        definition where it has one (California, Ohio and Texas: half an hour after sunset to half an hour before sunrise). Where a state counts only so
+        much practice a day (Texas: 2 hours), the totals count up to that much each day, and the log shows the rest. Where a state&apos;s
         materials don&apos;t define &ldquo;night&rdquo; more precisely, check any drive close to dusk or dawn, and adjust the
         night minutes on that drive if needed.
       </p>
