@@ -299,13 +299,27 @@ export function subscribeToUnlocks(familyId: string, onData: (learnerIds: string
   return onSnapshot(collection(getFirebaseDb(), "families", familyId, "unlocks"), (snap) => onData(snap.docs.map((d) => d.id)), onError);
 }
 
+/**
+ * Drives, plus the ids of those saved on this phone but not yet on the server (the other phones
+ * can't see them until they are). Metadata changes are included so a drive's id leaves that set
+ * the moment the server acknowledges it, even when its data didn't change.
+ */
 export function subscribeToDrives(
   familyId: string,
-  onData: (drives: Drive[]) => void,
+  onData: (drives: Drive[], pendingIds: Set<string>) => void,
   onError: (e: Error) => void
 ): Unsubscribe {
   const q = query(drivesCol(familyId), orderBy("startedAt", "desc"));
-  return onSnapshot(q, (snap) => onData(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Drive)), onError);
+  return onSnapshot(
+    q,
+    { includeMetadataChanges: true },
+    (snap) =>
+      onData(
+        snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Drive),
+        new Set(snap.docs.filter((d) => d.metadata.hasPendingWrites).map((d) => d.id))
+      ),
+    onError
+  );
 }
 
 // Writes don't await the server: with the offline cache they resolve once the server acks,

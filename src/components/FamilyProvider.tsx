@@ -38,6 +38,8 @@ interface FamilyContextValue {
   freeLeft: number | null;
   /** Learner ids with a paid unlock (null until loaded) */
   unlocks: ReadonlySet<string> | null;
+  /** Drives saved on this phone that haven't reached the server (or the other phones) yet */
+  pendingIds: ReadonlySet<string>;
 }
 
 const LEARNER_KEY = "drivetron.learnerId";
@@ -50,6 +52,8 @@ function storedLearnerId(): string | null {
   }
 }
 
+const NONE: ReadonlySet<string> = new Set();
+
 const FamilyContext = createContext<FamilyContextValue | undefined>(undefined);
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
@@ -59,7 +63,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   // Each piece of state remembers which key it was loaded for, so switching accounts
   // never briefly shows the previous user's data.
   const [famState, setFamState] = useState<{ uid: string; family: Family | null; error: string | null } | null>(null);
-  const [driveState, setDriveState] = useState<{ familyId: string; drives: Drive[] } | null>(null);
+  const [driveState, setDriveState] = useState<{ familyId: string; drives: Drive[]; pendingIds: Set<string> } | null>(null);
 
   useEffect(() => {
     if (!uid) return;
@@ -82,7 +86,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsub = subscribeToDrives(
       familyId,
-      (drives) => setDriveState({ familyId, drives }),
+      (drives, pendingIds) => setDriveState({ familyId, drives, pendingIds }),
       (e) => {
         console.warn("drives subscription failed, retrying", e.message);
         timer = setTimeout(() => setRetry((n) => n + 1), 2000);
@@ -154,6 +158,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     locked,
     freeLeft,
     unlocks,
+    pendingIds: driveState && driveState.familyId === familyId ? driveState.pendingIds : NONE,
   };
 
   return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>;

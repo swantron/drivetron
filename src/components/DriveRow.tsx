@@ -10,7 +10,7 @@ export function DriveRow({ drive }: { drive: Drive }) {
   const start = new Date(drive.startedAt);
   const tags = [...drive.conditions, ...drive.skills];
   // With one car, naming it on every row is noise
-  const { vehicles, drives, rules } = useFamily();
+  const { vehicles, drives, rules, pendingIds } = useFamily();
   // Over Texas's 2 hours a day (or a weekly limit), say what counted so the total adds up
   // The same initials the printed log uses, so two parents named Montana read apart
   // (The React compiler memoizes these per render inputs.)
@@ -32,6 +32,7 @@ export function DriveRow({ drive }: { drive: Drive }) {
             </span>
           </p>
           {tags.length > 0 && <p className="truncate text-sm text-gray-500 dark:text-gray-400">{tags.join(", ")}</p>}
+          {pendingIds.has(drive.id) && <p className="text-xs font-medium text-sky-700 dark:text-sky-400">On this phone only, syncing…</p>}
           {needsConfirming(drive) && <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Not confirmed yet</p>}
         </div>
         <div className="shrink-0 text-right tabular-nums">

@@ -1,5 +1,6 @@
 "use client";
 
+import { SyncStatus } from "@/components/SyncStatus";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -38,6 +39,7 @@ export function AppShell({
           )}
           <main className={`flex-1 px-4 pb-28 print:pb-0 ${title ? "" : "pt-[max(1rem,env(safe-area-inset-top))] print:pt-0"}`}>
             <JoinRequestBanner />
+            <SyncStatus />
             {switcher && (
               <div className="mb-3 empty:hidden">
                 <LearnerSwitcher />
