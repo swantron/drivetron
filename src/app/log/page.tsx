@@ -36,6 +36,8 @@ function PrintableLog() {
   // The rows show every minute driven; with a daily or weekly limit, a second total shows what counts.
   const loggedTotal = done.reduce((s, d) => s + d.dayMinutes + d.nightMinutes, 0);
   const loggedNight = done.reduce((s, d) => s + d.nightMinutes, 0);
+  // With one car, naming it on every row is noise
+  const manyVehicles = new Set(done.map((d) => d.vehicleName).filter(Boolean)).size > 1;
 
   return (
     <div className="space-y-4">
@@ -135,7 +137,7 @@ function PrintableLog() {
                   </td>
                   <td className="break-words py-1 pr-1.5 sm:pr-2">
                     {[...d.conditions, ...d.skills].join(", ") || "—"}
-                    {d.vehicleName && <div className="text-xs text-gray-500 dark:text-gray-400">Vehicle: {d.vehicleName}</div>}
+                    {d.vehicleName && manyVehicles && <div className="text-xs text-gray-500 dark:text-gray-400">Vehicle: {d.vehicleName}</div>}
                     {d.notes && <div className="text-xs text-gray-500 dark:text-gray-400">{d.notes}</div>}
                   </td>
                   <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">

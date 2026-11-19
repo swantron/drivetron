@@ -357,6 +357,7 @@ function LearnerForm({
   onDone?: () => void;
 }) {
   const { showToast } = useToast();
+  const { rules } = useFamily();
   const [name, setName] = useState(initial?.name ?? "");
   const [dob, setDob] = useState(initial?.dob ?? "");
   const [permitDate, setPermitDate] = useState(initial?.permitDate ?? new Date().toLocaleDateString("en-CA"));
@@ -382,7 +383,7 @@ function LearnerForm({
           <input type="date" className={input} required value={dob} onChange={(e) => setDob(e.target.value)} />
         </div>
         <div>
-          <label className={label}>License issued</label>
+          <label className={label}>{rules.noPermit ? "Started practicing" : "Permit issued"}</label>
           <input type="date" className={input} required value={permitDate} onChange={(e) => setPermitDate(e.target.value)} />
         </div>
       </div>

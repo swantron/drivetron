@@ -131,16 +131,19 @@ export default function LandingPage() {
             <h2 id="states-title" className="text-2xl font-bold">
               Built around your state&apos;s rules
             </h2>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Compact: two columns on a phone, so 49 states don't become a 4,000-pixel scroll */}
+            <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {STATES_BY_NAME.map((s) => (
                 <li key={s.code}>
                   <Link
                     href={`/${s.slug}`}
-                    className="block rounded-2xl border border-gray-200 bg-white p-4 hover:border-emerald-700 dark:border-gray-800 dark:bg-gray-900"
+                    className="block h-full rounded-xl border border-gray-200 bg-white px-3 py-2 hover:border-emerald-700 dark:border-gray-800 dark:bg-gray-900"
                   >
-                    <span className="font-semibold">{s.name}</span>
-                    <span className="block text-sm text-gray-600 dark:text-gray-400">
-                      {formatMinutes(s.totalMinutes)} supervised{s.nightMinutes ? ` · ${formatMinutes(s.nightMinutes)} at night` : ""}{s.weatherMinutes ? ` · ${formatMinutes(s.weatherMinutes)} bad weather` : ""}{s.challengingMinutes ? ` · ${formatMinutes(s.challengingMinutes)} night or bad weather` : ""}{s.noPermit ? " · no permit" : ` · hold ${holdText(s)}`}
+                    <span className="block text-sm font-semibold">{s.name}</span>
+                    <span className="block text-xs text-gray-600 dark:text-gray-400">
+                      {formatMinutes(s.totalMinutes)}
+                      {s.nightMinutes ? ` · ${formatMinutes(s.nightMinutes)} night` : ""}
+                      {s.noPermit ? " · no permit" : ` · hold ${holdText(s)}`}
                     </span>
                   </Link>
                 </li>
@@ -150,7 +153,7 @@ export default function LandingPage() {
               <Link href="/driving-hours-by-state" className="font-medium text-emerald-700 underline dark:text-emerald-400">
                 Compare every state&apos;s hours
               </Link>
-              . More states are on the way.
+              : night, bad-weather and daily limits, side by side.
             </p>
           </section>
 

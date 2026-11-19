@@ -2,10 +2,14 @@ import Link from "next/link";
 import type { Drive } from "@/types";
 import { formatMinutes } from "@/utils/progress";
 import { needsConfirming } from "@/utils/signoff";
+import { useFamily } from "@/components/FamilyProvider";
 
 export function DriveRow({ drive }: { drive: Drive }) {
   const start = new Date(drive.startedAt);
   const tags = [...drive.conditions, ...drive.skills];
+  // With one car, naming it on every row is noise
+  const { vehicles } = useFamily();
+  const showVehicle = !!drive.vehicleName && vehicles.length > 1;
   return (
     <li>
       <Link
@@ -17,7 +21,7 @@ export function DriveRow({ drive }: { drive: Drive }) {
             {start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
             <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
               {start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · {drive.supervisorInitials}
-              {drive.vehicleName && <> · {drive.vehicleName}</>}
+              {showVehicle && <span className="whitespace-nowrap"> · {drive.vehicleName}</span>}
             </span>
           </p>
           {tags.length > 0 && <p className="truncate text-sm text-gray-500 dark:text-gray-400">{tags.join(", ")}</p>}

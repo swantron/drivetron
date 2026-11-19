@@ -133,7 +133,29 @@ export default function DrivingHoursByState() {
           checked against the state&apos;s own sources.
         </p>
 
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+        {/* Phones: one card per state; the table needs a wider screen */}
+        <ul className="mt-6 divide-y divide-gray-200 rounded-2xl border border-gray-200 bg-white sm:hidden dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-900">
+          {byName.map((s) => (
+            <li key={s.code} className="px-4 py-3 text-sm">
+              <Link href={`/${s.slug}`} className="font-semibold text-emerald-700 underline dark:text-emerald-400">
+                {s.name}
+              </Link>
+              <p className="mt-0.5">
+                {hours(s.totalMinutes)} hours{s.nightMinutes ? `, ${hours(s.nightMinutes)} at night` : ""}
+                {s.noPermit ? "" : ` · hold the permit ${holdText(s)}`}
+              </p>
+              {extras(s).length > 0 && <p className="text-gray-600 dark:text-gray-400">{upperFirst(extras(s).join("; "))}</p>}
+              <p className="text-gray-600 dark:text-gray-400">
+                Parent signs:{" "}
+                <a href={s.certification.url} className="underline" target="_blank" rel="noreferrer">
+                  {s.certification.label.replace(/^the /, "")}
+                </a>
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-gray-200 sm:block dark:border-gray-800">
           <table className="w-full min-w-[40rem] border-collapse bg-white text-left text-sm dark:bg-gray-900">
             <thead className="bg-gray-50 dark:bg-gray-950">
               <tr>
