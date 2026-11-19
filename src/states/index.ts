@@ -4,15 +4,18 @@ import { ohio } from "./ohio";
 import { florida } from "./florida";
 import { georgia } from "./georgia";
 import { illinois } from "./illinois";
+import { michigan } from "./michigan";
+import { newYork } from "./newYork";
 import { northCarolina } from "./northCarolina";
 import { pennsylvania } from "./pennsylvania";
 import { texas } from "./texas";
+import { virginia } from "./virginia";
 import type { StateRules } from "./types";
 
 export type { StateRules, Link } from "./types";
 
 /** Every supported state. Adding one here adds its public page and makes it selectable. */
-export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois];
+export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia];
 
 /** Logs created before multi-state support have no `state`; they're all Montana. */
 export const DEFAULT_STATE = "MT";

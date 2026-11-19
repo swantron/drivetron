@@ -35,6 +35,15 @@ export const pennsylvania: StateRules = {
   // No practiceLog: PennDOT has no log form of its own; DL-180C certifies the totals.
   logAtTest:
     "Pennsylvania doesn't ask for the log itself. A parent or guardian signs the DL-180C certifying the 65 hours, 10 at night and 5 in bad weather, in front of the driver license examiner at the road test, or before a notary if they won't be there. Keep the printed log as the record behind that signature.",
+  formGuide: {
+    form: { label: "PennDOT DL-180C (PDF)", url: "https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/public/dvspubsforms/bdl/bdl-form/dl-180c.pdf" },
+    title: "How to fill in Pennsylvania's DL-180C",
+    steps: [
+      "PennDOT doesn't ask for the log. The DL-180C certifies the totals: at least 65 hours, 10 at night and 5 in bad weather, given by licensed drivers 21 or older. Drivetron's printed log shows all three totals.",
+      "The form also certifies the teen has read or viewed PennDOT's materials on the dangers of distracted driving.",
+      "Sign it in front of the driver license examiner at the road test. If the parent or guardian isn't coming, sign it in front of a notary instead.",
+    ],
+  },
   notAffiliatedWith: "the Commonwealth of Pennsylvania or the Pennsylvania Department of Transportation (PennDOT)",
   defaultLocation: { lat: 40.2732, lng: -76.8867 },
   stages: [

@@ -46,6 +46,16 @@ export interface StateRules {
   practiceLog?: Link;
   /** What the state says about bringing the log to the license test, in its words */
   logAtTest?: string;
+  /**
+   * How to fill in the state's form from Drivetron's log, for the public page: a heading that names
+   * the form (people search by form number) and steps, each from `sources`
+   */
+  formGuide?: {
+    title: string;
+    steps: string[];
+    /** The fillable form itself, when the state publishes one (not, say, a guide or a statute) */
+    form?: Link;
+  };
   /** Agencies named in the "not affiliated with" disclaimer */
   notAffiliatedWith: string;
   /** Fallback for night calculations with no GPS fix: the capital */

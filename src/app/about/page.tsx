@@ -202,7 +202,7 @@ function Disclaimer() {
       </p>
       <p>
         Night hours are worked out as sunset to sunrise at the drive&apos;s approximate location, or the state&apos;s own
-        definition where it has one (California, Ohio and Texas: half an hour after sunset to half an hour before sunrise). Where a state counts only so
+        definition where it has one (California, Michigan, Ohio and Texas: half an hour after sunset to half an hour before sunrise). Where a state counts only so
         much practice a day or week (Texas: 2 hours a day; North Carolina: 10 hours a week), the totals count up to that much,
         and the log shows the rest. Where a state asks for hours in bad weather
         (Pennsylvania: 5), a drive counts toward them when it&apos;s tagged with rain, snow, ice, fog or wind. Where a state&apos;s

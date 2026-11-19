@@ -27,6 +27,15 @@ export const montana: StateRules = {
   },
   // MVD's Step 2 checklist: "Driving log; either hard copy or digital version on an electronic device"
   logAtTest: "MVD accepts the driving log at the drive test as a paper copy or as a digital version on a phone or other device.",
+  formGuide: {
+    form: { label: "MVD form 21-1600 (PDF)", url: "https://mvdmt.gov/wp-content/uploads/2023/10/21-1600-Graduated-Driver-Licensing-Certification.pdf" },
+    title: "Montana form 21-1600 and the practice driving log",
+    steps: [
+      "Print Drivetron's log or keep it on your phone: it's laid out like OPI's practice driving log, with date, conditions and skills, time, and the supervising adult's initials, plus night minutes split out.",
+      "A parent or guardian certifies the 50 hours, 10 at night, on MVD form 21-1600.",
+      "Bring the log to the drive test. MVD takes it on paper or as a digital copy on a phone.",
+    ],
+  },
   notAffiliatedWith: "the State of Montana, the Motor Vehicle Division (MVD), or the Office of Public Instruction (OPI)",
   defaultLocation: { lat: 46.5891, lng: -112.0391 },
   stages: [

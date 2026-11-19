@@ -36,6 +36,15 @@ export const florida: StateRules = {
   },
   logAtTest:
     "Florida's driving log is for keeping track. What FLHSMV asks for is the Certification of Driving Experience of a Minor (HSMV 71143): a parent, legal guardian, or responsible adult 21 or older signs that the teen has driven at least 50 hours in the past 12 months, 10 at night, in front of a notary or the driver license examiner.",
+  formGuide: {
+    form: { label: "FLHSMV HSMV 71143 (PDF)", url: "https://www.flhsmv.gov/pdf/forms/71143.pdf" },
+    title: "How to fill in Florida's HSMV 71143",
+    steps: [
+      "HSMV 71143 certifies that the teen has driven at least 50 hours in the past 12 months, 10 of them at night.",
+      "A parent, legal guardian, or responsible adult 21 or older signs it in front of a notary or a driver license examiner.",
+      "FLHSMV's Learner's License Driving Log (date, day or night, traffic, weather, time, skills) is for keeping track and isn't required. Drivetron's printed log covers the same columns; tag the traffic and weather on each drive.",
+    ],
+  },
   notAffiliatedWith: "the State of Florida or the Florida Department of Highway Safety and Motor Vehicles (FLHSMV)",
   defaultLocation: { lat: 30.4383, lng: -84.2807 },
   stages: [

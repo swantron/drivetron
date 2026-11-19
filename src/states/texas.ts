@@ -39,6 +39,16 @@ export const texas: StateRules = {
   // every session, which Drivetron doesn't keep, so the printed log isn't "laid out like" it.
   logAtTest:
     "Texas's 30-hour log (TDLR Form DES150N) has a line for each session, with the date, daytime and nighttime hours, and the supervising adult's signature and driver license number, and a parent or guardian signs it at the bottom. Only 2 hours a day count, however long the drive. Keep the drives in Drivetron, with day and night already split, then copy them onto the form and bring it to DPS with the driver education certificate.",
+  formGuide: {
+    form: { label: "TDLR Form DES150N (PDF)", url: "https://www.tdlr.texas.gov/driver/files/DES150N-Texas-30-Hour-Behind-the-Wheel-Log.pdf" },
+    title: "How to fill in Texas Form DES150N (30-hour behind-the-wheel log)",
+    steps: [
+      "DES150N has a line for each session: the date, the time, daytime hours, nighttime hours, and the supervising adult's signature and driver license number. Copy the date and the day and night split from Drivetron; the adult signs and adds their license number.",
+      "Only 2 hours a day count, however long the drive. On a longer day, enter at most 2 hours. Drivetron's “counts toward the 30 hours” total already applies the limit.",
+      "Nighttime on the form is half an hour after sunset to half an hour before sunrise, the same definition Drivetron uses for Texas.",
+      "A parent or guardian signs the certification at the bottom. Take the log to DPS with the DE-964 driver education certificate.",
+    ],
+  },
   notAffiliatedWith:
     "the State of Texas, the Texas Department of Public Safety (DPS), or the Texas Department of Licensing and Regulation (TDLR)",
   defaultLocation: { lat: 30.2672, lng: -97.7431 },

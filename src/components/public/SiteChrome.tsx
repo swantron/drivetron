@@ -31,6 +31,11 @@ export function SiteFooter() {
         <div>
           <p className="font-semibold text-gray-900 dark:text-gray-100">States</p>
           <ul className="mt-1 space-y-1">
+            <li>
+              <Link href="/driving-hours-by-state" className="underline">
+                Hours by state, compared
+              </Link>
+            </li>
             {STATES.map((s) => (
               <li key={s.code}>
                 <Link href={`/${s.slug}`} className="underline">

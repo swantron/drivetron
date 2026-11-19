@@ -146,7 +146,12 @@ export default function LandingPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">More states are on the way.</p>
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+              <Link href="/driving-hours-by-state" className="font-medium text-emerald-700 underline dark:text-emerald-400">
+                Compare every state&apos;s hours
+              </Link>
+              . More states are on the way.
+            </p>
           </section>
 
           <section className="mt-6 rounded-2xl bg-emerald-50 p-6 dark:bg-emerald-950">

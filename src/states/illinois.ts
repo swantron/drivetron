@@ -31,6 +31,13 @@ export const illinois: StateRules = {
   },
   logAtTest:
     "Illinois doesn't ask for the log itself. A parent, legal guardian, or responsible adult certifies that the teen has had at least 50 hours of practice, 10 at night, and is ready to drive safely. Keep the printed log as the record behind that signature.",
+  formGuide: {
+    title: "Illinois's 50-hour parent certification",
+    steps: [
+      "Illinois doesn't ask for a log. A parent, legal guardian, or responsible adult certifies that the teen has had at least 50 hours of practice, 10 at night, and is ready to drive safely.",
+      "Keep Drivetron's printed log as the record behind that certification.",
+    ],
+  },
   notAffiliatedWith: "the State of Illinois or the Illinois Secretary of State",
   defaultLocation: { lat: 39.7817, lng: -89.6501 },
   stages: [

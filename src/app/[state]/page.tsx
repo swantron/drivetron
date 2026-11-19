@@ -91,6 +91,25 @@ export default async function StatePage({ params }: Props) {
           </Link>
         </section>
 
+        {s.formGuide && (
+          <section className="mt-10">
+            <h2 className="text-2xl font-bold">{s.formGuide.title}</h2>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-gray-700 dark:text-gray-300">
+              {s.formGuide.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            {s.formGuide.form && (
+              <p className="mt-3 text-sm">
+                The form:{" "}
+                <a href={s.formGuide.form.url} className="text-emerald-700 underline dark:text-emerald-400" target="_blank" rel="noreferrer">
+                  {s.formGuide.form.label}
+                </a>
+              </p>
+            )}
+          </section>
+        )}
+
         <section className="mt-10 space-y-6">
           <h2 className="text-2xl font-bold">
             {s.name}&apos;s {s.program} steps
@@ -129,7 +148,10 @@ export default async function StatePage({ params }: Props) {
             ))}
           </ul>
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            Checked against these sources on {s.verified}. Requirements can change, so confirm with the state before your teen
+            <Link href="/driving-hours-by-state" className="underline">
+            Compare {s.name} with other states
+          </Link>
+          . Checked against these sources on {s.verified}. Requirements can change, so confirm with the state before your teen
             applies. Drivetron is not affiliated with {s.notAffiliatedWith}.
           </p>
         </section>

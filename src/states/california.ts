@@ -37,6 +37,14 @@ export const california: StateRules = {
   // Supervised Driving Log: "The use of this log is optional"; the handbook asks for parent signatures on the permit.
   logAtTest:
     "California's own practice log is optional. What DMV asks for is a parent or guardian's signature on the instruction permit, certifying the 50 hours.",
+  formGuide: {
+    title: "California's instruction permit certification and Supervised Driving Log",
+    steps: [
+      "DMV's Supervised Driving Log is optional. Drivetron's printed log follows its layout, with darkness counted from half an hour after sunset to half an hour before sunrise.",
+      "What DMV requires is a signature on the instruction permit certifying 50 hours, 10 in darkness: a parent, guardian, or spouse (a teen without one may have a licensed driver 25 or older, or a driving instructor, sign).",
+      "Look over the log's total and night columns before signing; the parent is certifying them to DMV.",
+    ],
+  },
   notAffiliatedWith: "the State of California or the California Department of Motor Vehicles (DMV)",
   defaultLocation: { lat: 38.5767, lng: -121.4934 },
   stages: [

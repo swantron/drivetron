@@ -101,6 +101,26 @@ describe("state rules", () => {
     expect(computeProgress([], "2026-11-18", now, il).expiryDate).toEqual(new Date(2028, 10, 18));
   });
 
+  it("finds New York, Michigan and Virginia", () => {
+    const ny = getStateBySlug("new-york")!;
+    const mi = getStateBySlug("michigan")!;
+    const va = getStateBySlug("virginia")!;
+    expect([ny, mi, va].map((s) => [s.code, s.totalMinutes / 60, s.nightMinutes / 60])).toEqual([
+      ["NY", 50, 15],
+      ["MI", 50, 10],
+      ["VA", 45, 15],
+    ]);
+    expect(nightRangeText(mi)).toBe("30 minutes after sunset to 30 minutes before sunrise");
+    expect([holdText(ny), holdText(mi), holdText(va)]).toEqual(["6 months", "6 months", "9 months"]);
+  });
+
+  it("gives every state a form guide that names its form", () => {
+    for (const s of STATES) {
+      expect(s.formGuide?.steps.length, s.name).toBeGreaterThan(0);
+      expect(s.formGuide!.title, s.name).toMatch(new RegExp(s.name));
+    }
+  });
+
   it("drives progress from the state's own figures", () => {
     const strict = { ...getState("MT"), totalMinutes: 60 * 60, nightMinutes: 15 * 60, holdMonths: 9 };
     const p = computeProgress([], "2026-11-01", new Date(2026, 10, 9), strict);

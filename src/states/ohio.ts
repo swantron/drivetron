@@ -38,6 +38,15 @@ export const ohio: StateRules = {
   // BMV 5791: hours "may be documented manually by filling in the log included or by using the RoadReady Ohio App".
   logAtTest:
     "Ohio's Fifty-Hour Affidavit (BMV 5791) has its own Supervised Driving Log, filled in by hand or with the state's RoadReady Ohio app, and asks for each supervising adult's Ohio driver license number. A parent or guardian signs it in front of a notary. Keep the drives in Drivetron, with day and night already split, then copy them onto the form.",
+  formGuide: {
+    form: { label: "BMV 5791: Fifty-Hour Affidavit (PDF)", url: "https://dam.assets.ohio.gov/image/upload/publicsafety.ohio.gov/bmv5791.pdf" },
+    title: "How to fill in Ohio's Fifty-Hour Affidavit (BMV 5791)",
+    steps: [
+      "BMV 5791 has its own Supervised Driving Log: 50 hours, 40 in daytime and 10 at night, with each supervising adult's Ohio driver license number. Copy each drive's date and day and night minutes from Drivetron, and add the license numbers yourself (Drivetron doesn't keep them).",
+      "Ohio also accepts the hours logged in its RoadReady Ohio app instead of the paper log.",
+      "A parent, guardian, or custodian signs the affidavit in front of a notary. Bring it to the driving test.",
+    ],
+  },
   notAffiliatedWith: "the State of Ohio, the Ohio Department of Public Safety, or the Bureau of Motor Vehicles (BMV)",
   defaultLocation: { lat: 39.9612, lng: -82.9988 },
   stages: [
