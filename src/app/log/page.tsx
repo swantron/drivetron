@@ -132,10 +132,12 @@ function PrintableLog() {
               const t = (x: Date) => x.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
               return (
                 <tr key={d.id} className="break-inside-avoid border-b border-gray-300 align-top dark:border-gray-700 print:border-gray-400">
-                  <td className="whitespace-nowrap py-1 pr-1.5 sm:pr-2">
-                    {start.toLocaleDateString(undefined, { month: "numeric", day: "numeric", year: "2-digit" })}
+                  <td className="py-1 pr-1.5 sm:pr-2">
+                    <span className="whitespace-nowrap">{start.toLocaleDateString(undefined, { month: "numeric", day: "numeric", year: "2-digit" })}</span>
+                    {/* On a phone the range breaks after the dash, leaving room for the other columns */}
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {t(start)}–{t(end)}
+                      <span className="whitespace-nowrap">{t(start)}–</span>
+                      <span className="whitespace-nowrap">{t(end)}</span>
                     </div>
                   </td>
                   <td className="break-words py-1 pr-1.5 sm:pr-2">
@@ -150,7 +152,7 @@ function PrintableLog() {
                     {syncedLate(d) && <sup title="Reached the server well after its start time">‡</sup>}
                   </td>
                   <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">{d.nightMinutes ? formatMinutes(d.nightMinutes) : ""}</td>
-                  <td className="py-1 text-center font-medium">
+                  <td className="whitespace-nowrap py-1 text-center font-medium">
                     {inits.label(d.supervisorUid) || d.supervisorInitials}
                     {confirmationOf(d) === "confirmed" && <sup title={`Confirmed by ${d.signedOff?.name}`}>✓</sup>}
                     {needsConfirming(d) && <sup title="Not confirmed by a supervising adult">?</sup>}
@@ -171,8 +173,8 @@ function PrintableLog() {
               <td className="py-1 pr-2" colSpan={2}>
                 TOTAL TIME ({p.driveCount} {p.driveCount === 1 ? "drive" : "drives"})
               </td>
-              <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(loggedTotal)}</td>
-              <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(loggedNight)}</td>
+              <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{formatMinutes(loggedTotal)}</td>
+              <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{formatMinutes(loggedNight)}</td>
               <td />
             </tr>
             {p.overLimitMinutes > 0 && (
@@ -180,8 +182,8 @@ function PrintableLog() {
                 <td className="py-1 pr-2" colSpan={2}>
                   COUNTS TOWARD THE {rules.totalMinutes / 60} HOURS (up to {countLimitText(rules)})
                 </td>
-                <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.totalMinutes)}</td>
-                <td className="py-1 pr-2 text-right tabular-nums">{formatMinutes(p.nightMinutes)}</td>
+                <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{formatMinutes(p.totalMinutes)}</td>
+                <td className="whitespace-nowrap py-1 pr-2 text-right tabular-nums">{formatMinutes(p.nightMinutes)}</td>
                 <td />
               </tr>
             )}

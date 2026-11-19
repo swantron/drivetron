@@ -38,7 +38,13 @@ function Drives() {
         <section className={card}>
           <h2 className="font-semibold">Not practiced yet</h2>
           <p className={`${muted} mb-2`}>{rules.practiceNote}</p>
-          <p className="text-sm">{untried.join(" · ")}</p>
+          <ul className="flex flex-wrap gap-2">
+            {untried.map((t) => (
+              <li key={t} className="rounded-full border border-dashed border-gray-300 px-3 py-1 text-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                {t}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

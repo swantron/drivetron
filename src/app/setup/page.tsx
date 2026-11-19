@@ -4,7 +4,8 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { DEFAULT_STATE, STATES, STATES_BY_NAME, getState, holdText } from "@/states";
+import { STATES_BY_NAME, getState, holdText } from "@/states";
+import { signOut } from "@/lib/firebase/auth";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -72,7 +73,29 @@ function Setup() {
         </p>
       )}
       {mode === "create" ? <CreateForm /> : <JoinForm initialCode={codeParam} onRequested={setPendingId} />}
+      <SignedInAs />
     </main>
+  );
+}
+
+/** Signed in with the wrong Google account? A way back out before anything is created. */
+function SignedInAs() {
+  const { user } = useAuth();
+  const router = useRouter();
+  if (!user) return null;
+  return (
+    <p className={`${muted} text-center`}>
+      Signed in as {user.email ?? user.displayName}.{" "}
+      <button
+        className="min-h-11 font-medium underline"
+        onClick={async () => {
+          await signOut();
+          router.replace("/login");
+        }}
+      >
+        Sign out
+      </button>
+    </p>
   );
 }
 
@@ -84,8 +107,9 @@ function CreateForm() {
   const [learnerDob, setLearnerDob] = useState("");
   const [permitDate, setPermitDate] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [busy, setBusy] = useState(false);
-  const [state, setState] = useState(DEFAULT_STATE);
-  const rules = getState(state);
+  // Nothing preselected: a family that skims past the picker would get another state's rules
+  const [state, setState] = useState("");
+  const rules = getState(state || undefined);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,17 +133,19 @@ function CreateForm() {
       <p className={muted}>For the parent or guardian. You&apos;ll get a code to invite the other parent and your teen.</p>
       <div>
         <label className={label} htmlFor="state">State</label>
-        <select id="state" className={input} value={state} onChange={(e) => setState(e.target.value)}>
+        <select id="state" className={input} required value={state} onChange={(e) => setState(e.target.value)}>
+          <option value="" disabled>
+            Choose your state
+          </option>
           {STATES_BY_NAME.map((st) => (
             <option key={st.code} value={st.code}>
               {st.name}
             </option>
           ))}
         </select>
-        <p className={`${muted} mt-1`}>
+        {state && <p className={`${muted} mt-1`}>
           {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? `, ${formatMinutes(rules.nightMinutes)} at night` : ""}{rules.weatherMinutes ? `, ${formatMinutes(rules.weatherMinutes)} in bad weather` : ""}{rules.challengingMinutes ? `, ${formatMinutes(rules.challengingMinutes)} at night or in bad weather` : ""}{rules.noPermit ? ". No learner's permit is needed." : `, with the ${rules.permitName} held at least ${holdText(rules)}.`}
-          {STATES.length === 1 && " More states are on the way."}
-        </p>
+        </p>}
       </div>
       <div>
         <label className={label} htmlFor="me">Your name (supervising adult)</label>
@@ -128,7 +154,7 @@ function CreateForm() {
       <div>
         <label className={label} htmlFor="learner">Learner&apos;s full legal name</label>
         <input id="learner" className={input} required maxLength={80} value={learnerName} onChange={(e) => setLearnerName(e.target.value)} />
-        <p className={`${muted} mt-1`}>As it will appear on {rules.certification.label}.</p>
+        <p className={`${muted} mt-1`}>As it will appear on {state ? rules.certification.label : "your state's forms"}.</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -185,12 +211,14 @@ function JoinForm({ initialCode, onRequested }: { initialCode: string; onRequest
   const { showToast } = useToast();
   const [code, setCode] = useState(initialCode);
   const [myName, setMyName] = useState(user?.displayName ?? "");
-  const [role, setRole] = useState<"supervisor" | "learner">("supervisor");
+  // No default: a teen who skims past it would join as a supervising adult
+  const [role, setRole] = useState<"supervisor" | "learner" | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!role) return showToast("Choose whether you're a supervising adult or the learner", "error");
     setBusy(true);
     try {
       onRequested(await requestToJoin(user, code, { name: myName.trim(), initials: initialsOf(myName) || "?", role }));
@@ -225,13 +253,13 @@ function JoinForm({ initialCode, onRequested }: { initialCode: string; onRequest
         <div className="grid grid-cols-2 gap-2">
           {(["supervisor", "learner"] as const).map((r) => (
             <label key={r} className={`rounded-lg border p-3 text-center text-sm ${role === r ? "border-emerald-700 bg-emerald-50 dark:bg-emerald-950" : "border-gray-300 dark:border-gray-700"}`}>
-              <input type="radio" name="role" className="sr-only" checked={role === r} onChange={() => setRole(r)} />
+              <input type="radio" name="role" required className="sr-only" checked={role === r} onChange={() => setRole(r)} />
               {r === "supervisor" ? "A supervising adult" : "The learner driver"}
             </label>
           ))}
         </div>
       </fieldset>
-      <button className={primaryBtn} disabled={busy}>
+      <button className={primaryBtn} disabled={busy || !role}>
         {busy ? "Sending…" : "Ask to join"}
       </button>
     </form>

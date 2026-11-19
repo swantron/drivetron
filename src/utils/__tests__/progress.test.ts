@@ -182,3 +182,18 @@ describe("challenging hours (Alaska: 10 at night or in bad weather)", () => {
     expect([p.challengingMinutes, p.challengingRemaining]).toEqual([0, 0]);
   });
 });
+
+import { countedPerDrive } from "../progress";
+
+describe("countedPerDrive", () => {
+  const dr = (id: string, startedAt: number, minutes: number) =>
+    ({ id, startedAt, endedAt: startedAt + minutes * 60000, dayMinutes: minutes, nightMinutes: 0, conditions: [], skills: [] }) as never;
+  it("gives each day's allowance to drives in order", () => {
+    const day = new Date(2026, 5, 1, 9).getTime();
+    const m = countedPerDrive([dr("b", day + 3 * 3600000, 60), dr("a", day, 90), dr("c", day + 86400000, 60)], { minutes: 120, per: "day" });
+    expect([...m]).toEqual([["b", 30]]);
+  });
+  it("is empty without a limit", () => {
+    expect(countedPerDrive([dr("a", 0, 300)]).size).toBe(0);
+  });
+});

@@ -87,7 +87,7 @@ export function ConfirmCard() {
             </Link>
             <button
               onClick={() => confirm([d])}
-              className="shrink-0 rounded-lg border border-emerald-700 px-3 py-2 text-sm font-semibold text-emerald-800 active:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-300 dark:active:bg-emerald-950"
+              className="min-h-11 shrink-0 rounded-lg border border-emerald-700 px-3 py-2 text-sm font-semibold text-emerald-800 active:bg-emerald-50 dark:border-emerald-500 dark:text-emerald-300 dark:active:bg-emerald-950"
             >
               Confirm
             </button>
@@ -97,7 +97,7 @@ export function ConfirmCard() {
       {waiting.length > SHOWN && <p className={muted}>and {waiting.length - SHOWN} more</p>}
       {waiting.length > 1 && (
         <button className={primaryBtn} onClick={() => confirm(waiting)}>
-          Confirm all {waiting.length}
+          {waiting.length === 2 ? "Confirm both" : `Confirm all ${waiting.length}`}
         </button>
       )}
     </section>

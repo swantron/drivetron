@@ -80,7 +80,7 @@ export default function LandingPage() {
                   href={START_HREF}
                   className="rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
                 >
-                  Start your log — free{PAYWALL_ON ? " to start" : ""}
+                  {PAYWALL_ON ? "Start your log free" : "Start your free log"}
                 </Link>
                 <a href="#how" className="rounded-xl border border-gray-300 px-5 py-3 font-medium dark:border-gray-700">
                   How it works

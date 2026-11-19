@@ -69,7 +69,11 @@ export default async function StatePage({ params }: Props) {
           {facts.map((f) => (
             <div key={f.label} className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <dt className="text-sm text-gray-600 first-letter:uppercase dark:text-gray-400">{f.label}</dt>
-              <dd className="mt-1 text-2xl font-bold">{f.value}</dd>
+              {/* "6 months + 1 day": the extra day on its own small line instead of a ragged wrap */}
+              <dd className="mt-1 text-2xl font-bold">
+                {f.value.split(" + ")[0]}
+                {f.value.includes(" + ") && <span className="block text-sm font-medium text-gray-600 dark:text-gray-400">+ {f.value.split(" + ").slice(1).join(" + ")}</span>}
+              </dd>
             </div>
           ))}
         </dl>

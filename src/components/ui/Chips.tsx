@@ -19,7 +19,7 @@ export function Chips({
             type="button"
             aria-pressed={on}
             onClick={() => onToggle(o)}
-            className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+            className={`min-h-11 rounded-full border px-3.5 py-2 text-sm transition-colors ${
               on
                 ? "border-emerald-700 bg-emerald-700 text-white"
                 : // View-only: fade what wasn't picked so the picked ones read at a glance

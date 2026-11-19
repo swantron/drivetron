@@ -25,10 +25,10 @@ import {
   updateFamily,
 } from "@/lib/firebase/firestore";
 import { writeErrorMessage } from "@/utils/errors";
-import { STATES, STATES_BY_NAME } from "@/states";
+import { STATES, STATES_BY_NAME, getState } from "@/states";
 import { driveLearnerId, firstName, learnersOf, newId } from "@/utils/learners";
 import { signOut } from "@/lib/firebase/auth";
-import { initialsOf } from "@/utils/progress";
+import { formatMinutes, initialsOf } from "@/utils/progress";
 import type { Family, Learner, Member } from "@/types";
 import { card, dangerBtn, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
@@ -51,7 +51,7 @@ function FamilySettings() {
       <Members family={family} myUid={user.uid} />
       <Invite family={family} isOwner={isOwner} />
       {isSupervisor ? <Learners familyId={family.id} /> : <LearnerSummary />}
-      <Vehicles familyId={family.id} />
+      <Vehicles familyId={family.id} canManage={isSupervisor} />
       {!isOwner && <LeaveFamily familyId={family.id} uid={user.uid} />}
       {isOwner && <OwnerControls family={family} myUid={user.uid} />}
       <DataExport />
@@ -180,6 +180,7 @@ function LeaveFamily({ familyId, uid }: { familyId: string; uid: string }) {
 
 function Invite({ family, isOwner }: { family: Family; isOwner: boolean }) {
   const { showToast } = useToast();
+  const [confirmRotate, setConfirmRotate] = useState(false);
   const link = typeof window !== "undefined" ? `${window.location.origin}/setup?code=${family.inviteCode}` : "";
 
   const share = async () => {
@@ -199,23 +200,40 @@ function Invite({ family, isOwner }: { family: Family; isOwner: boolean }) {
   return (
     <section className={`${card} space-y-3`}>
       <h2 className="font-semibold">Invite</h2>
-      <p className={muted}>Share this with the other parent, another licensed adult you authorize, or your teen. They ask to join with it, and the log owner approves them.</p>
+      <p className={muted}>
+        Everyone on this log joins with this code: parents or guardians, other licensed adults who supervise, and the learner.
+        They ask to join, and {isOwner ? "you approve" : `${family.members[family.ownerUid]?.name ?? "the person who started the log"} approves`} them on this tab.
+      </p>
       <p className="rounded-lg bg-gray-100 py-3 text-center font-mono text-2xl tracking-[0.3em] dark:bg-gray-950">{family.inviteCode}</p>
       <button className={primaryBtn} onClick={share}>
         Share invite
       </button>
-      {isOwner && (
-        <button
-          className="w-full text-sm text-gray-500 dark:text-gray-400 underline"
-          onClick={() =>
-            rotateInviteCode(family)
-              .then(() => showToast("New code made; the old one no longer works", "success"))
-              .catch((e) => showToast(writeErrorMessage(e, "Couldn't change the code"), "error"))
-          }
-        >
-          Make a new code
-        </button>
-      )}
+      {isOwner &&
+        (confirmRotate ? (
+          <div className="space-y-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+            <p>The current code and any links you&apos;ve sent stop working. People already on the log stay.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button className={secondaryBtn} onClick={() => setConfirmRotate(false)}>
+                Keep this code
+              </button>
+              <button
+                className={primaryBtn}
+                onClick={() => {
+                  setConfirmRotate(false);
+                  rotateInviteCode(family)
+                    .then(() => showToast("New code made; the old one no longer works", "success"))
+                    .catch((e) => showToast(writeErrorMessage(e, "Couldn't change the code"), "error"));
+                }}
+              >
+                Make new code
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button className="min-h-11 w-full text-sm text-gray-500 underline dark:text-gray-400" onClick={() => setConfirmRotate(true)}>
+            Make a new code
+          </button>
+        ))}
     </section>
   );
 }
@@ -304,6 +322,9 @@ function Learners({ familyId }: { familyId: string }) {
   const { learners, allDrives, rules, unlocks } = useFamily();
   const { showToast } = useToast();
   const [adding, setAdding] = useState(false);
+  // Switching states changes the hours, hold and forms for everyone, so it asks first
+  const [pendingState, setPendingState] = useState<string | null>(null);
+  const next = pendingState ? getState(pendingState) : null;
   return (
     <section className={`${card} space-y-3`}>
       <h2 className="font-semibold">Learners</h2>
@@ -312,11 +333,9 @@ function Learners({ familyId }: { familyId: string }) {
         <select
           id="logState"
           className={input}
-          value={rules.code}
+          value={pendingState ?? rules.code}
           disabled={STATES.length < 2}
-          onChange={(e) =>
-            updateFamily(familyId, { state: e.target.value }).catch((err) => showToast(writeErrorMessage(err), "error"))
-          }
+          onChange={(e) => setPendingState(e.target.value === rules.code ? null : e.target.value)}
         >
           {STATES_BY_NAME.map((st) => (
             <option key={st.code} value={st.code}>
@@ -324,7 +343,33 @@ function Learners({ familyId }: { familyId: string }) {
             </option>
           ))}
         </select>
-        <p className={`${muted} mt-1`}>Sets the hours, hold period and forms this log follows.</p>
+        {next ? (
+          <div className="mt-2 space-y-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+            <p>
+              Switch this log from {rules.name} to {next.name}? Progress, the earliest test date and the printed log will follow{" "}
+              {next.name}&apos;s rules ({formatMinutes(next.totalMinutes)}
+              {next.nightMinutes ? `, ${formatMinutes(next.nightMinutes)} at night` : ""}) for everyone on it. Drives stay as they are.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button className={secondaryBtn} onClick={() => setPendingState(null)}>
+                Cancel
+              </button>
+              <button
+                className={primaryBtn}
+                onClick={() => {
+                  updateFamily(familyId, { state: next.code })
+                    .then(() => showToast(`Now following ${next.name}'s rules`, "success"))
+                    .catch((err) => showToast(writeErrorMessage(err), "error"));
+                  setPendingState(null);
+                }}
+              >
+                Switch
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className={`${muted} mt-1`}>Sets the hours, hold period and forms this log follows.</p>
+        )}
       </div>
       {learners.map((l) => (
         <LearnerForm
@@ -425,7 +470,7 @@ function LearnerForm({
   );
 }
 
-function Vehicles({ familyId }: { familyId: string }) {
+function Vehicles({ familyId, canManage }: { familyId: string; canManage: boolean }) {
   const { vehicles } = useFamily();
   const { showToast } = useToast();
   const [name, setName] = useState("");
@@ -442,18 +487,21 @@ function Vehicles({ familyId }: { familyId: string }) {
     <section className={`${card} space-y-3`}>
       <h2 className="font-semibold">Vehicles</h2>
       {vehicles.length === 0 ? (
-        <p className={muted}>Add the cars you practice in, then pick one when starting a drive.</p>
+        <p className={muted}>
+          {canManage ? "Add the cars you practice in, then pick one when starting a drive." : "A parent or guardian adds the cars you practice in."}
+        </p>
       ) : (
         <ul className="divide-y divide-gray-100 dark:divide-gray-800">
           {vehicles.map((v) => (
             <li key={v.id} className="flex items-center justify-between py-2">
               <span className="font-medium">{v.name}</span>
               {/* Past drives keep the vehicle's name, so removing one doesn't change the log */}
-              <ConfirmRemove label={`Remove ${v.name}`} onConfirm={() => removeVehicle(familyId, v.id, onError)} />
+              {canManage && <ConfirmRemove label={`Remove ${v.name}`} onConfirm={() => removeVehicle(familyId, v.id, onError)} />}
             </li>
           ))}
         </ul>
       )}
+      {canManage && (
       <form onSubmit={add} data-unsaved={!!name.trim() || undefined} className="flex gap-2">
         <input
           aria-label="Vehicle name"
@@ -467,6 +515,7 @@ function Vehicles({ familyId }: { familyId: string }) {
           Add
         </button>
       </form>
+      )}
     </section>
   );
 }
@@ -476,7 +525,7 @@ function ConfirmRemove({ label, onConfirm }: { label: string; onConfirm: () => v
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!armed) return;
-    const t = setTimeout(() => setArmed(false), 4000);
+    const t = setTimeout(() => setArmed(false), 8000);
     return () => clearTimeout(t);
   }, [armed]);
   return (

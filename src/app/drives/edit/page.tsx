@@ -364,7 +364,8 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
               <option value={drive.vehicleId}>{drive.vehicleName} (removed)</option>
             )}
             <option value="">No vehicle</option>
-            <option value={NEW_VEHICLE}>Add a vehicle…</option>
+            {/* The garage is the supervising adults' to manage */}
+            {isSupervisor && <option value={NEW_VEHICLE}>Add a vehicle…</option>}
           </select>
           {vehicleId === NEW_VEHICLE && (
             <input

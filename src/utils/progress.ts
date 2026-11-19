@@ -200,3 +200,25 @@ export function initialsOf(name: string): string {
     .slice(0, 3)
     .join("");
 }
+
+/**
+ * With a daily or weekly limit (Texas, North Carolina), how many of each drive's minutes count.
+ * Each day's or week's allowance goes to its drives in the order they were driven. Drives with no
+ * limit, or under it, aren't in the map.
+ */
+export function countedPerDrive(done: Drive[], limit?: StateRules["countLimit"]): Map<string, number> {
+  const out = new Map<string, number>();
+  if (!limit) return out;
+  const used = new Map<string, number>();
+  for (const d of [...done].filter((x) => x.endedAt !== null).sort((a, b) => a.startedAt - b.startedAt)) {
+    const s = new Date(d.startedAt);
+    if (limit.per === "week") s.setDate(s.getDate() - s.getDay());
+    const key = `${s.getFullYear()}-${s.getMonth()}-${s.getDate()}`;
+    const len = d.dayMinutes + d.nightMinutes;
+    const before = used.get(key) ?? 0;
+    const counts = Math.max(0, Math.min(len, limit.minutes - before));
+    used.set(key, before + len);
+    if (counts < len) out.set(d.id, counts);
+  }
+  return out;
+}
