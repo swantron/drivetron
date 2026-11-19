@@ -29,6 +29,7 @@ import { STATES, STATES_BY_NAME, getState } from "@/states";
 import { driveLearnerId, firstName, learnersOf, newId } from "@/utils/learners";
 import { signOut } from "@/lib/firebase/auth";
 import { formatMinutes, initialsOf } from "@/utils/progress";
+import { distinctLabels, supervisorsOf } from "@/utils/members";
 import type { Family, Learner, Member } from "@/types";
 import { card, dangerBtn, input, label, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 
@@ -251,6 +252,8 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
       ? family.memberUids.map((u) => (u !== myUid ? family.members[u] : undefined)).find((m) => m?.role === "supervisor" && m.initials === me.initials)?.name
       : undefined;
 
+  const printedAs = distinctLabels(supervisorsOf(family));
+
   const meDirty =
     !!me && (name.trim() !== me.name || (initials.trim() || initialsOf(name)).toUpperCase().slice(0, 4) !== me.initials);
 
@@ -271,11 +274,18 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
         {family.memberUids.map((uid) => {
           const m = family.members[uid];
           if (!m) return null;
+          // What the printed log calls this adult: initials, or a first name when two share initials
+          const printed = m.role === "supervisor" ? printedAs.get(uid) : undefined;
           return (
             <li key={uid} className="flex items-center justify-between py-2">
               <div>
                 <p className="font-medium">
-                  {m.name} <span className="text-sm text-gray-500 dark:text-gray-400">({m.initials})</span>
+                  {m.name}{" "}
+                  {printed && (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      ({printed === m.initials ? printed : `prints as ${printed}`})
+                    </span>
+                  )}
                   {uid === myUid && <span className="ml-1 text-xs text-emerald-700 dark:text-emerald-400">you</span>}
                 </p>
                 <p className={muted}>{m.role === "supervisor" ? "Supervising adult" : "Learner"}{uid === family.ownerUid ? " · owner" : ""}</p>
@@ -306,7 +316,8 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
           </div>
           {initialsClash && (
             <p className="col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
-              {initialsClash} also uses {me?.initials}. Change your initials so the printed log tells you apart.
+              {initialsClash} also uses {me?.initials}, so the printed log names you both by first name. Change your initials if you&apos;d
+              rather it show initials.
             </p>
           )}
           {meDirty && (

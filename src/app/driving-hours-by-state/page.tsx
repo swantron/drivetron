@@ -223,7 +223,7 @@ export default function DrivingHoursByState() {
             href={START_HREF}
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
           >
-            Start your log — free{PAYWALL_ON ? " to start" : ""}
+            {PAYWALL_ON ? "Start your log free" : "Start your free log"}
           </Link>
         </section>
 

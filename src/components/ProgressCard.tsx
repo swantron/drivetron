@@ -184,7 +184,7 @@ export function ReadyBanner() {
     <section className="space-y-2 rounded-2xl bg-emerald-50 p-4 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
       {rules.certification ? (
         <>
-          <p className="font-semibold">Hours and waiting period done 🎉</p>
+          <p className="font-semibold">Hours and waiting period done</p>
           <p className="text-sm">
             Print the log, then sign{" "}
             <a className="underline" href={rules.certification.url} target="_blank" rel="noreferrer">
@@ -195,7 +195,7 @@ export function ReadyBanner() {
         </>
       ) : (
         <>
-          <p className="font-semibold">Waiting period done 🎉</p>
+          <p className="font-semibold">Waiting period done</p>
           <p className="text-sm">
             The {rules.permitName} has been held long enough. {rules.name} doesn&apos;t ask for an hours certification, so check its other
             requirements (age, driver&apos;s education) on the Log tab before your teen applies. Print the log if you&apos;d like a record.

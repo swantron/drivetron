@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Fragment } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useExport } from "@/components/DataExport";
 import { confirmationOf, needsConfirming } from "@/utils/signoff";
@@ -137,7 +138,8 @@ function PrintableLog() {
               const end = new Date(d.endedAt!);
               const t = (x: Date) => x.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
               return (
-                <tr key={d.id} className="break-inside-avoid border-b border-gray-300 align-top dark:border-gray-700 print:border-gray-400">
+                <Fragment key={d.id}>
+                <tr className={`break-inside-avoid align-top ${d.notes ? "" : "border-b border-gray-300 dark:border-gray-700 print:border-gray-400"}`}>
                   <td className="py-1 pr-1.5 sm:pr-2">
                     <span className="whitespace-nowrap">{start.toLocaleDateString(undefined, { month: "numeric", day: "numeric", year: "2-digit" })}</span>
                     {/* On a phone the range breaks after the dash, leaving room for the other columns */}
@@ -149,7 +151,6 @@ function PrintableLog() {
                   <td className="break-words py-1 pr-1.5 sm:pr-2">
                     {[...d.conditions, ...d.skills].join(", ") || "—"}
                     {d.vehicleName && manyVehicles && <div className="text-xs text-gray-500 dark:text-gray-400">Vehicle: {d.vehicleName}</div>}
-                    {d.notes && <div className="text-xs text-gray-500 dark:text-gray-400">{d.notes}</div>}
                   </td>
                   <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">
                     {formatMinutes(d.dayMinutes + d.nightMinutes)}
@@ -164,6 +165,15 @@ function PrintableLog() {
                     {needsConfirming(d) && <sup title="Not confirmed by a supervising adult">?</sup>}
                   </td>
                 </tr>
+                {/* Notes get the full width, so they don't squeeze the conditions column into a tall stack */}
+                {d.notes && (
+                  <tr className="break-inside-avoid border-b border-gray-300 dark:border-gray-700 print:border-gray-400">
+                    <td colSpan={5} className="pb-1 text-xs text-gray-500 dark:text-gray-400">
+                      {d.notes}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               );
             })}
             {done.length === 0 && (
@@ -224,10 +234,7 @@ function PrintableLog() {
         <div className="mt-10 grid grid-cols-2 gap-8 break-inside-avoid">
           {["Parent/Guardian", "Teen Driver"].map((who) => (
             <div key={who}>
-              <div className="flex items-end gap-2 border-b border-black pb-1 dark:border-gray-400 print:border-black">
-                <span className="text-lg">X</span>
-                <span className="h-8" />
-              </div>
+              <div className="h-10 border-b border-black dark:border-gray-400 print:border-black" />
               <p className="mt-1 text-xs">{who}</p>
             </div>
           ))}

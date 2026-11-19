@@ -13,7 +13,7 @@ import { addDrive, removeDrive, saveDrive, saveVehicle } from "@/lib/firebase/fi
 import { defaultVehicleId, driveLearnerId, newId, PRIMARY_LEARNER } from "@/utils/learners";
 import { splitDayNight } from "@/utils/night";
 import { driveCoords } from "@/utils/location";
-import { defaultSupervisor, supervisorsOf } from "@/utils/members";
+import { defaultSupervisor, distinctLabels, supervisorsOf } from "@/utils/members";
 import { formatMinutes } from "@/utils/progress";
 import { CONDITIONS, SKILLS } from "@/utils/practice";
 import type { Drive, Family } from "@/types";
@@ -82,6 +82,8 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const { showToast } = useToast();
   const router = useRouter();
   const supervisors = supervisorsOf(family);
+  // The same names the printed log uses: initials, or first names when two adults share them
+  const printedAs = distinctLabels(supervisors);
   const { learners, learner: selectedLearner, vehicles, drives: learnerDrives, isSupervisor, rules } = useFamily();
   // Mirrors firestore.rules: learners edit only their own drives, and only tags once it's finished.
   const ownDrive = !drive || drive.createdBy === user?.uid;
@@ -235,8 +237,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   };
 
   return (
-    // Bottom padding lets the last tags scroll clear of the pinned Save bar and the tab bar
-    <form onSubmit={save} className="space-y-4 pb-24">
+    <form onSubmit={save} className="space-y-4">
       <fieldset disabled={!canEdit} className="min-w-0 space-y-4">
       <h1 className="text-2xl font-bold">
         {finished ? (timeProblem ? "Check the times" : `Nice — ${formatMinutes(total)} logged`) : forgot ? "When did the drive end?" : drive ? (canEdit ? "Edit drive" : "Drive") : "Add a past drive"}
@@ -333,7 +334,8 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
           <select id="sup" className={input} value={supervisorUid} onChange={(e) => setSupervisorUid(e.target.value)}>
             {supervisors.map((s) => (
               <option key={s.uid} value={s.uid}>
-                {s.name} ({s.initials})
+                {s.name}
+                {printedAs.get(s.uid) === s.initials ? ` (${s.initials})` : ""}
               </option>
             ))}
           </select>
@@ -402,8 +404,8 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
       </section>
 
       {canEdit && (
-        // Pinned above the tab bar: the form is long, and Save shouldn't be a scroll away
-        <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 -mx-4 grid grid-cols-[1fr_2fr] gap-2 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95 print:hidden">
+        // At the end of the form, not pinned: a pinned bar always covers the tags under it
+        <div className="grid grid-cols-[1fr_2fr] gap-2 print:hidden">
           <button type="button" className={secondaryBtn} onClick={() => router.back()}>
             Cancel
           </button>
