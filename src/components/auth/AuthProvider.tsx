@@ -2,6 +2,7 @@
 
 import { createContext, useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
+import { completeRedirectSignIn } from "@/lib/firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase/config";
 // Notes a Google Play app launch on the first page load, before redirects drop the launch URL
 import "@/lib/platform";
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    completeRedirectSignIn().catch((error) => console.error("Redirect sign-in failed:", error));
     const unsubscribe = onAuthStateChanged(getFirebaseAuth(), (u) => {
       setUser(u);
       setLoading(false);

@@ -3,8 +3,9 @@ import {
   GoogleAuthProvider,
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
+  getRedirectResult,
   signInWithEmailLink,
-  signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -12,7 +13,14 @@ import { clearIndexedDbPersistence, terminate } from "firebase/firestore";
 import { getFirebaseAuth, getFirebaseDb } from "./config";
 
 export async function signInWithGoogle() {
-  return signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider());
+  // Same-tab redirect. A popup comes back through drivetron.app and this browser
+  // drops the link to the login page, so the sign-in sits on a blank handler.
+  return signInWithRedirect(getFirebaseAuth(), new GoogleAuthProvider());
+}
+
+/** Finishes a Google redirect that landed back on this page. */
+export function completeRedirectSignIn() {
+  return getRedirectResult(getFirebaseAuth());
 }
 
 export async function signOut() {
