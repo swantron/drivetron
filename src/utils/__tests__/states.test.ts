@@ -144,6 +144,17 @@ describe("state rules", () => {
     expect(p.hoursDone).toBe(true);
   });
 
+  it("finds Wisconsin, Colorado, Minnesota and South Carolina", () => {
+    const [wi, co, mn, sc] = ["wisconsin", "colorado", "minnesota", "south-carolina"].map((s) => getStateBySlug(s)!);
+    expect([wi, co, mn, sc].map((s) => [s.code, s.totalMinutes / 60, s.nightMinutes / 60, holdText(s)])).toEqual([
+      ["WI", 50, 10, "6 months"],
+      ["CO", 50, 10, "12 months"],
+      ["MN", 50, 15, "6 months"],
+      ["SC", 40, 10, "180 days"],
+    ]);
+    expect(nightRangeText(wi)).toBe("30 minutes after sunset to 30 minutes before sunrise");
+  });
+
   it("gives every state a form guide that names its form", () => {
     for (const s of STATES) {
       expect(s.formGuide?.steps.length, s.name).toBeGreaterThan(0);
