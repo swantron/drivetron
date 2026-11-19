@@ -96,6 +96,24 @@ export const QA_FAMILIES: QaFamily[] = [
     people: trio("ak", "Alaska", "Abby", "Alan", "Ada"),
   },
   {
+    id: "qa-ar",
+    state: "AR",
+    checks: "No hours required: no target bars, no \"still to drive\" or projection; the six-month hold is the only gate, two weeks out.",
+    people: trio("ar", "Arkansas", "Ava", "Andy", "Aria"),
+  },
+  {
+    id: "qa-hi-done",
+    state: "HI",
+    checks: "No hours required and the 180-day hold has passed: the \"Waiting period done\" banner with no form to sign.",
+    people: trio("hi", "Hawaii", "Hope", "Hank", "Hana"),
+  },
+  {
+    id: "qa-ms",
+    state: "MS",
+    checks: "50 hours and a 12-month hold, no night requirement: the Road Test Waiver affidavit link.",
+    people: trio("ms", "Mississippi", "Mia", "Matt", "Mason"),
+  },
+  {
     id: "qa-pa-done",
     state: "PA",
     checks: "Everything done and the hold passed: the eligible banner and the DL-180C link.",

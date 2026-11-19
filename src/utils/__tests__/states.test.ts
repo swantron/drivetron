@@ -12,7 +12,13 @@ describe("state rules", () => {
     for (const s of STATES) {
       expect(s.code).toMatch(/^[A-Z]{2}$/);
       expect(s.slug).toMatch(/^[a-z-]+$/);
-      expect(s.totalMinutes).toBeGreaterThan(0);
+      // A state with no hours requirement has no figures and no form to certify them
+      if (s.noHours) {
+        expect([s.totalMinutes, s.nightMinutes, s.certification, s.weatherMinutes, s.challengingMinutes, s.countLimit]).toEqual([0, 0, undefined, undefined, undefined, undefined]);
+      } else {
+        expect(s.totalMinutes).toBeGreaterThan(0);
+        expect(s.certification).toBeDefined();
+      }
       expect(s.nightMinutes).toBeGreaterThanOrEqual(0);
       expect(s.nightMinutes).toBeLessThanOrEqual(s.totalMinutes);
       expect(s.holdMonths).toBeGreaterThanOrEqual(0);
@@ -21,7 +27,7 @@ describe("state rules", () => {
       expect(Math.abs(s.nightOffsetMinutes)).toBeLessThanOrEqual(60);
       if (s.permitValidMonths !== null) expect(s.permitValidMonths).toBeGreaterThanOrEqual(s.holdMonths);
       expect(s.sources.length).toBeGreaterThan(0);
-      for (const l of [...s.sources, s.certification]) expect(l.url).toMatch(/^https:\/\//);
+      for (const l of [...s.sources, ...(s.certification ? [s.certification] : [])]) expect(l.url).toMatch(/^https:\/\//);
       expect(s.verified).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
@@ -158,6 +164,9 @@ describe("state rules", () => {
   // Key figures for each state added in the later batches, checked against its sources: [code, total h, night h, hold]
   const FIGURES: [string, number, number, string][] = [
     ["AL", 50, 0, "6 months"],
+    ["MS", 50, 0, "12 months"],
+    ["AR", 0, 0, "6 months"],
+    ["HI", 0, 0, "180 days"],
     ["LA", 50, 15, "180 days"],
     ["KY", 60, 10, "180 days"],
     ["OR", 100, 0, "6 months"],

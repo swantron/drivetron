@@ -144,7 +144,7 @@ function CreateForm() {
           ))}
         </select>
         {state && <p className={`${muted} mt-1`}>
-          {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? `, ${formatMinutes(rules.nightMinutes)} at night` : ""}{rules.weatherMinutes ? `, ${formatMinutes(rules.weatherMinutes)} in bad weather` : ""}{rules.challengingMinutes ? `, ${formatMinutes(rules.challengingMinutes)} at night or in bad weather` : ""}{rules.noPermit ? ". No learner's permit is needed." : `, with the ${rules.permitName} held at least ${holdText(rules)}.`}
+          {rules.noHours ? `${rules.name} doesn't require a set number of supervised hours; Drivetron keeps a practice log and tracks the hold` : `${formatMinutes(rules.totalMinutes)} supervised`}{rules.nightMinutes ? `, ${formatMinutes(rules.nightMinutes)} at night` : ""}{rules.weatherMinutes ? `, ${formatMinutes(rules.weatherMinutes)} in bad weather` : ""}{rules.challengingMinutes ? `, ${formatMinutes(rules.challengingMinutes)} at night or in bad weather` : ""}{rules.noPermit ? ". No learner's permit is needed." : `, with the ${rules.permitName} held at least ${holdText(rules)}.`}
         </p>}
       </div>
       <div>
@@ -154,7 +154,7 @@ function CreateForm() {
       <div>
         <label className={label} htmlFor="learner">Learner&apos;s full legal name</label>
         <input id="learner" className={input} required maxLength={80} value={learnerName} onChange={(e) => setLearnerName(e.target.value)} />
-        <p className={`${muted} mt-1`}>As it will appear on {state ? rules.certification.label : "your state's forms"}.</p>
+        <p className={`${muted} mt-1`}>As it will appear on {state && rules.certification ? rules.certification.label : "the printed log"}.</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

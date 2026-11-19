@@ -23,6 +23,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = getStateBySlug((await params).state);
   if (!s) return {};
   const hours = `${hoursText(s.totalMinutes)}${s.nightMinutes ? `, ${hoursText(s.nightMinutes)} at night` : ""}${s.weatherMinutes ? `, ${hoursText(s.weatherMinutes)} in bad weather` : ""}${s.challengingMinutes ? `, ${hoursText(s.challengingMinutes)} at night or in bad weather` : ""}`;
+  // States with no hours requirement: people still search "Arkansas supervised driving hours", so answer it
+  if (s.noHours) {
+    const title = `${s.name} supervised driving hours: none required | Drivetron`;
+    const description = `${s.name} doesn't require a set number of supervised driving hours; the ${s.permitName} is held at least ${holdText(s)}. Here are the rules, and an optional practice log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
+    return { title, description, alternates: { canonical: `/${s.slug}` }, ...socialMeta(title, description, `/${s.slug}`), robots: { index: true, follow: true } };
+  }
   const title = `${s.name} supervised driving log: ${hours} | Drivetron`;
   const description = `${s.name} teen drivers need ${hours}${s.noPermit ? "" : `, with the ${s.permitName} held at least ${holdText(s)}`}. Here are the rules, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
   return {
@@ -38,7 +44,7 @@ export default async function StatePage({ params }: Props) {
   const s = getStateBySlug((await params).state);
   if (!s) notFound();
   const facts = [
-    { label: "Supervised hours", value: formatMinutes(s.totalMinutes) },
+    { label: "Supervised hours", value: s.noHours ? "None required" : formatMinutes(s.totalMinutes) },
     ...(s.nightMinutes ? [{ label: "At night", value: formatMinutes(s.nightMinutes) }] : []),
     ...(s.weatherMinutes ? [{ label: "In bad weather", value: formatMinutes(s.weatherMinutes) }] : []),
     ...(s.challengingMinutes ? [{ label: "At night or in bad weather", value: formatMinutes(s.challengingMinutes) }] : []),
@@ -57,12 +63,22 @@ export default async function StatePage({ params }: Props) {
         </nav>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{s.name} supervised driving log</h1>
         <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+          {s.noHours ? (
+            <>
+              {s.name} doesn&apos;t require a set number of supervised driving hours. A teen on {/^[aeiou]/i.test(s.permitName) ? "an" : "a"} {s.permitName}{" "}
+              holds it at least {holdText(s)}, driving with {s.supervisor.replace(/;.*/, "")}, before moving to the next license. A practice log is
+              optional, but it&apos;s an easy way to see what your teen has and hasn&apos;t practiced.
+            </>
+          ) : (
+          <>
           Under {s.name}&apos;s {s.program} rules, a teen{" "}
           {s.noPermit ? null : <>on {/^[aeiou]/i.test(s.permitName) ? "an" : "a"} {s.permitName} </>}needs {hoursText(s.totalMinutes)} of supervised
           driving{s.nightMinutes ? <>, {hoursText(s.nightMinutes)} of it at night</> : null}
           {s.weatherMinutes ? <> and {hoursText(s.weatherMinutes)} in bad weather</> : null}
           {s.challengingMinutes ? <>, {hoursText(s.challengingMinutes)} of it at night or in bad weather</> : null}, before moving to the next license. A parent or guardian
-          certifies the hours on {s.certification.label}.
+          certifies the hours on {s.certification?.label}.
+          </>
+          )}
         </p>
 
         <dl className={`mt-6 grid grid-cols-2 gap-3 ${facts.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
@@ -79,7 +95,7 @@ export default async function StatePage({ params }: Props) {
         </dl>
 
         <section className="mt-8 rounded-2xl bg-emerald-50 p-6 dark:bg-emerald-950">
-          <h2 className="text-xl font-bold">Track the {hoursText(s.totalMinutes)} with Drivetron</h2>
+          <h2 className="text-xl font-bold">{s.noHours ? "Keep a practice log with Drivetron" : `Track the ${hoursText(s.totalMinutes)} with Drivetron`}</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
             <li>One log shared by both parents and your teen, on iPhone or Android.</li>
             <li>Night minutes counted from sunset and sunrise where you drove{s.nightOffsetMinutes ? `, using ${s.name}\u2019s definition` : ""}.</li>
@@ -94,7 +110,7 @@ export default async function StatePage({ params }: Props) {
             href={START_HREF}
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
           >
-            Start your {s.name} log — free{PAYWALL_ON ? " to start" : ""}
+            {PAYWALL_ON ? `Start your ${s.name} log free` : `Start your free ${s.name} log`}
           </Link>
         </section>
 

@@ -44,6 +44,20 @@ export function ProgressCard() {
 
       <FreeHoursNotice />
 
+      {rules.noHours ? (
+        // No target to fill: show what's been practiced, and the hold is the only gate
+        <div>
+          <div className="flex items-baseline justify-between">
+            <span className="font-semibold">Practiced</span>
+            <span className="tabular-nums">
+              {formatMinutes(p.totalMinutes)}
+              {p.nightMinutes > 0 && <span className="text-indigo-600 dark:text-indigo-400"> · 🌙 {formatMinutes(p.nightMinutes)}</span>}
+            </span>
+          </div>
+          <p className={`${muted} mt-1`}>{rules.name} doesn&apos;t require a set number of supervised hours. The log is your own record.</p>
+        </div>
+      ) : (
+      <>
       <div>
         <div className="mb-1 flex items-baseline justify-between">
           <span className="font-semibold">Total</span>
@@ -65,6 +79,8 @@ export function ProgressCard() {
           </div>
           <Bar value={p.nightMinutes} max={REQUIRED_NIGHT_MINUTES} color="bg-indigo-500" />
         </div>
+      )}
+      </>
       )}
 
       {rules.challengingMinutes ? (
@@ -101,6 +117,7 @@ export function ProgressCard() {
       )}
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
+        {!rules.noHours && (
         <div>
           <dt className={muted}>Still to drive</dt>
           <dd className="font-medium">
@@ -111,6 +128,7 @@ export function ProgressCard() {
             )}
           </dd>
         </div>
+        )}
         <div>
           <dt className={muted}>Pace</dt>
           <dd className="font-medium">{p.driveCount < 2 ? "—" : `${formatMinutes(p.minutesPerWeek)} / week`}</dd>
@@ -129,6 +147,7 @@ export function ProgressCard() {
             <dd className="font-medium">{formatDate(p.expiryDate)}</dd>
           </div>
         )}
+        {!rules.noHours && (
         <div className="col-span-2">
           <dt className={muted}>Projected test-ready</dt>
           <dd className="font-medium">
@@ -149,6 +168,7 @@ export function ProgressCard() {
             </p>
           )}
         </div>
+        )}
       </dl>
     </section>
   );
@@ -162,14 +182,26 @@ export function ReadyBanner() {
   if (!p.eligible) return null;
   return (
     <section className="space-y-2 rounded-2xl bg-emerald-50 p-4 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-      <p className="font-semibold">Hours and waiting period done 🎉</p>
-      <p className="text-sm">
-        Print the log, then sign{" "}
-        <a className="underline" href={rules.certification.url} target="_blank" rel="noreferrer">
-          {rules.certification.label}
-        </a>{" "}
-        and bring both when your teen applies for the next license.
-      </p>
+      {rules.certification ? (
+        <>
+          <p className="font-semibold">Hours and waiting period done 🎉</p>
+          <p className="text-sm">
+            Print the log, then sign{" "}
+            <a className="underline" href={rules.certification.url} target="_blank" rel="noreferrer">
+              {rules.certification.label}
+            </a>{" "}
+            and bring both when your teen applies for the next license.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="font-semibold">Waiting period done 🎉</p>
+          <p className="text-sm">
+            The {rules.permitName} has been held long enough. {rules.name} doesn&apos;t ask for an hours certification, so check its other
+            requirements (age, driver&apos;s education) on the Log tab before your teen applies. Print the log if you&apos;d like a record.
+          </p>
+        </>
+      )}
       <Link href="/log" className="block rounded-xl bg-emerald-700 px-4 py-3 text-center font-semibold text-white">
         Print the log
       </Link>

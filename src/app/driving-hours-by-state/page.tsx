@@ -42,10 +42,13 @@ function extras(s: StateRules): string[] {
 
 /** Plain-language questions answered from the state data, shown on the page and as FAQ structured data. */
 function faqs(): { q: string; a: string }[] {
-  const most = Math.max(...STATES.map((s) => s.totalMinutes));
-  const fewest = Math.min(...STATES.map((s) => s.totalMinutes));
+  // States with no hours requirement aren't "the fewest": they get their own answer
+  const withHours = STATES.filter((s) => !s.noHours);
+  const noHours = byName.filter((s) => s.noHours);
+  const most = Math.max(...withHours.map((s) => s.totalMinutes));
+  const fewest = Math.min(...withHours.map((s) => s.totalMinutes));
   const mostStates = byName.filter((s) => s.totalMinutes === most);
-  const fewestStates = byName.filter((s) => s.totalMinutes === fewest);
+  const fewestStates = byName.filter((s) => !s.noHours && s.totalMinutes === fewest);
   const limited = byName.filter((s) => s.countLimit);
   const weather = byName.filter((s) => s.weatherMinutes);
   const narrower = byName.filter((s) => s.nightOffsetMinutes > 0);
@@ -59,8 +62,16 @@ function faqs(): { q: string; a: string }[] {
   return [
     {
       q: "Which state requires the most supervised driving hours?",
-      a: `Of the states Drivetron covers, ${listNames(mostStates)} ${mostStates.length === 1 ? "requires" : "require"} the most: ${hours(most)} hours. ${listNames(fewestStates)} ${fewestStates.length === 1 ? "requires" : "require"} the fewest, ${hours(fewest)} hours.`,
+      a: `Of the states Drivetron covers, ${listNames(mostStates)} ${mostStates.length === 1 ? "requires" : "require"} the most: ${hours(most)} hours. ${listNames(fewestStates)} ${fewestStates.length === 1 ? "requires" : "require"} the fewest, ${hours(fewest)} hours.${noHours.length ? ` ${listNames(noHours)} ${noHours.length === 1 ? "doesn't" : "don't"} set a number at all.` : ""}`,
     },
+    ...(noHours.length
+      ? [
+          {
+            q: "Which states don't require supervised driving hours?",
+            a: `${listNames(noHours)} ${noHours.length === 1 ? "doesn't" : "don't"} require a set number of supervised hours. ${noHours.map((s) => `${s.name} has the ${s.permitName} held at least ${holdText(s)} instead`).join("; ")}. A practice log is still a good way to make sure the practice covers night, bad weather and highways.`,
+          },
+        ]
+      : []),
     {
       q: "Do all states require night driving hours?",
       a: [
@@ -92,7 +103,7 @@ function faqs(): { q: string; a: string }[] {
     },
     {
       q: "Who signs off on the supervised hours?",
-      a: "In every state here a parent or guardian (or, in some states, another responsible adult) certifies the hours, on a form or affidavit some states require to be notarized or signed in front of an examiner. A few states also want the log itself. The table lists each state's form.",
+      a: "In every state here with an hours requirement, a parent or guardian (or, in some states, another responsible adult) certifies the hours, on a form or affidavit some states require to be notarized or signed in front of an examiner. A few states also want the log itself. The table lists each state's form.",
     },
   ];
 }
@@ -141,16 +152,18 @@ export default function DrivingHoursByState() {
                 {s.name}
               </Link>
               <p className="mt-0.5">
-                {hours(s.totalMinutes)} hours{s.nightMinutes ? `, ${hours(s.nightMinutes)} at night` : ""}
+                {s.noHours ? "No hours required" : `${hours(s.totalMinutes)} hours`}{s.nightMinutes ? `, ${hours(s.nightMinutes)} at night` : ""}
                 {s.noPermit ? "" : ` · hold the permit ${holdText(s)}`}
               </p>
               {extras(s).length > 0 && <p className="text-gray-600 dark:text-gray-400">{upperFirst(extras(s).join("; "))}</p>}
-              <p className="text-gray-600 dark:text-gray-400">
-                Parent signs:{" "}
-                <a href={s.certification.url} className="underline" target="_blank" rel="noreferrer">
-                  {s.certification.label.replace(/^the /, "")}
-                </a>
-              </p>
+              {s.certification && (
+                <p className="text-gray-600 dark:text-gray-400">
+                  Parent signs:{" "}
+                  <a href={s.certification.url} className="underline" target="_blank" rel="noreferrer">
+                    {s.certification.label.replace(/^the /, "")}
+                  </a>
+                </p>
+              )}
             </li>
           ))}
         </ul>
@@ -175,14 +188,18 @@ export default function DrivingHoursByState() {
                       {s.name}
                     </Link>
                   </th>
-                  <td className="px-3 py-2 text-right tabular-nums">{hours(s.totalMinutes)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{s.noHours ? "None" : hours(s.totalMinutes)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{s.nightMinutes ? hours(s.nightMinutes) : "—"}</td>
                   <td className="px-3 py-2">{extras(s).join("; ") || "—"}</td>
                   <td className="px-3 py-2">{holdText(s)}</td>
                   <td className="px-3 py-2">
-                    <a href={s.certification.url} className="underline" target="_blank" rel="noreferrer">
-                      {upperFirst(s.certification.label.replace(/^the /, ""))}
-                    </a>
+                    {s.certification ? (
+                      <a href={s.certification.url} className="underline" target="_blank" rel="noreferrer">
+                        {upperFirst(s.certification.label.replace(/^the /, ""))}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                 </tr>
               ))}

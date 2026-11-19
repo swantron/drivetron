@@ -58,9 +58,12 @@ import { wyoming } from "../src/states/wyoming.ts";
 import { districtOfColumbia } from "../src/states/districtOfColumbia.ts";
 import { newHampshire } from "../src/states/newHampshire.ts";
 import { alaska } from "../src/states/alaska.ts";
+import { mississippi } from "../src/states/mississippi.ts";
+import { arkansas } from "../src/states/arkansas.ts";
+import { hawaii } from "../src/states/hawaii.ts";
 
 const RULES = Object.fromEntries(
-  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia, newJersey, washington, arizona, tennessee, massachusetts, indiana, missouri, maryland, wisconsin, colorado, minnesota, southCarolina, alabama, louisiana, kentucky, oregon, oklahoma, connecticut, utah, iowa, nevada, kansas, newMexico, nebraska, idaho, westVirginia, maine, rhodeIsland, delaware, southDakota, northDakota, vermont, wyoming, districtOfColumbia, newHampshire, alaska].map((r) => [r.code, r])
+  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia, newJersey, washington, arizona, tennessee, massachusetts, indiana, missouri, maryland, wisconsin, colorado, minnesota, southCarolina, alabama, louisiana, kentucky, oregon, oklahoma, connecticut, utah, iowa, nevada, kansas, newMexico, nebraska, idaho, westVirginia, maine, rhodeIsland, delaware, southDakota, northDakota, vermont, wyoming, districtOfColumbia, newHampshire, alaska, mississippi, arkansas, hawaii].map((r) => [r.code, r])
 );
 const PROJECT = "demo-drivetron";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1";
@@ -211,6 +214,22 @@ const PLANS = {
     d(40, 21.5, 60, { tags: ["Clear", "Highway"], notes: "60 night minutes count as challenging." });
     d(20, 12, 90, { tags: ["Snow", "Highway"], notes: "Snow: all 90 minutes count as challenging." });
     return { permitDate: ymd(daysAgo(160)) };
+  },
+  "qa-ar": (d) => {
+    for (let i = 0; i < 9; i++) d(160 - i * 15, 16, 60, { tags: ["Clear", i % 2 ? "Highway" : "Residential"] });
+    d(40, 21.5, 60, { tags: ["Rain", "Rural"] });
+    const permit = monthsAgo(6);
+    permit.setDate(permit.getDate() + 14);
+    return { permitDate: ymd(permit) }; // the six-month hold ends in two weeks
+  },
+  "qa-hi-done": (d) => {
+    for (let i = 0; i < 12; i++) d(190 - i * 14, 15, 60, { tags: ["Clear", "City traffic"] });
+    d(50, 21.5, 45, { tags: ["Clear", "Highway"] });
+    return { permitDate: ymd(daysAgo(200)) };
+  },
+  "qa-ms": (d) => {
+    for (let i = 0; i < 20; i++) d(300 - i * 14, 10, 90, { tags: ["Clear", i % 2 ? "Highway" : "Residential"] });
+    return { permitDate: ymd(daysAgo(320)) };
   },
   "qa-pa-done": (d) => {
     for (let i = 0; i < 38; i++) d(210 - i * 5, 10, 90, { tags: ["Clear", "Residential"] });

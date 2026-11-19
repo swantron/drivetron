@@ -347,7 +347,7 @@ function Learners({ familyId }: { familyId: string }) {
           <div className="mt-2 space-y-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
             <p>
               Switch this log from {rules.name} to {next.name}? Progress, the earliest test date and the printed log will follow{" "}
-              {next.name}&apos;s rules ({formatMinutes(next.totalMinutes)}
+              {next.name}&apos;s rules ({next.noHours ? "no hours required" : formatMinutes(next.totalMinutes)}
               {next.nightMinutes ? `, ${formatMinutes(next.nightMinutes)} at night` : ""}) for everyone on it. Drives stay as they are.
             </p>
             <div className="grid grid-cols-2 gap-2">

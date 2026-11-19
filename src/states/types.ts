@@ -53,8 +53,14 @@ export interface StateRules {
   noPermit?: boolean;
   /** What the state asks to practice, shown above the conditions checklist */
   practiceNote: string;
-  /** The parent's certification of the hours */
-  certification: Link;
+  /** The parent's certification of the hours; unset only with noHours */
+  certification?: Link;
+  /**
+   * The state requires no supervised hours (Arkansas, Hawaii): totalMinutes and nightMinutes are 0,
+   * there's no certification, and the log is the family's own record of practice. Progress shows
+   * what's been driven and the hold, never a target.
+   */
+  noHours?: boolean;
   /** The state's own paper log, which the printed log mirrors */
   practiceLog?: Link;
   /** What the state says about bringing the log to the license test, in its words */

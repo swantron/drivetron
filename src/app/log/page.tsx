@@ -56,11 +56,17 @@ function PrintableLog() {
               .{" "}
             </>
           ) : null}
-          Print it or save it as a PDF, sign it, and bring it with{" "}
-          <a href={rules.certification.url} className="underline" target="_blank" rel="noreferrer">
-            {rules.certification.label}
-          </a>{" "}
-          when your teen applies.
+          {rules.certification ? (
+            <>
+              Print it or save it as a PDF, sign it, and bring it with{" "}
+              <a href={rules.certification.url} className="underline" target="_blank" rel="noreferrer">
+                {rules.certification.label}
+              </a>{" "}
+              when your teen applies.
+            </>
+          ) : (
+            <>{rules.name} doesn&apos;t ask for a log or an hours certification, so this is your family&apos;s own record. Print it or save it as a PDF to keep.</>
+          )}
         </p>
         {unconfirmed > 0 && (
           <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
@@ -89,7 +95,7 @@ function PrintableLog() {
         <header className="mb-4 text-center">
           <h2 className="text-lg font-bold uppercase tracking-wide">Practice Driving Log</h2>
           <p>
-            {rules.name} {rules.program} — {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? <>, including {formatMinutes(rules.nightMinutes)} at night</> : null}
+            {rules.name} {rules.program} — {rules.noHours ? "no set number of supervised hours required" : `${formatMinutes(rules.totalMinutes)} supervised`}{rules.nightMinutes ? <>, including {formatMinutes(rules.nightMinutes)} at night</> : null}
             {rules.weatherMinutes ? <> and {formatMinutes(rules.weatherMinutes)} in bad weather</> : null}
             {rules.challengingMinutes ? <>, including {formatMinutes(rules.challengingMinutes)} at night or in bad weather</> : null}
           </p>

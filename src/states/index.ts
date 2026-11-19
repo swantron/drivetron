@@ -46,6 +46,9 @@ import { wyoming } from "./wyoming";
 import { districtOfColumbia } from "./districtOfColumbia";
 import { newHampshire } from "./newHampshire";
 import { alaska } from "./alaska";
+import { mississippi } from "./mississippi";
+import { arkansas } from "./arkansas";
+import { hawaii } from "./hawaii";
 import type { StateRules } from "./types";
 
 export type { StateRules, Link } from "./types";
@@ -61,7 +64,8 @@ export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylva
   maine, rhodeIsland,
   delaware, southDakota, northDakota,
   vermont, wyoming, districtOfColumbia,
-  newHampshire, alaska];
+  newHampshire, alaska,
+  mississippi, arkansas, hawaii];
 
 /** Every state, alphabetical, for pickers and lists people scan by name. */
 export const STATES_BY_NAME: StateRules[] = [...STATES].sort((a, b) => a.name.localeCompare(b.name));
@@ -105,7 +109,7 @@ export function nightRangeText(r: StateRules): string {
  * the certification form or practice log keeps the source's descriptive label, then no duplicates.
  */
 export function sourceLinks(r: StateRules): { label: string; url: string }[] {
-  return [...r.sources, r.certification, ...(r.practiceLog ? [r.practiceLog] : [])].filter(
+  return [...r.sources, ...(r.certification ? [r.certification] : []), ...(r.practiceLog ? [r.practiceLog] : [])].filter(
     (l, i, all) => all.findIndex((x) => x.url === l.url) === i
   );
 }

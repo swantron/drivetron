@@ -141,7 +141,7 @@ export default function LandingPage() {
                   >
                     <span className="block text-sm font-semibold">{s.name}</span>
                     <span className="block text-xs text-gray-600 dark:text-gray-400">
-                      {formatMinutes(s.totalMinutes)}
+                      {s.noHours ? "No hours required" : formatMinutes(s.totalMinutes)}
                       {s.nightMinutes ? ` · ${formatMinutes(s.nightMinutes)} night` : ""}
                       {s.noPermit ? " · no permit" : ` · hold ${holdText(s)}`}
                     </span>
