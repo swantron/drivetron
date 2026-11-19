@@ -12,7 +12,9 @@ import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChro
 
 const PATH = "/driving-hours-by-state";
 const TITLE = "Supervised driving hours by state: teen permit requirements compared | Drivetron";
-const DESCRIPTION = `How many supervised driving hours a teen needs, how many at night, how long to hold the permit, and the form a parent signs, compared across ${STATES.length} states, from each state's own sources.`;
+/** "47 states and Washington, D.C.": D.C. is in STATES but isn't a state. */
+const COVERAGE = `${STATES.filter((s) => s.code !== "DC").length} states${STATES.some((s) => s.code === "DC") ? " and Washington, D.C." : ""}`;
+const DESCRIPTION = `How many supervised driving hours a teen needs, how many at night, how long to hold the permit, and the form a parent signs, compared across ${COVERAGE}, from each state's own sources.`;
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -31,6 +33,8 @@ const listNames = (ss: StateRules[]) =>
 function extras(s: StateRules): string[] {
   const out: string[] = [];
   if (s.weatherMinutes) out.push(`${hours(s.weatherMinutes)}h in bad weather`);
+  if (s.challengingMinutes) out.push(`${hours(s.challengingMinutes)}h at night or in bad weather`);
+  if (s.noPermit) out.push("no learner's permit");
   const limit = countLimitText(s);
   if (limit) out.push(`only ${limit} counts`);
   return out;
@@ -48,7 +52,8 @@ function faqs(): { q: string; a: string }[] {
   const wider = byName.filter((s) => s.nightOffsetMinutes < 0);
   const withNight = STATES.filter((s) => s.nightMinutes > 0);
   const noNight = byName.filter((s) => !s.nightMinutes);
-  const byHold = [...STATES].sort((a, b) => holdDays(a) - holdDays(b));
+  const byHold = STATES.filter((s) => !s.noPermit).sort((a, b) => holdDays(a) - holdDays(b));
+  const noPermit = byName.filter((s) => s.noPermit);
   const shortest = byHold[0];
   const longest = byHold[byHold.length - 1];
   return [
@@ -83,7 +88,7 @@ function faqs(): { q: string; a: string }[] {
       : []),
     {
       q: "How long does a teen have to hold a learner's permit?",
-      a: `From ${listNames(byName.filter((s) => holdDays(s) === holdDays(shortest)))}'s ${holdText(shortest)} to ${longest.name}'s ${holdText(longest)}. ${byName.map((s) => `${s.name}: ${holdText(s)}`).join("; ")}.`,
+      a: `From ${listNames(byName.filter((s) => !s.noPermit && holdDays(s) === holdDays(shortest)))}'s ${holdText(shortest)} to ${longest.name}'s ${holdText(longest)}${noPermit.length ? `; ${listNames(noPermit)} ${noPermit.length === 1 ? "has" : "have"} no learner's permit at all` : ""}. ${byName.filter((s) => !s.noPermit).map((s) => `${s.name}: ${holdText(s)}`).join("; ")}.`,
     },
     {
       q: "Who signs off on the supervised hours?",
@@ -124,7 +129,7 @@ export default function DrivingHoursByState() {
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Supervised driving hours by state</h1>
         <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
           Before a teen moves from a learner&apos;s permit to a license, most states want a set number of supervised hours,
-          some of them at night, certified by a parent. Here are the rules in the {STATES.length} states Drivetron covers, each
+          some of them at night, certified by a parent. Here are the rules in the {COVERAGE} Drivetron covers, each
           checked against the state&apos;s own sources.
         </p>
 

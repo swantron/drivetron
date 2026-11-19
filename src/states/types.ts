@@ -41,6 +41,16 @@ export interface StateRules {
   countLimit?: { minutes: number; per: "day" | "week" };
   /** Bad-weather minutes required, counted from drives tagged with bad weather (Pennsylvania: 5 hours); unset = none */
   weatherMinutes?: number;
+  /**
+   * Minutes required in "challenging" conditions, night or bad weather (Alaska: 10 hours): a drive
+   * tagged with bad weather counts whole, any other drive counts its night minutes; unset = none
+   */
+  challengingMinutes?: number;
+  /**
+   * No learner's permit (New Hampshire: teens practice from 15½ without one). The log's permit date
+   * is then the day practice started, and holdMonths and holdExtraDays are 0.
+   */
+  noPermit?: boolean;
   /** What the state asks to practice, shown above the conditions checklist */
   practiceNote: string;
   /** The parent's certification of the hours */

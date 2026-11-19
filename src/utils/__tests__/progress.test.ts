@@ -162,3 +162,23 @@ describe("weekly limit (North Carolina: 10 hours a week)", () => {
     expect(p.overLimitMinutes).toBe(120);
   });
 });
+
+describe("challenging hours (Alaska: 10 at night or in bad weather)", () => {
+  const ak = getState("AK");
+  it("counts night minutes, plus whole drives tagged with bad weather", () => {
+    const drives = [
+      drive(new Date(2026, 10, 1, 17), 30, 60, { conditions: ["Clear"] }), // 60 night
+      drive(new Date(2026, 10, 2, 10), 90, 0, { conditions: ["Snow"] }), // 90, all of it
+      drive(new Date(2026, 10, 3, 17), 20, 40, { conditions: ["Rain"] }), // 60, all of it (not 40 + 60)
+      drive(new Date(2026, 10, 4, 10), 120, 0, { conditions: ["Clear"] }), // 0
+    ];
+    const p = computeProgress(drives, "2026-01-01", new Date(2026, 10, 5), ak);
+    expect(p.challengingMinutes).toBe(60 + 90 + 60);
+    expect(p.challengingRemaining).toBe(600 - 210);
+    expect(p.hoursDone).toBe(false);
+  });
+  it("is zero for states that don't require it", () => {
+    const p = computeProgress([drive(new Date(2026, 10, 2, 18), 0, 60)], "2026-01-01", new Date(2026, 10, 4), getState("MT"));
+    expect([p.challengingMinutes, p.challengingRemaining]).toEqual([0, 0]);
+  });
+});

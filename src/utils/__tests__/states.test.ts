@@ -17,7 +17,7 @@ describe("state rules", () => {
       expect(s.nightMinutes).toBeLessThanOrEqual(s.totalMinutes);
       expect(s.holdMonths).toBeGreaterThanOrEqual(0);
       expect(s.holdExtraDays).toBeGreaterThanOrEqual(0);
-      expect(holdDays(s)).toBeGreaterThan(0);
+      expect(holdDays(s) > 0 || s.noPermit === true).toBe(true);
       expect(Math.abs(s.nightOffsetMinutes)).toBeLessThanOrEqual(60);
       if (s.permitValidMonths !== null) expect(s.permitValidMonths).toBeGreaterThanOrEqual(s.holdMonths);
       expect(s.sources.length).toBeGreaterThan(0);
@@ -153,6 +153,39 @@ describe("state rules", () => {
       ["SC", 40, 10, "180 days"],
     ]);
     expect(nightRangeText(wi)).toBe("30 minutes after sunset to 30 minutes before sunrise");
+  });
+
+  // Key figures for each state added in the later batches, checked against its sources: [code, total h, night h, hold]
+  const FIGURES: [string, number, number, string][] = [
+    ["AL", 50, 0, "6 months"],
+    ["LA", 50, 15, "180 days"],
+    ["KY", 60, 10, "180 days"],
+    ["OR", 100, 0, "6 months"],
+    ["OK", 50, 10, "180 days"],
+    ["CT", 40, 0, "180 days"],
+    ["UT", 40, 10, "6 months"],
+    ["IA", 20, 2, "12 months"],
+    ["NV", 50, 10, "6 months"],
+    ["KS", 50, 10, "12 months"],
+    ["NM", 50, 10, "6 months"],
+    ["NE", 50, 10, "6 months"],
+    ["ID", 50, 10, "6 months"],
+    ["WV", 50, 10, "6 months"],
+    ["ME", 70, 10, "6 months"],
+    ["RI", 50, 10, "6 months"],
+    ["DE", 50, 10, "6 months"],
+    ["SD", 50, 10, "275 days"],
+    ["ND", 50, 0, "12 months"],
+    ["VT", 40, 10, "12 months"],
+    ["WY", 50, 10, "10 days"],
+    ["DC", 40, 0, "6 months"],
+    ["NH", 40, 10, "none"],
+    ["AK", 40, 0, "6 months"],
+  ];
+  it.each(FIGURES)("%s: %i hours, %i at night, hold %s", (code, total, night, hold) => {
+    const s = getState(code);
+    expect(s.code).toBe(code);
+    expect([s.totalMinutes / 60, s.nightMinutes / 60, holdText(s)]).toEqual([total, night, hold]);
   });
 
   it("gives every state a form guide that names its form", () => {

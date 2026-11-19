@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/hooks/useAuth";
-import { DEFAULT_STATE, STATES, getState, holdText } from "@/states";
+import { DEFAULT_STATE, STATES, STATES_BY_NAME, getState, holdText } from "@/states";
 import { useFamily } from "@/components/FamilyProvider";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -110,14 +110,14 @@ function CreateForm() {
       <div>
         <label className={label} htmlFor="state">State</label>
         <select id="state" className={input} value={state} onChange={(e) => setState(e.target.value)}>
-          {STATES.map((st) => (
+          {STATES_BY_NAME.map((st) => (
             <option key={st.code} value={st.code}>
               {st.name}
             </option>
           ))}
         </select>
         <p className={`${muted} mt-1`}>
-          {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? `, ${formatMinutes(rules.nightMinutes)} at night` : ""}{rules.weatherMinutes ? `, ${formatMinutes(rules.weatherMinutes)} in bad weather` : ""}, with the {rules.permitName} held at least {holdText(rules)}.
+          {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? `, ${formatMinutes(rules.nightMinutes)} at night` : ""}{rules.weatherMinutes ? `, ${formatMinutes(rules.weatherMinutes)} in bad weather` : ""}{rules.challengingMinutes ? `, ${formatMinutes(rules.challengingMinutes)} at night or in bad weather` : ""}, with the {rules.permitName} held at least {holdText(rules)}.
           {STATES.length === 1 && " More states are on the way."}
         </p>
       </div>
@@ -136,7 +136,7 @@ function CreateForm() {
           <input id="dob" type="date" className={input} required value={learnerDob} onChange={(e) => setLearnerDob(e.target.value)} />
         </div>
         <div>
-          <label className={`${label} first-letter:uppercase`} htmlFor="permit">{rules.permitName} issued</label>
+          <label className={`${label} first-letter:uppercase`} htmlFor="permit">{rules.noPermit ? "Started practicing" : `${rules.permitName} issued`}</label>
           <input id="permit" type="date" className={input} required value={permitDate} onChange={(e) => setPermitDate(e.target.value)} />
         </div>
       </div>

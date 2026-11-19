@@ -35,6 +35,7 @@ export function ProgressCard() {
   const stillToGo = [
     nightToGo > 0 && `${formatMinutes(nightToGo)} at night`,
     p.weatherRemaining > 0 && `${formatMinutes(p.weatherRemaining)} in bad weather`,
+    p.challengingRemaining > 0 && `${formatMinutes(p.challengingRemaining)} at night or in bad weather`,
   ].filter((s): s is string => !!s);
 
   return (
@@ -76,6 +77,19 @@ export function ProgressCard() {
           <Bar value={p.nightMinutes} max={REQUIRED_NIGHT_MINUTES} color="bg-indigo-500" />
         </div>
       )}
+
+      {rules.challengingMinutes ? (
+        <div>
+          <div className="mb-1 flex items-baseline justify-between">
+            <span className="font-semibold">Night or bad weather</span>
+            <span className="tabular-nums">
+              {formatMinutes(p.challengingMinutes)} <span className={muted}>/ {formatMinutes(rules.challengingMinutes)}</span>
+            </span>
+          </div>
+          <Bar value={p.challengingMinutes} max={rules.challengingMinutes} color="bg-indigo-500" />
+          <p className={`${muted} mt-1 text-xs`}>Night minutes, plus whole drives tagged with bad weather.</p>
+        </div>
+      ) : null}
 
       {rules.weatherMinutes ? (
         <div>

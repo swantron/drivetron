@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { STATES } from "@/states";
+import { STATES_BY_NAME } from "@/states";
 import { CONTACT_EMAIL, OPERATOR } from "@/lib/site";
 import { HeaderAction } from "./HeaderAction";
 
@@ -36,10 +36,13 @@ export function SiteFooter() {
                 Hours by state, compared
               </Link>
             </li>
-            {STATES.map((s) => (
-              <li key={s.code}>
+          </ul>
+          {/* Every state's page, in two columns so the footer stays short */}
+          <ul className="mt-2 columns-2 gap-x-4 text-sm">
+            {STATES_BY_NAME.map((s) => (
+              <li key={s.code} className="mb-1 break-inside-avoid">
                 <Link href={`/${s.slug}`} className="underline">
-                  {s.name} requirements
+                  {s.name}
                 </Link>
               </li>
             ))}

@@ -35,36 +35,42 @@ export function addMonths(date: Date, months: number): Date {
 export function countedMinutes(
   done: Drive[],
   limit?: StateRules["countLimit"]
-): { totalMinutes: number; nightMinutes: number; weatherMinutes: number } {
+): { totalMinutes: number; nightMinutes: number; weatherMinutes: number; challengingMinutes: number } {
   const len = (d: Drive) => d.dayMinutes + d.nightMinutes;
+  // Night or bad weather (Alaska): a bad-weather drive counts whole, any other its night minutes
+  const challenging = (d: Drive) => (isBadWeather(d) ? len(d) : d.nightMinutes);
   if (!limit) {
     return {
       totalMinutes: done.reduce((s, d) => s + len(d), 0),
       nightMinutes: done.reduce((s, d) => s + d.nightMinutes, 0),
       weatherMinutes: done.reduce((s, d) => s + (isBadWeather(d) ? len(d) : 0), 0),
+      challengingMinutes: done.reduce((s, d) => s + challenging(d), 0),
     };
   }
-  const days = new Map<string, { total: number; night: number; weather: number }>();
+  const days = new Map<string, { total: number; night: number; weather: number; challenging: number }>();
   for (const d of done) {
     const s = new Date(d.startedAt);
     // A week is keyed by its Sunday
     if (limit.per === "week") s.setDate(s.getDate() - s.getDay());
     const key = `${s.getFullYear()}-${s.getMonth()}-${s.getDate()}`;
-    const day = days.get(key) ?? { total: 0, night: 0, weather: 0 };
+    const day = days.get(key) ?? { total: 0, night: 0, weather: 0, challenging: 0 };
     day.total += len(d);
     day.night += d.nightMinutes;
     if (isBadWeather(d)) day.weather += len(d);
+    day.challenging += challenging(d);
     days.set(key, day);
   }
   let totalMinutes = 0;
   let nightMinutes = 0;
   let weatherMinutes = 0;
+  let challengingMinutes = 0;
   for (const day of days.values()) {
     totalMinutes += Math.min(day.total, limit.minutes);
     nightMinutes += Math.min(day.night, limit.minutes);
     weatherMinutes += Math.min(day.weather, limit.minutes);
+    challengingMinutes += Math.min(day.challenging, limit.minutes);
   }
-  return { totalMinutes, nightMinutes, weatherMinutes };
+  return { totalMinutes, nightMinutes, weatherMinutes, challengingMinutes };
 }
 
 export interface Progress {
@@ -78,6 +84,9 @@ export interface Progress {
   /** Minutes on drives tagged with bad weather, for states that require some (else 0) */
   weatherMinutes: number;
   weatherRemaining: number;
+  /** Minutes at night or in bad weather, for states that require some (Alaska; else 0) */
+  challengingMinutes: number;
+  challengingRemaining: number;
   driveCount: number;
   /** Earliest date the permit has been held long enough (the state's hold period) */
   holdDate: Date;
@@ -111,6 +120,8 @@ export function computeProgress(
   const totalRemaining = Math.max(0, REQUIRED_TOTAL_MINUTES - totalMinutes);
   const nightRemaining = Math.max(0, REQUIRED_NIGHT_MINUTES - nightMinutes);
   const weatherRemaining = Math.max(0, (rules.weatherMinutes ?? 0) - weatherMinutes);
+  const challengingMinutes = rules.challengingMinutes ? counted.challengingMinutes : 0;
+  const challengingRemaining = Math.max(0, (rules.challengingMinutes ?? 0) - challengingMinutes);
 
   const permit = parseLocalDate(permitDate);
   const holdDate = addMonths(permit, rules.holdMonths);
@@ -123,7 +134,7 @@ export function computeProgress(
   const weeks = Math.max(1, (now.getTime() - paceStart) / (7 * 86400000));
   const minutesPerWeek = totalMinutes / weeks;
 
-  const hoursDone = totalRemaining === 0 && nightRemaining === 0 && weatherRemaining === 0;
+  const hoursDone = totalRemaining === 0 && nightRemaining === 0 && weatherRemaining === 0 && challengingRemaining === 0;
   let projectedHoursDate: Date | null = null;
   if (hoursDone) {
     projectedHoursDate = now;
@@ -155,6 +166,8 @@ export function computeProgress(
     nightRemaining,
     weatherMinutes,
     weatherRemaining,
+    challengingMinutes,
+    challengingRemaining,
     driveCount: done.length,
     holdDate,
     expiryDate,

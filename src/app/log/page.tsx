@@ -86,6 +86,7 @@ function PrintableLog() {
           <p>
             {rules.name} {rules.program} — {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? <>, including {formatMinutes(rules.nightMinutes)} at night</> : null}
             {rules.weatherMinutes ? <> and {formatMinutes(rules.weatherMinutes)} in bad weather</> : null}
+            {rules.challengingMinutes ? <>, including {formatMinutes(rules.challengingMinutes)} at night or in bad weather</> : null}
           </p>
         </header>
 
@@ -100,7 +101,7 @@ function PrintableLog() {
           </div>
           <div>
             {/* ::first-letter doesn't apply to inline elements, so capitalize in code */}
-            <dt className="inline font-semibold">{upperFirst(rules.permitName)} issued: </dt>
+            <dt className="inline font-semibold">{rules.noPermit ? "Started practicing" : `${upperFirst(rules.permitName)} issued`}: </dt>
             <dd className="inline">{formatDate(parseLocalDate(learner.permitDate))}</dd>
           </div>
           <div>
@@ -182,6 +183,12 @@ function PrintableLog() {
           </tfoot>
         </table>
 
+        {rules.challengingMinutes ? (
+          <p className="mt-2 font-bold">
+            AT NIGHT OR IN BAD WEATHER: {formatMinutes(p.challengingMinutes)}{" "}
+            <span className="font-normal">(night minutes, plus drives tagged {BAD_WEATHER.join(", ")})</span>
+          </p>
+        ) : null}
         {rules.weatherMinutes ? (
           <p className="mt-2 font-bold">
             IN BAD WEATHER: {formatMinutes(p.weatherMinutes)}{" "}

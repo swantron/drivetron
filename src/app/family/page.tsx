@@ -25,7 +25,7 @@ import {
   updateFamily,
 } from "@/lib/firebase/firestore";
 import { writeErrorMessage } from "@/utils/errors";
-import { STATES } from "@/states";
+import { STATES, STATES_BY_NAME } from "@/states";
 import { driveLearnerId, firstName, learnersOf, newId } from "@/utils/learners";
 import { signOut } from "@/lib/firebase/auth";
 import { initialsOf } from "@/utils/progress";
@@ -307,7 +307,7 @@ function Learners({ familyId }: { familyId: string }) {
             updateFamily(familyId, { state: e.target.value }).catch((err) => showToast(writeErrorMessage(err), "error"))
           }
         >
-          {STATES.map((st) => (
+          {STATES_BY_NAME.map((st) => (
             <option key={st.code} value={st.code}>
               {st.name}
             </option>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { STATES, holdText } from "@/states";
+import { STATES_BY_NAME, holdText } from "@/states";
 import { socialMeta } from "@/lib/site";
 import { FREE_HOURS_TEXT, PAYWALL_ON, PRICE_LABEL } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
@@ -132,7 +132,7 @@ export default function LandingPage() {
               Built around your state&apos;s rules
             </h2>
             <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {STATES.map((s) => (
+              {STATES_BY_NAME.map((s) => (
                 <li key={s.code}>
                   <Link
                     href={`/${s.slug}`}
@@ -140,7 +140,7 @@ export default function LandingPage() {
                   >
                     <span className="font-semibold">{s.name}</span>
                     <span className="block text-sm text-gray-600 dark:text-gray-400">
-                      {formatMinutes(s.totalMinutes)} supervised{s.nightMinutes ? ` · ${formatMinutes(s.nightMinutes)} at night` : ""}{s.weatherMinutes ? ` · ${formatMinutes(s.weatherMinutes)} bad weather` : ""} · hold {holdText(s)}
+                      {formatMinutes(s.totalMinutes)} supervised{s.nightMinutes ? ` · ${formatMinutes(s.nightMinutes)} at night` : ""}{s.weatherMinutes ? ` · ${formatMinutes(s.weatherMinutes)} bad weather` : ""}{s.challengingMinutes ? ` · ${formatMinutes(s.challengingMinutes)} night or bad weather` : ""}{s.noPermit ? " · no permit" : ` · hold ${holdText(s)}`}
                     </span>
                   </Link>
                 </li>

@@ -22,6 +22,30 @@ import { texas } from "./texas";
 import { virginia } from "./virginia";
 import { washington } from "./washington";
 import { wisconsin } from "./wisconsin";
+import { alabama } from "./alabama";
+import { louisiana } from "./louisiana";
+import { kentucky } from "./kentucky";
+import { oregon } from "./oregon";
+import { oklahoma } from "./oklahoma";
+import { connecticut } from "./connecticut";
+import { utah } from "./utah";
+import { iowa } from "./iowa";
+import { nevada } from "./nevada";
+import { kansas } from "./kansas";
+import { newMexico } from "./newMexico";
+import { nebraska } from "./nebraska";
+import { idaho } from "./idaho";
+import { westVirginia } from "./westVirginia";
+import { maine } from "./maine";
+import { rhodeIsland } from "./rhodeIsland";
+import { delaware } from "./delaware";
+import { southDakota } from "./southDakota";
+import { northDakota } from "./northDakota";
+import { vermont } from "./vermont";
+import { wyoming } from "./wyoming";
+import { districtOfColumbia } from "./districtOfColumbia";
+import { newHampshire } from "./newHampshire";
+import { alaska } from "./alaska";
 import type { StateRules } from "./types";
 
 export type { StateRules, Link } from "./types";
@@ -29,7 +53,18 @@ export type { StateRules, Link } from "./types";
 /** Every supported state. Adding one here adds its public page and makes it selectable. */
 export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia,
   newJersey, washington, arizona, tennessee, massachusetts, indiana, missouri, maryland,
-  wisconsin, colorado, minnesota, southCarolina];
+  wisconsin, colorado, minnesota, southCarolina,
+  alabama, louisiana, kentucky, oregon,
+  oklahoma, connecticut, utah, iowa,
+  nevada, kansas,
+  newMexico, nebraska, idaho, westVirginia,
+  maine, rhodeIsland,
+  delaware, southDakota, northDakota,
+  vermont, wyoming, districtOfColumbia,
+  newHampshire, alaska];
+
+/** Every state, alphabetical, for pickers and lists people scan by name. */
+export const STATES_BY_NAME: StateRules[] = [...STATES].sort((a, b) => a.name.localeCompare(b.name));
 
 /** Logs created before multi-state support have no `state`; they're all Montana. */
 export const DEFAULT_STATE = "MT";
@@ -44,6 +79,8 @@ export function getStateBySlug(slug: string): StateRules | undefined {
 
 /** "6 months", or "6 months + 1 day" for a state that adds days. */
 export function holdText(r: StateRules): string {
+  // New Hampshire has no permit, so no hold
+  if (!r.holdMonths && !r.holdExtraDays) return "none";
   const days = `${r.holdExtraDays} day${r.holdExtraDays === 1 ? "" : "s"}`;
   // A hold counted only in days (Tennessee: 180 days)
   if (!r.holdMonths) return days;

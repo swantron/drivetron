@@ -34,9 +34,33 @@ import { wisconsin } from "../src/states/wisconsin.ts";
 import { colorado } from "../src/states/colorado.ts";
 import { minnesota } from "../src/states/minnesota.ts";
 import { southCarolina } from "../src/states/southCarolina.ts";
+import { alabama } from "../src/states/alabama.ts";
+import { louisiana } from "../src/states/louisiana.ts";
+import { kentucky } from "../src/states/kentucky.ts";
+import { oregon } from "../src/states/oregon.ts";
+import { oklahoma } from "../src/states/oklahoma.ts";
+import { connecticut } from "../src/states/connecticut.ts";
+import { utah } from "../src/states/utah.ts";
+import { iowa } from "../src/states/iowa.ts";
+import { nevada } from "../src/states/nevada.ts";
+import { kansas } from "../src/states/kansas.ts";
+import { newMexico } from "../src/states/newMexico.ts";
+import { nebraska } from "../src/states/nebraska.ts";
+import { idaho } from "../src/states/idaho.ts";
+import { westVirginia } from "../src/states/westVirginia.ts";
+import { maine } from "../src/states/maine.ts";
+import { rhodeIsland } from "../src/states/rhodeIsland.ts";
+import { delaware } from "../src/states/delaware.ts";
+import { southDakota } from "../src/states/southDakota.ts";
+import { northDakota } from "../src/states/northDakota.ts";
+import { vermont } from "../src/states/vermont.ts";
+import { wyoming } from "../src/states/wyoming.ts";
+import { districtOfColumbia } from "../src/states/districtOfColumbia.ts";
+import { newHampshire } from "../src/states/newHampshire.ts";
+import { alaska } from "../src/states/alaska.ts";
 
 const RULES = Object.fromEntries(
-  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia, newJersey, washington, arizona, tennessee, massachusetts, indiana, missouri, maryland, wisconsin, colorado, minnesota, southCarolina].map((r) => [r.code, r])
+  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia, newJersey, washington, arizona, tennessee, massachusetts, indiana, missouri, maryland, wisconsin, colorado, minnesota, southCarolina, alabama, louisiana, kentucky, oregon, oklahoma, connecticut, utah, iowa, nevada, kansas, newMexico, nebraska, idaho, westVirginia, maine, rhodeIsland, delaware, southDakota, northDakota, vermont, wyoming, districtOfColumbia, newHampshire, alaska].map((r) => [r.code, r])
 );
 const PROJECT = "demo-drivetron";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1";
@@ -176,6 +200,17 @@ const PLANS = {
     const sunset = SunCalc.getTimes(new Date(at(dusk, 12)), lat, lng).sunset.getTime();
     d(4, (sunset - 40 * 60000 - at(dusk, 0)) / 3600000, 60, { tags: ["Clear", "Residential"], notes: "Ends 20 min after sunset: 50 min count as night in Maryland." });
     return { permitDate: ymd(daysAgo(260)) };
+  },
+  "qa-nh": (d) => {
+    for (let i = 0; i < 14; i++) d(120 - i * 8, 15, 90, { tags: ["Clear", "Residential"] });
+    for (let i = 0; i < 3; i++) d(100 - i * 30, 21.5, 60, { tags: ["Clear", "Highway"] });
+    return { permitDate: ymd(daysAgo(130)) };
+  },
+  "qa-ak": (d) => {
+    for (let i = 0; i < 10; i++) d(150 - i * 12, 12, 90, { tags: ["Clear", "Residential"] });
+    d(40, 21.5, 60, { tags: ["Clear", "Highway"], notes: "60 night minutes count as challenging." });
+    d(20, 12, 90, { tags: ["Snow", "Highway"], notes: "Snow: all 90 minutes count as challenging." });
+    return { permitDate: ymd(daysAgo(160)) };
   },
   "qa-pa-done": (d) => {
     for (let i = 0; i < 38; i++) d(210 - i * 5, 10, 90, { tags: ["Clear", "Residential"] });

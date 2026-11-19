@@ -84,6 +84,18 @@ export const QA_FAMILIES: QaFamily[] = [
     people: trio("md", "Maryland", "Mara", "Miles", "Maddie"),
   },
   {
+    id: "qa-nh",
+    state: "NH",
+    checks: "No learner's permit: setup and the log say \"Started practicing\", the hold shows as reached, and the log is laid out like DSMV 509.",
+    people: trio("nh", "Hampshire", "Hana", "Hugo", "Holly"),
+  },
+  {
+    id: "qa-ak",
+    state: "AK",
+    checks: "Challenging hours: a \"Night or bad weather\" bar counting night minutes plus whole bad-weather drives (no separate night bar).",
+    people: trio("ak", "Alaska", "Abby", "Alan", "Ada"),
+  },
+  {
     id: "qa-pa-done",
     state: "PA",
     checks: "Everything done and the hold passed: the eligible banner and the DL-180C link.",
