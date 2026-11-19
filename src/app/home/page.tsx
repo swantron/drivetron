@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DriveTimer } from "@/components/DriveTimer";
-import { ProgressCard } from "@/components/ProgressCard";
+import { ProgressCard, ReadyBanner } from "@/components/ProgressCard";
 import { DriveRow } from "@/components/DriveRow";
 import { UnlockReturn } from "@/components/UnlockReturn";
 import { ConfirmCard } from "@/components/ConfirmDrives";
@@ -34,6 +34,7 @@ function Home() {
       <Suspense fallback={null}>
         <UnlockReturn />
       </Suspense>
+      <ReadyBanner />
       <DriveTimer />
       <ConfirmCard />
       <ProgressCard />

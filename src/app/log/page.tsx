@@ -8,6 +8,7 @@ import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes, parseLocalDate } from "@/utils/progress";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 import { syncedLate } from "@/utils/syncedLate";
+import { logInitials } from "@/utils/members";
 import { BAD_WEATHER } from "@/utils/practice";
 import { StateResources } from "@/components/StateResources";
 import { countLimitText, holdText, nightRangeText, upperFirst } from "@/states";
@@ -38,6 +39,8 @@ function PrintableLog() {
   const loggedNight = done.reduce((s, d) => s + d.nightMinutes, 0);
   // With one car, naming it on every row is noise
   const manyVehicles = new Set(done.map((d) => d.vehicleName).filter(Boolean)).size > 1;
+  // Initials a clerk can tell apart, and a key of who's who
+  const inits = logInitials(done);
 
   return (
     <div className="space-y-4">
@@ -148,7 +151,7 @@ function PrintableLog() {
                   </td>
                   <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">{d.nightMinutes ? formatMinutes(d.nightMinutes) : ""}</td>
                   <td className="py-1 text-center font-medium">
-                    {d.supervisorInitials}
+                    {inits.label(d.supervisorUid) || d.supervisorInitials}
                     {confirmationOf(d) === "confirmed" && <sup title={`Confirmed by ${d.signedOff?.name}`}>✓</sup>}
                     {needsConfirming(d) && <sup title="Not confirmed by a supervising adult">?</sup>}
                   </td>
@@ -199,7 +202,8 @@ function PrintableLog() {
         ) : null}
 
         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          Night = {nightRangeText(rules)} at the drive&apos;s location. Init. = initials of the supervising licensed adult.
+          Night = {nightRangeText(rules)} at the drive&apos;s location. Init. = initials of the supervising licensed adult
+          {inits.key.length > 0 && <> ({inits.key.map((k) => `${k.label}: ${k.name}`).join("; ")})</>}.
           {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
           {done.some((d) => d.timesEdited) && <> * Times were edited after the drive was logged.</>}
           {confirmedLater && <> ✓ Logged on another phone and confirmed afterward by a supervising adult.</>}

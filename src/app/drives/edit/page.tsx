@@ -107,6 +107,13 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   // Night is worked out from the times; a supervisor can override it if they know better.
   const [nightOverride, setNightOverride] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // An end before the start only means "the next day" when someone says so; a mistyped end time
+  // must not silently become a 23-hour drive. A saved drive that already spans midnight starts ticked.
+  const [nextDay, setNextDay] = useState(
+    !!drive?.endedAt && toDateInput(drive.endedAt) !== toDateInput(drive.startedAt)
+  );
+  // Right after Stop, the times are tucked away: changing them marks the drive as edited for good.
+  const [showTimes, setShowTimes] = useState(!finished);
 
   const [initialInputs] = useState(() => ({ date, startTime, endTime }));
   const range = useMemo(() => {
@@ -117,14 +124,15 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
     const startUntouched = !!drive && date === initialInputs.date && startTime === initialInputs.startTime;
     const start = startUntouched ? drive.startedAt : combine(date, startTime);
     if (startUntouched && drive.endedAt && endTime === initialInputs.endTime) {
-      return { start, end: drive.endedAt };
+      return { start, end: drive.endedAt, endsBeforeStart: false };
     }
     let end = combine(date, endTime);
-    // Crossed midnight. Compare at minute precision so an untouched start's seconds don't push a
-    // same-minute end onto the next day.
-    if (end < combine(date, startTime)) end += 24 * 60 * 60 * 1000;
-    return { start, end };
-  }, [date, startTime, endTime, drive, initialInputs]);
+    // Crossed midnight, only when ticked. Compare at minute precision so an untouched start's
+    // seconds don't count as an end before the start.
+    const endsBeforeStart = end < combine(date, startTime);
+    if (endsBeforeStart && nextDay) end += 24 * 60 * 60 * 1000;
+    return { start, end, endsBeforeStart };
+  }, [date, startTime, endTime, drive, initialInputs, nextDay]);
 
   const coords = driveCoords(drive ?? { lat: null, lng: null }, family);
   const untouched =
@@ -140,6 +148,28 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const nightMinutes =
     nightOverride !== null && nightOverride !== "" ? Math.max(0, Math.min(total, Math.round(Number(nightOverride)))) : computed?.nightMinutes ?? 0;
 
+  // What's wrong with the times, shown beside them; Save stays off until it's fixed
+  const timeProblem = !range
+    ? null
+    : range.endsBeforeStart && !nextDay
+    ? "The end time is before the start. Fix it, or tick “Ended the next day” if the drive crossed midnight."
+    : total <= 0
+    ? "The end time must be after the start."
+    : total > MAX_MINUTES
+    ? "That's over 16 hours. Check the times, or split it into separate drives."
+    : range.end > nowMs() + 5 * 60 * 1000
+    ? "That drive ends in the future."
+    : null;
+  // Saving changed times on a finished drive marks it on the printed log for good
+  const willMarkEdited =
+    !drive?.timesEdited &&
+    !!drive?.endedAt &&
+    !!range &&
+    (range.start !== drive.startedAt ||
+      range.end !== drive.endedAt ||
+      total - nightMinutes !== drive.dayMinutes ||
+      nightMinutes !== drive.nightMinutes);
+
   const toggleTag = (list: "c" | "s") => (v: string) =>
     list === "c" ? setConditions((x) => toggle(x, v)) : setSkills((x) => toggle(x, v));
 
@@ -148,9 +178,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const save = (e: React.FormEvent) => {
     e.preventDefault();
     if (!range || !user) return;
-    if (total <= 0) return showToast("End time must be after the start", "error");
-    if (total > MAX_MINUTES) return showToast("That's over 16 hours — split it into separate drives", "error");
-    if (range.end > nowMs() + 5 * 60 * 1000) return showToast("That drive ends in the future", "error");
+    if (timeProblem) return showToast(timeProblem, "error");
     const sup = supervisors.find((s) => s.uid === supervisorUid);
     if (!sup) return showToast("Pick who supervised", "error");
 
@@ -207,10 +235,11 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   };
 
   return (
-    <form onSubmit={save} className="space-y-4">
+    // Bottom padding lets the last tags scroll clear of the pinned Save bar and the tab bar
+    <form onSubmit={save} className="space-y-4 pb-24">
       <fieldset disabled={!canEdit} className="min-w-0 space-y-4">
       <h1 className="text-2xl font-bold">
-        {finished ? `Nice — ${formatMinutes(total)} logged` : forgot ? "When did the drive end?" : drive ? (canEdit ? "Edit drive" : "Drive") : "Add a past drive"}
+        {finished ? (timeProblem ? "Check the times" : `Nice — ${formatMinutes(total)} logged`) : forgot ? "When did the drive end?" : drive ? (canEdit ? "Edit drive" : "Drive") : "Add a past drive"}
       </h1>
       {finished && (
         <p className={muted}>
@@ -227,6 +256,19 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
       {drive && !finished && <ConfirmationNote drive={drive} />}
 
       <section className={`${card} space-y-3`}>
+        {!showTimes ? (
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <p>
+              {range && `${new Date(range.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}–${new Date(range.end).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+            </p>
+            {canEditTimes && (
+              <button type="button" className="text-sm font-medium text-emerald-700 underline dark:text-emerald-400" onClick={() => setShowTimes(true)}>
+                Edit times
+              </button>
+            )}
+          </div>
+        ) : (
+        <>
         <div className="grid grid-cols-3 gap-2">
           <div className="col-span-3">
             <label className={label} htmlFor="date">Date</label>
@@ -243,8 +285,26 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
             </div>
           </div>
         </div>
+        {(range?.endsBeforeStart || nextDay) && canEditTimes && (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" className="h-5 w-5" checked={nextDay} onChange={(e) => setNextDay(e.target.checked)} />
+            Ended the next day (crossed midnight)
+          </label>
+        )}
+        {timeProblem && (
+          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
+            {timeProblem}
+          </p>
+        )}
+        {willMarkEdited && !timeProblem && (
+          <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+            Saving changed times marks this drive as edited on the printed log, permanently.
+          </p>
+        )}
+        </>
+        )}
 
-        {computed && total > 0 && (
+        {showTimes && computed && total > 0 && !timeProblem && (
           <div className="flex items-end justify-between gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-950">
             <div className="text-sm">
               <p className="font-semibold">{formatMinutes(total)} total</p>
@@ -346,7 +406,9 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
           <button type="button" className={secondaryBtn} onClick={() => router.back()}>
             Cancel
           </button>
-          <button className={primaryBtn}>Save</button>
+          <button className={primaryBtn} disabled={!!timeProblem}>
+            Save
+          </button>
         </div>
       )}
       </fieldset>

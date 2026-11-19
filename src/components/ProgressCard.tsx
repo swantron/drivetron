@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useFamily } from "@/components/FamilyProvider";
 import { computeProgress, formatDate, formatMinutes } from "@/utils/progress";
 import { card, muted } from "@/components/ui/styles";
@@ -40,18 +41,6 @@ export function ProgressCard() {
 
   return (
     <section className={`${card} space-y-4`}>
-      {p.eligible ? (
-        <div className="rounded-xl bg-emerald-50 p-3 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
-          <p className="font-semibold">Hours and waiting period done 🎉</p>
-          <p className="text-sm">
-            Print the log, then sign{" "}
-            <a className="underline" href={rules.certification.url} target="_blank" rel="noreferrer">
-              {rules.certification.label}
-            </a>{" "}
-            and bring both when your teen applies for the next license.
-          </p>
-        </div>
-      ) : null}
 
       <FreeHoursNotice />
 
@@ -128,9 +117,9 @@ export function ProgressCard() {
         </div>
         <div>
           {/* The hold period: the earliest the next license can be applied for */}
-          <dt className={muted}>Earliest test date</dt>
+          <dt className={muted}>{holdPassed ? "Waiting period" : "Earliest test date"}</dt>
           <dd className="font-medium">
-            {holdPassed ? "Reached ✓" : formatDate(p.holdDate)}
+            {holdPassed ? "Done ✓" : formatDate(p.holdDate)}
             {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Hold of {holdText(rules)} · {daysToHold} {daysToHold === 1 ? "day" : "days"}</span>}
           </dd>
         </div>
@@ -161,6 +150,29 @@ export function ProgressCard() {
           )}
         </div>
       </dl>
+    </section>
+  );
+}
+
+/** Home, above everything: hours and waiting period are done, so lead with what to do next. */
+export function ReadyBanner() {
+  const { learner, drives, rules } = useFamily();
+  if (!learner) return null;
+  const p = computeProgress(drives, learner.permitDate, new Date(), rules);
+  if (!p.eligible) return null;
+  return (
+    <section className="space-y-2 rounded-2xl bg-emerald-50 p-4 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+      <p className="font-semibold">Hours and waiting period done 🎉</p>
+      <p className="text-sm">
+        Print the log, then sign{" "}
+        <a className="underline" href={rules.certification.url} target="_blank" rel="noreferrer">
+          {rules.certification.label}
+        </a>{" "}
+        and bring both when your teen applies for the next license.
+      </p>
+      <Link href="/log" className="block rounded-xl bg-emerald-700 px-4 py-3 text-center font-semibold text-white">
+        Print the log
+      </Link>
     </section>
   );
 }

@@ -227,6 +227,12 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
   const [name, setName] = useState(me?.name ?? "");
   const [initials, setInitials] = useState(me?.initials ?? "");
 
+  // Another supervising adult with the same initials: the printed log can't tell them apart
+  const initialsClash =
+    me?.role === "supervisor"
+      ? family.memberUids.map((u) => (u !== myUid ? family.members[u] : undefined)).find((m) => m?.role === "supervisor" && m.initials === me.initials)?.name
+      : undefined;
+
   const meDirty =
     !!me && (name.trim() !== me.name || (initials.trim() || initialsOf(name)).toUpperCase().slice(0, 4) !== me.initials);
 
@@ -280,6 +286,11 @@ function Members({ family, myUid }: { family: Family; myUid: string }) {
             <label className={label} htmlFor="myinit">Initials</label>
             <input id="myinit" className={`${input} uppercase`} maxLength={4} value={initials} onChange={(e) => setInitials(e.target.value)} />
           </div>
+          {initialsClash && (
+            <p className="col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+              {initialsClash} also uses {me?.initials}. Change your initials so the printed log tells you apart.
+            </p>
+          )}
           {meDirty && (
             <button className={`${secondaryBtn} col-span-2`}>Save my details</button>
           )}

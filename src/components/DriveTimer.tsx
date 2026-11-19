@@ -11,7 +11,7 @@ import { addDrive, patchDrive, removeDrive, updateFamily } from "@/lib/firebase/
 import { getLocation, driveCoords } from "@/utils/location";
 import { splitDayNight } from "@/utils/night";
 import { defaultSupervisor, supervisorsOf } from "@/utils/members";
-import { defaultVehicleId } from "@/utils/learners";
+import { defaultVehicleId, firstName } from "@/utils/learners";
 import { nowMs } from "@/utils/time";
 import { writeErrorMessage } from "@/utils/errors";
 import { card, input, primaryBtn, secondaryBtn, muted } from "@/components/ui/styles";
@@ -28,7 +28,7 @@ function clock(ms: number) {
 
 export function DriveTimer() {
   const { user } = useAuth();
-  const { family, learner, drives, vehicles, activeDrive, isSupervisor, rules, locked } = useFamily();
+  const { family, learner, learners, drives, vehicles, activeDrive, isSupervisor, rules, locked } = useFamily();
   const { showToast } = useToast();
   const router = useRouter();
   const now = useNow(1000, activeDrive !== null);
@@ -40,7 +40,7 @@ export function DriveTimer() {
   const [discardArmed, setDiscardArmed] = useState(false);
   useEffect(() => {
     if (!discardArmed) return;
-    const t = setTimeout(() => setDiscardArmed(false), 4000);
+    const t = setTimeout(() => setDiscardArmed(false), 10000);
     return () => clearTimeout(t);
   }, [discardArmed]);
 
@@ -148,7 +148,12 @@ export function DriveTimer() {
         {(isSupervisor || activeDrive.createdBy === user.uid) && (
           <button
             onClick={discard}
-            className={`mt-6 rounded-lg px-3 py-2 text-sm ${discardArmed ? "bg-red-50 font-semibold text-red-700 dark:bg-red-950 dark:text-red-300" : "text-gray-500 dark:text-gray-400 underline"}`}
+            // Armed, it's as plain as Stop: full width, red, and easy to hit (or to leave alone)
+            className={
+              discardArmed
+                ? "mt-6 w-full rounded-xl border-2 border-red-600 bg-red-50 px-4 py-3 text-base font-semibold text-red-700 dark:border-red-500 dark:bg-red-950 dark:text-red-300"
+                : "mt-6 min-h-11 rounded-lg px-3 py-2 text-sm text-gray-500 underline dark:text-gray-400"
+            }
           >
             {discardArmed ? "Tap again to discard this drive" : "Discard — started by mistake"}
           </button>
@@ -192,7 +197,7 @@ export function DriveTimer() {
         </label>
       )}
       <button onClick={start} disabled={starting} className={`${primaryBtn} py-4 text-lg`}>
-        Start drive
+        {learners.length > 1 ? `Start drive for ${firstName(learner.name)}` : "Start drive"}
       </button>
       {isSupervisor && (
         <button onClick={() => router.push("/drives/edit")} className={`${secondaryBtn} mt-3`}>

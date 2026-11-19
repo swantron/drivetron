@@ -58,3 +58,23 @@ describe("defaultVehicleId", () => {
     expect(defaultVehicleId([], [])).toBeNull();
   });
 });
+
+import { logInitials } from "../members";
+
+describe("logInitials", () => {
+  const d = (uid: string, name: string, initials: string) => ({ supervisorUid: uid, supervisorName: name, supervisorInitials: initials });
+  it("keeps distinct initials, and tells matching ones apart", () => {
+    const x = logInitials([d("a", "Molly Montana", "MM"), d("b", "Mark Montana", "MM"), d("c", "Dana Rivera", "DR")]);
+    expect([x.label("a"), x.label("b"), x.label("c")]).toEqual(["MoM", "MaM", "DR"]);
+    expect(x.clash).toBe(true);
+    expect(x.key).toEqual([
+      { label: "MoM", name: "Molly Montana" },
+      { label: "MaM", name: "Mark Montana" },
+      { label: "DR", name: "Dana Rivera" },
+    ]);
+  });
+  it("falls back to first names when even those match", () => {
+    const x = logInitials([d("a", "Molly Montana", "MM"), d("b", "Mona Montana", "MM")]);
+    expect([x.label("a"), x.label("b")]).toEqual(["Molly", "Mona"]);
+  });
+});
