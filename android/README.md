@@ -77,7 +77,7 @@ the website, so a web deploy updates it.
   > • A printable log with totals and signature lines.
   > • Works offline and syncs when you're back in coverage.
   >
-  > Built around the rules in Montana, California, Ohio, Texas, Pennsylvania, Florida, Georgia, North Carolina, Illinois, New York, Michigan, Virginia, New Jersey, Washington, Arizona and Tennessee, with more states coming. Your first hours of
+  > Built around the rules in Montana, California, Ohio, Texas, Pennsylvania, Florida, Georgia, North Carolina, Illinois, New York, Michigan, Virginia, New Jersey, Washington, Arizona, Tennessee, Massachusetts, Indiana, Missouri and Maryland, with more states coming. Your first hours of
   > logging are free for each teen.
   >
   > Drivetron is not affiliated with any state government or motor vehicle agency. Confirm current

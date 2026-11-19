@@ -84,7 +84,7 @@ function PrintableLog() {
         <header className="mb-4 text-center">
           <h2 className="text-lg font-bold uppercase tracking-wide">Practice Driving Log</h2>
           <p>
-            {rules.name} {rules.program} — {formatMinutes(rules.totalMinutes)} supervised, including {formatMinutes(rules.nightMinutes)} at night
+            {rules.name} {rules.program} — {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? <>, including {formatMinutes(rules.nightMinutes)} at night</> : null}
             {rules.weatherMinutes ? <> and {formatMinutes(rules.weatherMinutes)} in bad weather</> : null}
           </p>
         </header>

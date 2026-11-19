@@ -64,15 +64,18 @@ export function ProgressCard() {
         <Bar value={p.totalMinutes} max={REQUIRED_TOTAL_MINUTES} color="bg-emerald-700 dark:bg-emerald-600" />
       </div>
 
-      <div>
-        <div className="mb-1 flex items-baseline justify-between">
-          <span className="font-semibold">Night</span>
-          <span className="tabular-nums">
-            {formatMinutes(p.nightMinutes)} <span className={muted}>/ {formatMinutes(rules.nightMinutes)}</span>
-          </span>
+      {/* Massachusetts requires no night hours */}
+      {REQUIRED_NIGHT_MINUTES > 0 && (
+        <div>
+          <div className="mb-1 flex items-baseline justify-between">
+            <span className="font-semibold">Night</span>
+            <span className="tabular-nums">
+              {formatMinutes(p.nightMinutes)} <span className={muted}>/ {formatMinutes(rules.nightMinutes)}</span>
+            </span>
+          </div>
+          <Bar value={p.nightMinutes} max={REQUIRED_NIGHT_MINUTES} color="bg-indigo-500" />
         </div>
-        <Bar value={p.nightMinutes} max={REQUIRED_NIGHT_MINUTES} color="bg-indigo-500" />
-      </div>
+      )}
 
       {rules.weatherMinutes ? (
         <div>

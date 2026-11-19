@@ -5,7 +5,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /**
  * Night = sunset to sunrise at the drive's location, narrowed by `offsetMinutes` at each end for
  * states that define it that way (California's "darkness": 30 minutes after sunset to 30 before
- * sunrise). The offset comes from the state's rules (`nightOffsetMinutes`).
+ * sunrise), or widened by a negative one (Maryland: 30 minutes before sunset to 30 after sunrise).
+ * The offset comes from the state's rules (`nightOffsetMinutes`).
  *
  * Returns whole minutes; day + night always equals the rounded total so the columns add up.
  */

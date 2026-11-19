@@ -44,7 +44,10 @@ function faqs(): { q: string; a: string }[] {
   const fewestStates = byName.filter((s) => s.totalMinutes === fewest);
   const limited = byName.filter((s) => s.countLimit);
   const weather = byName.filter((s) => s.weatherMinutes);
-  const offset = byName.filter((s) => s.nightOffsetMinutes);
+  const narrower = byName.filter((s) => s.nightOffsetMinutes > 0);
+  const wider = byName.filter((s) => s.nightOffsetMinutes < 0);
+  const withNight = STATES.filter((s) => s.nightMinutes > 0);
+  const noNight = byName.filter((s) => !s.nightMinutes);
   const byHold = [...STATES].sort((a, b) => holdDays(a) - holdDays(b));
   const shortest = byHold[0];
   const longest = byHold[byHold.length - 1];
@@ -55,7 +58,12 @@ function faqs(): { q: string; a: string }[] {
     },
     {
       q: "Do all states require night driving hours?",
-      a: `Every state here requires some driving at night, from ${hours(Math.min(...STATES.map((s) => s.nightMinutes)))} to ${hours(Math.max(...STATES.map((s) => s.nightMinutes)))} hours. ${offset.length ? `${listNames(offset)} ${offset.length === 1 ? "counts" : "count"} night from half an hour after sunset to half an hour before sunrise; the others don't define it, so Drivetron counts sunset to sunrise.` : ""}`,
+      a: [
+        `${noNight.length ? `Every state here except ${listNames(noNight)}` : "Every state here"} requires some driving at night, from ${hours(Math.min(...withNight.map((s) => s.nightMinutes)))} to ${hours(Math.max(...withNight.map((s) => s.nightMinutes)))} hours.`,
+        narrower.length ? `${listNames(narrower)} ${narrower.length === 1 ? "counts" : "count"} night from half an hour after sunset to half an hour before sunrise.` : "",
+        wider.length ? `${listNames(wider)} ${wider.length === 1 ? "counts" : "count"} it from half an hour before sunset to half an hour after sunrise.` : "",
+        "Where a state doesn't define night, Drivetron counts sunset to sunrise.",
+      ].filter(Boolean).join(" "),
     },
     ...(limited.length
       ? [
@@ -75,7 +83,7 @@ function faqs(): { q: string; a: string }[] {
       : []),
     {
       q: "How long does a teen have to hold a learner's permit?",
-      a: `From ${shortest.name}'s ${holdText(shortest)} to ${longest.name}'s ${holdText(longest)}. ${byName.map((s) => `${s.name}: ${holdText(s)}`).join("; ")}.`,
+      a: `From ${listNames(byName.filter((s) => holdDays(s) === holdDays(shortest)))}'s ${holdText(shortest)} to ${longest.name}'s ${holdText(longest)}. ${byName.map((s) => `${s.name}: ${holdText(s)}`).join("; ")}.`,
     },
     {
       q: "Who signs off on the supervised hours?",
@@ -141,7 +149,7 @@ export default function DrivingHoursByState() {
                     </Link>
                   </th>
                   <td className="px-3 py-2 text-right tabular-nums">{hours(s.totalMinutes)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{hours(s.nightMinutes)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{s.nightMinutes ? hours(s.nightMinutes) : "—"}</td>
                   <td className="px-3 py-2">{extras(s).join("; ") || "—"}</td>
                   <td className="px-3 py-2">{holdText(s)}</td>
                   <td className="px-3 py-2">

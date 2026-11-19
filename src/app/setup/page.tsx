@@ -117,7 +117,7 @@ function CreateForm() {
           ))}
         </select>
         <p className={`${muted} mt-1`}>
-          {formatMinutes(rules.totalMinutes)} supervised, {formatMinutes(rules.nightMinutes)} at night{rules.weatherMinutes ? `, ${formatMinutes(rules.weatherMinutes)} in bad weather` : ""}, with the {rules.permitName} held at least {holdText(rules)}.
+          {formatMinutes(rules.totalMinutes)} supervised{rules.nightMinutes ? `, ${formatMinutes(rules.nightMinutes)} at night` : ""}{rules.weatherMinutes ? `, ${formatMinutes(rules.weatherMinutes)} in bad weather` : ""}, with the {rules.permitName} held at least {holdText(rules)}.
           {STATES.length === 1 && " More states are on the way."}
         </p>
       </div>

@@ -29,7 +29,10 @@ export interface StateRules {
   supervisor: string;
   /** How the state defines "night", or null when its materials don't */
   nightDefinition: string | null;
-  /** Night starts this many minutes after sunset and ends this many before sunrise (0 = sunset to sunrise) */
+  /**
+   * Night starts this many minutes after sunset and ends this many before sunrise (0 = sunset to
+   * sunrise). Negative widens it: Maryland's -30 is 30 minutes before sunset to 30 after sunrise.
+   */
   nightOffsetMinutes: number;
   /**
    * Most practice that counts toward the hours per calendar day (Texas: 2 hours a day) or per

@@ -5,7 +5,11 @@ import { ohio } from "./ohio";
 import { florida } from "./florida";
 import { georgia } from "./georgia";
 import { illinois } from "./illinois";
+import { indiana } from "./indiana";
+import { maryland } from "./maryland";
+import { massachusetts } from "./massachusetts";
 import { michigan } from "./michigan";
+import { missouri } from "./missouri";
 import { newJersey } from "./newJersey";
 import { newYork } from "./newYork";
 import { northCarolina } from "./northCarolina";
@@ -20,7 +24,7 @@ export type { StateRules, Link } from "./types";
 
 /** Every supported state. Adding one here adds its public page and makes it selectable. */
 export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia,
-  newJersey, washington, arizona, tennessee];
+  newJersey, washington, arizona, tennessee, massachusetts, indiana, missouri, maryland];
 
 /** Logs created before multi-state support have no `state`; they're all Montana. */
 export const DEFAULT_STATE = "MT";
@@ -48,7 +52,10 @@ export const holdDays = (r: StateRules) => Math.round(r.holdMonths * 30.44) + r.
 /** How the app counts night for this state, for footnotes: "sunset to sunrise". */
 export function nightRangeText(r: StateRules): string {
   const m = r.nightOffsetMinutes;
-  return m ? `${m} minutes after sunset to ${m} minutes before sunrise` : "sunset to sunrise";
+  if (m > 0) return `${m} minutes after sunset to ${m} minutes before sunrise`;
+  // A negative offset widens night (Maryland: 30 minutes before sunset to 30 minutes after sunrise)
+  if (m < 0) return `${-m} minutes before sunset to ${-m} minutes after sunrise`;
+  return "sunset to sunrise";
 }
 
 /**

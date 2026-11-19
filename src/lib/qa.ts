@@ -72,6 +72,18 @@ export const QA_FAMILIES: QaFamily[] = [
     people: trio("ga", "Georgia", "Gina", "Greg", "Gabe"),
   },
   {
+    id: "qa-ma",
+    state: "MA",
+    checks: "No night requirement: no night bar on Home, no night line on the printed log or the state page, and the log laid out like the RMV's.",
+    people: trio("ma", "Mass", "Megan", "Matt", "Mia"),
+  },
+  {
+    id: "qa-md",
+    state: "MD",
+    checks: "Night from 30 minutes before sunset: a drive ending 20 minutes after sunset counts 50 of its 60 minutes as night.",
+    people: trio("md", "Maryland", "Mara", "Miles", "Maddie"),
+  },
+  {
     id: "qa-pa-done",
     state: "PA",
     checks: "Everything done and the hold passed: the eligible banner and the DL-180C link.",

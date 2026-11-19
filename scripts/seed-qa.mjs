@@ -26,9 +26,13 @@ import { newJersey } from "../src/states/newJersey.ts";
 import { washington } from "../src/states/washington.ts";
 import { arizona } from "../src/states/arizona.ts";
 import { tennessee } from "../src/states/tennessee.ts";
+import { massachusetts } from "../src/states/massachusetts.ts";
+import { indiana } from "../src/states/indiana.ts";
+import { missouri } from "../src/states/missouri.ts";
+import { maryland } from "../src/states/maryland.ts";
 
 const RULES = Object.fromEntries(
-  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia, newJersey, washington, arizona, tennessee].map((r) => [r.code, r])
+  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia, newJersey, washington, arizona, tennessee, massachusetts, indiana, missouri, maryland].map((r) => [r.code, r])
 );
 const PROJECT = "demo-drivetron";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1";
@@ -156,6 +160,18 @@ const PLANS = {
     const permit = monthsAgo(12);
     permit.setDate(permit.getDate() + 2);
     return { permitDate: ymd(permit) };
+  },
+  "qa-ma": (d) => {
+    for (let i = 0; i < 16; i++) d(170 - i * 10, 15, 90, { tags: ["Clear", i % 2 ? "Highway" : "City traffic"] });
+    return { permitDate: ymd(daysAgo(175)) };
+  },
+  "qa-md": (d, { lat, lng }) => {
+    for (let i = 0; i < 20; i++) d(250 - i * 12, 11, 90, { tags: ["Clear", "Residential"] });
+    // Ends 20 minutes after sunset: Maryland's night starts 30 minutes BEFORE sunset, so 50 of 60 minutes count
+    const dusk = daysAgo(4);
+    const sunset = SunCalc.getTimes(new Date(at(dusk, 12)), lat, lng).sunset.getTime();
+    d(4, (sunset - 40 * 60000 - at(dusk, 0)) / 3600000, 60, { tags: ["Clear", "Residential"], notes: "Ends 20 min after sunset: 50 min count as night in Maryland." });
+    return { permitDate: ymd(daysAgo(260)) };
   },
   "qa-pa-done": (d) => {
     for (let i = 0; i < 38; i++) d(210 - i * 5, 10, 90, { tags: ["Clear", "Residential"] });

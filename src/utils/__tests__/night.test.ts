@@ -1,3 +1,4 @@
+import SunCalc from "suncalc";
 import { splitDayNight } from "../night";
 
 // Helena, MT. Mountain time: MST is UTC-7, MDT is UTC-6.
@@ -78,5 +79,17 @@ describe("splitDayNight", () => {
   it("returns zero for an empty or reversed range", () => {
     expect(splitDayNight(1000, 1000, LAT, LNG)).toEqual({ dayMinutes: 0, nightMinutes: 0 });
     expect(splitDayNight(2000, 1000, LAT, LNG)).toEqual({ dayMinutes: 0, nightMinutes: 0 });
+  });
+});
+
+describe("a negative offset widens night (Maryland)", () => {
+  it("counts from 30 minutes before sunset", () => {
+    const lat = 38.9784;
+    const lng = -76.4922;
+    const sunset = SunCalc.getTimes(new Date(2026, 5, 15, 12), lat, lng).sunset.getTime();
+    const start = sunset - 40 * 60000;
+    const end = sunset + 20 * 60000;
+    expect(splitDayNight(start, end, lat, lng, 0)).toEqual({ dayMinutes: 40, nightMinutes: 20 });
+    expect(splitDayNight(start, end, lat, lng, -30)).toEqual({ dayMinutes: 10, nightMinutes: 50 });
   });
 });

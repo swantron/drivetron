@@ -18,7 +18,7 @@ describe("state rules", () => {
       expect(s.holdMonths).toBeGreaterThanOrEqual(0);
       expect(s.holdExtraDays).toBeGreaterThanOrEqual(0);
       expect(holdDays(s)).toBeGreaterThan(0);
-      expect(s.nightOffsetMinutes).toBeGreaterThanOrEqual(0);
+      expect(Math.abs(s.nightOffsetMinutes)).toBeLessThanOrEqual(60);
       if (s.permitValidMonths !== null) expect(s.permitValidMonths).toBeGreaterThanOrEqual(s.holdMonths);
       expect(s.sources.length).toBeGreaterThan(0);
       for (const l of [...s.sources, s.certification]) expect(l.url).toMatch(/^https:\/\//);
@@ -127,6 +127,21 @@ describe("state rules", () => {
     const p = computeProgress([], "2026-11-19", new Date(2026, 10, 19), tn);
     expect(p.holdDate).toEqual(new Date(2027, 4, 18)); // Nov 19 + 180 days
     expect(computeProgress([], "2026-11-19", new Date(2026, 10, 19), wa).expiryDate).toEqual(new Date(2027, 10, 19));
+  });
+
+  it("finds Massachusetts (no night hours), Indiana and Missouri (holds in days), and Maryland (wider night)", () => {
+    const [ma, ind, mo, md] = ["massachusetts", "indiana", "missouri", "maryland"].map((s) => getStateBySlug(s)!);
+    expect([ma, ind, mo, md].map((s) => [s.code, s.totalMinutes / 60, s.nightMinutes / 60])).toEqual([
+      ["MA", 40, 0],
+      ["IN", 50, 10],
+      ["MO", 40, 10],
+      ["MD", 60, 10],
+    ]);
+    expect([holdText(ind), holdText(mo), holdText(md)]).toEqual(["180 days", "182 days", "9 months"]);
+    expect(nightRangeText(md)).toBe("30 minutes before sunset to 30 minutes after sunrise");
+    // No night requirement: hours done on total alone
+    const p = computeProgress([], "2026-01-01", new Date(2026, 10, 19), { ...ma, totalMinutes: 0 });
+    expect(p.hoursDone).toBe(true);
   });
 
   it("gives every state a form guide that names its form", () => {
