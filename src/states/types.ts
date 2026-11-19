@@ -21,7 +21,7 @@ export interface StateRules {
   nightMinutes: number;
   /** Minimum time the permit must be held before the next stage: holdMonths, plus holdExtraDays */
   holdMonths: number;
-  /** Days on top of holdMonths, for states that say e.g. "6 months + 1 day" (otherwise 0) */
+  /** Days on top of holdMonths, for states that say e.g. "6 months + 1 day" (otherwise 0); with holdMonths 0, the whole hold in days (Tennessee: 180) */
   holdExtraDays: number;
   /** How long the permit is valid, or null when the state doesn't give the permit its own term */
   permitValidMonths: number | null;

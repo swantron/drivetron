@@ -22,9 +22,13 @@ import { illinois } from "../src/states/illinois.ts";
 import { newYork } from "../src/states/newYork.ts";
 import { michigan } from "../src/states/michigan.ts";
 import { virginia } from "../src/states/virginia.ts";
+import { newJersey } from "../src/states/newJersey.ts";
+import { washington } from "../src/states/washington.ts";
+import { arizona } from "../src/states/arizona.ts";
+import { tennessee } from "../src/states/tennessee.ts";
 
 const RULES = Object.fromEntries(
-  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia].map((r) => [r.code, r])
+  [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia, newJersey, washington, arizona, tennessee].map((r) => [r.code, r])
 );
 const PROJECT = "demo-drivetron";
 const AUTH = "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1";

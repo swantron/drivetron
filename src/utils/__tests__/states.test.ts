@@ -1,4 +1,4 @@
-import { DEFAULT_STATE, STATES, countLimitText, getState, getStateBySlug, holdText, nightRangeText } from "@/states";
+import { DEFAULT_STATE, STATES, countLimitText, holdDays, getState, getStateBySlug, holdText, nightRangeText } from "@/states";
 import { computeProgress } from "@/utils/progress";
 
 describe("state rules", () => {
@@ -15,8 +15,9 @@ describe("state rules", () => {
       expect(s.totalMinutes).toBeGreaterThan(0);
       expect(s.nightMinutes).toBeGreaterThanOrEqual(0);
       expect(s.nightMinutes).toBeLessThanOrEqual(s.totalMinutes);
-      expect(s.holdMonths).toBeGreaterThan(0);
+      expect(s.holdMonths).toBeGreaterThanOrEqual(0);
       expect(s.holdExtraDays).toBeGreaterThanOrEqual(0);
+      expect(holdDays(s)).toBeGreaterThan(0);
       expect(s.nightOffsetMinutes).toBeGreaterThanOrEqual(0);
       if (s.permitValidMonths !== null) expect(s.permitValidMonths).toBeGreaterThanOrEqual(s.holdMonths);
       expect(s.sources.length).toBeGreaterThan(0);
@@ -112,6 +113,20 @@ describe("state rules", () => {
     ]);
     expect(nightRangeText(mi)).toBe("30 minutes after sunset to 30 minutes before sunrise");
     expect([holdText(ny), holdText(mi), holdText(va)]).toEqual(["6 months", "6 months", "9 months"]);
+  });
+
+  it("finds New Jersey, Washington, Arizona and Tennessee; Tennessee's hold is 180 days", () => {
+    const [nj, wa, az, tn] = ["new-jersey", "washington", "arizona", "tennessee"].map((s) => getStateBySlug(s)!);
+    expect([nj, wa, az, tn].map((s) => [s.code, s.totalMinutes / 60, s.nightMinutes / 60])).toEqual([
+      ["NJ", 50, 10],
+      ["WA", 50, 10],
+      ["AZ", 30, 10],
+      ["TN", 50, 10],
+    ]);
+    expect(holdText(tn)).toBe("180 days");
+    const p = computeProgress([], "2026-11-19", new Date(2026, 10, 19), tn);
+    expect(p.holdDate).toEqual(new Date(2027, 4, 18)); // Nov 19 + 180 days
+    expect(computeProgress([], "2026-11-19", new Date(2026, 10, 19), wa).expiryDate).toEqual(new Date(2027, 10, 19));
   });
 
   it("gives every state a form guide that names its form", () => {

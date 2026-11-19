@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { STATES, countLimitText, holdText, upperFirst, type StateRules } from "@/states";
+import { STATES, countLimitText, holdDays, holdText, upperFirst, type StateRules } from "@/states";
 import { SITE_URL, socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
 import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
@@ -45,8 +45,9 @@ function faqs(): { q: string; a: string }[] {
   const limited = byName.filter((s) => s.countLimit);
   const weather = byName.filter((s) => s.weatherMinutes);
   const offset = byName.filter((s) => s.nightOffsetMinutes);
-  const longestHold = Math.max(...STATES.map((s) => s.holdMonths * 31 + s.holdExtraDays));
-  const longest = byName.filter((s) => s.holdMonths * 31 + s.holdExtraDays === longestHold);
+  const byHold = [...STATES].sort((a, b) => holdDays(a) - holdDays(b));
+  const shortest = byHold[0];
+  const longest = byHold[byHold.length - 1];
   return [
     {
       q: "Which state requires the most supervised driving hours?",
@@ -74,7 +75,7 @@ function faqs(): { q: string; a: string }[] {
       : []),
     {
       q: "How long does a teen have to hold a learner's permit?",
-      a: `From ${Math.min(...STATES.map((s) => s.holdMonths))} months to ${listNames(longest)}'s ${holdText(longest[0])}. ${byName.map((s) => `${s.name}: ${holdText(s)}`).join("; ")}.`,
+      a: `From ${shortest.name}'s ${holdText(shortest)} to ${longest.name}'s ${holdText(longest)}. ${byName.map((s) => `${s.name}: ${holdText(s)}`).join("; ")}.`,
     },
     {
       q: "Who signs off on the supervised hours?",
