@@ -52,6 +52,7 @@ import { hawaii } from "./hawaii";
 import type { StateRules } from "./types";
 
 export type { StateRules, Link } from "./types";
+export { holdText, upperFirst, hoursText, requirementText } from "./text";
 
 /** Every supported state. Adding one here adds its public page and makes it selectable. */
 export const STATES: StateRules[] = [montana, california, ohio, texas, pennsylvania, florida, georgia, northCarolina, illinois, newYork, michigan, virginia,
@@ -81,16 +82,6 @@ export function getStateBySlug(slug: string): StateRules | undefined {
   return STATES.find((s) => s.slug === slug);
 }
 
-/** "6 months", or "6 months + 1 day" for a state that adds days. */
-export function holdText(r: StateRules): string {
-  // New Hampshire has no permit, so no hold
-  if (!r.holdMonths && !r.holdExtraDays) return "none";
-  const days = `${r.holdExtraDays} day${r.holdExtraDays === 1 ? "" : "s"}`;
-  // A hold counted only in days (Tennessee: 180 days)
-  if (!r.holdMonths) return days;
-  const months = `${r.holdMonths} month${r.holdMonths === 1 ? "" : "s"}`;
-  return r.holdExtraDays ? `${months} + ${days}` : months;
-}
 
 /** Roughly how many days the hold lasts, for comparing states. */
 export const holdDays = (r: StateRules) => Math.round(r.holdMonths * 30.44) + r.holdExtraDays;
@@ -122,12 +113,3 @@ export function countLimitText(r: StateRules): string | null {
   return `${Number.isInteger(h) ? `${h}h` : `${minutes}m`} a ${per}`;
 }
 
-export const upperFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-/** "50 hours" rather than "50h", for page titles and prose. */
-export const hoursText = (minutes: number) => `${minutes / 60} hour${minutes === 60 ? "" : "s"}`;
-
-/** "50 hours, 10 hours at night": everything the state requires, for titles and the printed sheet. */
-export function requirementText(s: StateRules): string {
-  return `${hoursText(s.totalMinutes)}${s.nightMinutes ? `, ${hoursText(s.nightMinutes)} at night` : ""}${s.weatherMinutes ? `, ${hoursText(s.weatherMinutes)} in bad weather` : ""}${s.challengingMinutes ? `, ${hoursText(s.challengingMinutes)} at night or in bad weather` : ""}`;
-}

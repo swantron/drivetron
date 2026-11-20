@@ -6,6 +6,8 @@ import { socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
 import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+import { LicenseDateCalculator } from "@/components/public/LicenseDateCalculator";
+import { calcRules } from "@/utils/licenseDate";
 
 /** One public page per supported state, generated from its entry in src/states. */
 export const dynamicParams = false;
@@ -90,6 +92,14 @@ export default async function StatePage({ params }: Props) {
             </div>
           ))}
         </dl>
+
+        <section className="mt-8">
+          <h2 className="text-xl font-bold">When can your teen move up in {s.name}?</h2>
+          <p className="mt-1 mb-3 text-gray-600 dark:text-gray-400">
+            {s.noHours ? `The ${s.permitName} hold is the only clock to beat.` : `The later of the ${s.noPermit ? "hours" : `${s.permitName} hold and the hours`} at your pace.`}
+          </p>
+          <LicenseDateCalculator states={[calcRules(s)]} />
+        </section>
 
         <section className="mt-8 rounded-2xl bg-emerald-50 p-6 dark:bg-emerald-950">
           <h2 className="text-xl font-bold">{s.noHours ? "Keep a practice log with Drivetron" : `Track the ${hoursText(s.totalMinutes)} with Drivetron`}</h2>

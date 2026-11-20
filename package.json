@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "stats": "node --dns-result-order=ipv4first scripts/stats.mjs",
+    "indexnow": "node scripts/indexnow.mjs",
     "seed:qa": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed-qa.mjs",
     "test": "vitest run",
     "test:watch": "vitest",

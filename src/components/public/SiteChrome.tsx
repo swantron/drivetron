@@ -36,6 +36,11 @@ export function SiteFooter() {
                 Hours by state, compared
               </Link>
             </li>
+            <li>
+              <Link href="/license-date-calculator" className="underline">
+                When can my teen get a license?
+              </Link>
+            </li>
           </ul>
           {/* Every state's page, in two columns so the footer stays short */}
           <ul className="mt-2 columns-2 gap-x-4 text-sm">
