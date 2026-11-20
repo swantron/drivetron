@@ -123,3 +123,11 @@ export function countLimitText(r: StateRules): string | null {
 }
 
 export const upperFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** "50 hours" rather than "50h", for page titles and prose. */
+export const hoursText = (minutes: number) => `${minutes / 60} hour${minutes === 60 ? "" : "s"}`;
+
+/** "50 hours, 10 hours at night": everything the state requires, for titles and the printed sheet. */
+export function requirementText(s: StateRules): string {
+  return `${hoursText(s.totalMinutes)}${s.nightMinutes ? `, ${hoursText(s.nightMinutes)} at night` : ""}${s.weatherMinutes ? `, ${hoursText(s.weatherMinutes)} in bad weather` : ""}${s.challengingMinutes ? `, ${hoursText(s.challengingMinutes)} at night or in bad weather` : ""}`;
+}

@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { STATES, getStateBySlug, holdText, sourceLinks } from "@/states";
+import { STATES, getStateBySlug, holdText, hoursText, requirementText, sourceLinks } from "@/states";
 import { socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
-
-/** "50 hours" rather than "50h", for page titles and prose. */
-const hoursText = (minutes: number) => `${minutes / 60} hour${minutes === 60 ? "" : "s"}`;
 import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
 
 /** One public page per supported state, generated from its entry in src/states. */
@@ -22,7 +19,7 @@ type Props = { params: Promise<{ state: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = getStateBySlug((await params).state);
   if (!s) return {};
-  const hours = `${hoursText(s.totalMinutes)}${s.nightMinutes ? `, ${hoursText(s.nightMinutes)} at night` : ""}${s.weatherMinutes ? `, ${hoursText(s.weatherMinutes)} in bad weather` : ""}${s.challengingMinutes ? `, ${hoursText(s.challengingMinutes)} at night or in bad weather` : ""}`;
+  const hours = requirementText(s);
   // States with no hours requirement: people still search "Arkansas supervised driving hours", so answer it
   if (s.noHours) {
     const title = `${s.name} supervised driving hours: none required | Drivetron`;
@@ -106,6 +103,13 @@ export default async function StatePage({ params }: Props) {
             </li>
           </ul>
           {s.logAtTest && <p className="mt-3 text-gray-700 dark:text-gray-300">{s.logAtTest} Drivetron&apos;s log opens on your phone, or prints.</p>}
+          <p className="mt-3 text-gray-700 dark:text-gray-300">
+            Prefer paper?{" "}
+            <Link href={`/${s.slug}/printable-log`} className="font-semibold text-emerald-800 underline dark:text-emerald-300">
+              Print a free blank {s.name} log
+            </Link>
+            .
+          </p>
           <Link
             href={START_HREF}
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
