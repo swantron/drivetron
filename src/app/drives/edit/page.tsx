@@ -226,7 +226,9 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
     if (drive) saveDrive(family.id, drive.id, data, onError);
     else addDrive(family.id, data, onError);
     showToast(drive ? "Drive saved" : "Drive added", "success");
-    router.push(finished ? "/home" : "/drives");
+    // Editing a saved drive is reached from its view page: go back to it, showing the change
+    if (drive && !finished && !forgot) router.back();
+    else router.push(finished ? "/home" : "/drives");
   };
 
   const del = () => {

@@ -75,7 +75,7 @@ export function ConfirmCard() {
       <ul className="divide-y divide-gray-100 dark:divide-gray-800">
         {waiting.slice(0, SHOWN).map((d) => (
           <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
-            <Link href={`/drives/edit?id=${d.id}`} className="min-w-0">
+            <Link href={`/drives/view?id=${d.id}`} className="min-w-0">
               <p className="font-medium">
                 {when(d)} · <span className="tabular-nums">{formatMinutes(d.dayMinutes + d.nightMinutes)}</span>
               </p>

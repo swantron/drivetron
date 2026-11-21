@@ -7,7 +7,7 @@ import { formatMinutes } from "@/utils/progress";
 import { PhonePreview } from "@/components/public/PhonePreview";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { LandingRedirect, SIGNED_IN_HINT_SCRIPT } from "@/components/public/LandingRedirect";
-import { JOIN_HREF, SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+import { JOIN_HREF, PriceLine, SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
 
 const title = "Drivetron — the supervised driving log the whole family shares";
 const description =
@@ -86,6 +86,7 @@ export default function LandingPage() {
                   How it works
                 </a>
               </div>
+              <PriceLine className="mt-3" />
               <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                 Already invited? Open the link the other parent sent you, or{" "}
                 <Link href={JOIN_HREF} className="font-medium text-emerald-700 underline dark:text-emerald-400">

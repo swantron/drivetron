@@ -3,7 +3,7 @@ import Link from "next/link";
 import { STATES_BY_NAME } from "@/states";
 import { socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
-import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+import { PriceLine, SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
 import { LicenseDateCalculator } from "@/components/public/LicenseDateCalculator";
 import { calcRules } from "@/utils/licenseDate";
 
@@ -68,6 +68,7 @@ export default function LicenseDateCalculatorPage() {
           >
             {PAYWALL_ON ? "Start your log free" : "Start your free log"}
           </Link>
+          <PriceLine className="mt-2" />
         </section>
 
         <section className="mt-10">

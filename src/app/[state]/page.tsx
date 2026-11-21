@@ -5,7 +5,7 @@ import { STATES, getStateBySlug, holdText, hoursText, requirementText, sourceLin
 import { socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
-import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+import { PriceLine, SiteFooter, SiteHeader, startHref } from "@/components/public/SiteChrome";
 import { LicenseDateCalculator } from "@/components/public/LicenseDateCalculator";
 import { calcRules } from "@/utils/licenseDate";
 
@@ -74,7 +74,9 @@ export default async function StatePage({ params }: Props) {
           {s.noPermit ? null : <>on {/^[aeiou]/i.test(s.permitName) ? "an" : "a"} {s.permitName} </>}needs {hoursText(s.totalMinutes)} of supervised
           driving{s.nightMinutes ? <>, {hoursText(s.nightMinutes)} of it at night</> : null}
           {s.weatherMinutes ? <> and {hoursText(s.weatherMinutes)} in bad weather</> : null}
-          {s.challengingMinutes ? <>, {hoursText(s.challengingMinutes)} of it at night or in bad weather</> : null}, before moving to the next license. A parent or guardian
+          {s.challengingMinutes ? <>, {hoursText(s.challengingMinutes)} of it at night or in bad weather</> : null}
+          {/* The comma closes a night clause; without one it would dangle ("50 hours of supervised driving, before…") */}
+          {s.nightMinutes || s.challengingMinutes ? "," : ""} before moving to the next license. A parent or guardian
           certifies the hours on {s.certification?.label}.
           </>
           )}
@@ -92,6 +94,15 @@ export default async function StatePage({ params }: Props) {
             </div>
           ))}
         </dl>
+
+        {/* On a phone the green card's button is a couple of screens down; this one is in the first view */}
+        <Link
+          href={startHref(s.slug)}
+          className="mt-5 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
+        >
+          {PAYWALL_ON ? `Start your ${s.name} log free` : `Start your free ${s.name} log`}
+        </Link>
+        <PriceLine className="mt-2" />
 
         <section className="mt-8">
           <h2 className="text-xl font-bold">When can your teen move up in {s.name}?</h2>
@@ -121,11 +132,12 @@ export default async function StatePage({ params }: Props) {
             .
           </p>
           <Link
-            href={START_HREF}
+            href={startHref(s.slug)}
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
           >
             {PAYWALL_ON ? `Start your ${s.name} log free` : `Start your free ${s.name} log`}
           </Link>
+          <PriceLine className="mt-2" />
         </section>
 
         {s.formGuide && (

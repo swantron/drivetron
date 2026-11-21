@@ -107,8 +107,11 @@ function CreateForm() {
   const [learnerDob, setLearnerDob] = useState("");
   const [permitDate, setPermitDate] = useState(() => new Date().toLocaleDateString("en-CA"));
   const [busy, setBusy] = useState(false);
-  // Nothing preselected: a family that skims past the picker would get another state's rules
-  const [state, setState] = useState("");
+  // Preselected only when they came from that state's page (/setup?state=montana); otherwise
+  // nothing, since a family that skims past the picker would get another state's rules
+  const params = useSearchParams();
+  const fromPage = STATES_BY_NAME.find((st) => st.slug === params.get("state"))?.code ?? "";
+  const [state, setState] = useState(fromPage);
   const rules = getState(state || undefined);
 
   const submit = async (e: React.FormEvent) => {

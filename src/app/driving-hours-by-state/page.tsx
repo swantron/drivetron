@@ -3,7 +3,7 @@ import Link from "next/link";
 import { STATES, countLimitText, holdDays, holdText, upperFirst, type StateRules } from "@/states";
 import { SITE_URL, socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
-import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+import { PriceLine, SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
 
 /**
  * Every supported state side by side, generated from src/states: one page for the "hours by state"
@@ -225,6 +225,7 @@ export default function DrivingHoursByState() {
           >
             {PAYWALL_ON ? "Start your log free" : "Start your free log"}
           </Link>
+          <PriceLine className="mt-2" />
         </section>
 
         <section className="mt-10 max-w-3xl">

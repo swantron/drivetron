@@ -20,7 +20,7 @@ export function DriveRow({ drive }: { drive: Drive }) {
   return (
     <li>
       <Link
-        href={`/drives/edit?id=${drive.id}`}
+        href={`/drives/view?id=${drive.id}`}
         className="flex items-center justify-between gap-3 py-3"
       >
         <div className="min-w-0">

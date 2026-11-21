@@ -5,8 +5,9 @@ import { STATES, countLimitText, getStateBySlug, holdText, nightRangeText, requi
 import type { StateRules } from "@/states";
 import { socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
-import { SiteFooter, SiteHeader, START_HREF } from "@/components/public/SiteChrome";
+import { PriceLine, SiteFooter, SiteHeader, startHref } from "@/components/public/SiteChrome";
 import { PrintButton } from "@/components/public/PrintButton";
+import { FitToWidth } from "@/components/public/FitToWidth";
 
 /**
  * A free blank log per state, for parents searching "printable <state> driving log". The sheet is the
@@ -95,7 +96,7 @@ export default async function PrintableLogPage({ params }: Props) {
 
         {/* The sheet: paper on screen too, whatever the theme */}
         <article className="mt-6 overflow-x-auto rounded-2xl border border-gray-300 bg-white p-4 text-black shadow-sm sm:p-6 print:mt-0 print:overflow-visible print:rounded-none print:border-0 print:p-0 print:shadow-none">
-          <div className="min-w-[36rem] text-sm">
+          <FitToWidth width={640} className="text-sm">
             <header className="text-center">
               <h2 className="text-lg font-bold uppercase tracking-wide">{s.name} Practice Driving Log</h2>
               <p>
@@ -134,7 +135,7 @@ export default async function PrintableLogPage({ params }: Props) {
                   {weatherColumn && <th className="w-[9%] border border-black px-1 py-1">Bad weather</th>}
                   <th className="w-[10%] border border-black px-1 py-1">Total time</th>
                   {nightColumn && <th className="w-[10%] border border-black px-1 py-1">Night time</th>}
-                  <th className="w-[10%] border border-black px-1 py-1">Supervisor initials</th>
+                  <th className="w-[12%] border border-black px-1 py-1">Supervisor initials</th>
                 </tr>
               </thead>
               <tbody>
@@ -183,7 +184,7 @@ export default async function PrintableLogPage({ params }: Props) {
             <p className="mt-4 text-center text-[10px] text-gray-600">
               Blank log from drivetron.app{path(s)}. Not an official {s.name} form; confirm requirements with the state.
             </p>
-          </div>
+          </FitToWidth>
         </article>
 
         <section className="mt-10 rounded-2xl bg-emerald-50 p-6 print:hidden dark:bg-emerald-950">
@@ -194,11 +195,12 @@ export default async function PrintableLogPage({ params }: Props) {
             one log, and it prints filled in, ready to sign.
           </p>
           <Link
-            href={START_HREF}
+            href={startHref(s.slug)}
             className="mt-4 inline-block rounded-xl bg-emerald-700 px-5 py-3 font-semibold text-white shadow-sm active:bg-emerald-800"
           >
             {PAYWALL_ON ? `Start your ${s.name} log free` : `Start your free ${s.name} log`}
           </Link>
+          <PriceLine className="mt-2" />
           <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
             More on{" "}
             <Link href={`/${s.slug}`} className="underline">

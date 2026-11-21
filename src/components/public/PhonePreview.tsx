@@ -3,12 +3,13 @@ import { card, muted } from "@/components/ui/styles";
 /**
  * A picture of the app for the landing page, drawn with the app's own styles rather than a
  * screenshot, so it stays crisp, follows light/dark mode, and can't go stale against the real UI.
- * Sample data only.
+ * Sample data only, against a real state's figures (Montana: 50 hours, 10 at night, a 6-month + 1 day
+ * hold) so a parent sees an actual obligation, not made-up numbers.
  */
 export function PhonePreview() {
   return (
     <div
-      aria-label="The Drivetron app on a phone: a drive in progress, with 31 of 50 hours logged"
+      aria-label="The Drivetron app on a phone: a Montana drive in progress, with 31 of the state's 50 hours logged"
       role="img"
       className="mx-auto w-full max-w-[19rem] rounded-[2.5rem] border-[10px] border-gray-900 bg-gray-50 p-3 shadow-xl dark:border-gray-700 dark:bg-gray-950"
     >
@@ -20,12 +21,13 @@ export function PhonePreview() {
         </p>
 
         <div className={`${card} text-center`}>
-          <p className={muted}>Driving with Dad · 2014 Outback</p>
+          <p className={muted}>Driving with Dad · 2017 F-150</p>
           <p className="my-2 font-mono text-4xl font-bold tabular-nums">0:42:17</p>
           <div className="rounded-xl bg-red-600 py-3 font-semibold text-white">Stop drive</div>
         </div>
 
         <div className={`${card} space-y-3`}>
+          <p className={`${muted} text-xs`}>Montana: 50 hours, 10 at night, before the next license</p>
           <Meter label="Total" value="31h 20m" of="50h" pct={63} color="bg-emerald-700 dark:bg-emerald-600" />
           <Meter label="Night" value="6h 05m" of="10h" pct={61} color="bg-indigo-500" />
           <dl className="grid grid-cols-2 gap-2 text-xs">
@@ -36,6 +38,10 @@ export function PhonePreview() {
             <div>
               <dt className={muted}>Pace</dt>
               <dd className="font-medium">2h 50m / week</dd>
+            </div>
+            <div className="col-span-2">
+              <dt className={muted}>At this pace</dt>
+              <dd className="font-medium">Ready in about 7 weeks</dd>
             </div>
           </dl>
         </div>
