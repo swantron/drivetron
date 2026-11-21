@@ -9,6 +9,7 @@ import { useFamily } from "@/components/FamilyProvider";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { LearnerSwitcher } from "@/components/LearnerSwitcher";
 import { subscribeToJoinRequests, type JoinRequest } from "@/lib/firebase/firestore";
+import { needsConfirming } from "@/utils/signoff";
 
 const tabs = [
   { href: "/home", label: "Home", icon: "M3 12l9-8 9 8M5 10v10h14V10" },
@@ -107,11 +108,19 @@ function JoinRequestBanner() {
 function BottomNav() {
   const pathname = usePathname();
   const pending = usePendingRequests().length;
+  // Drives waiting for a supervising adult's OK; Home is where they're confirmed (ConfirmCard)
+  const { allDrives, isSupervisor } = useFamily();
+  const unconfirmed = isSupervisor ? allDrives.filter(needsConfirming).length : 0;
+  const badges: Record<string, { count: number; label: string }> = {
+    "/home": { count: unconfirmed, label: `${unconfirmed} ${unconfirmed === 1 ? "drive" : "drives"} to confirm` },
+    "/family": { count: pending, label: `${pending} waiting for approval` },
+  };
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-gray-800 dark:bg-gray-950/95 print:hidden">
       <ul className="mx-auto grid max-w-xl grid-cols-4">
         {tabs.map((t) => {
           const active = pathname.startsWith(t.href);
+          const badge = badges[t.href];
           return (
             <li key={t.href}>
               <Link
@@ -124,12 +133,12 @@ function BottomNav() {
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                     <path d={t.icon} />
                   </svg>
-                  {t.href === "/family" && pending > 0 && (
+                  {badge && badge.count > 0 && (
                     <span
-                      aria-label={`${pending} waiting for approval`}
+                      aria-label={badge.label}
                       className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white"
                     >
-                      {pending}
+                      {badge.count}
                     </span>
                   )}
                 </span>
