@@ -1,6 +1,6 @@
 import type { Drive } from "@/types";
 import { getState } from "@/states";
-import { addMonths, computeProgress, formatMinutes, initialsOf, parseLocalDate } from "../progress";
+import { addMonths, computeProgress, formatMinutes, initialsOf, paceNeeded, parseLocalDate } from "../progress";
 
 function drive(startedAt: Date, dayMinutes: number, nightMinutes: number, extra: Partial<Drive> = {}): Drive {
   return {
@@ -90,6 +90,45 @@ describe("computeProgress", () => {
     const p = computeProgress(drives, permit, new Date(2026, 10, 9));
     expect(p.conditionCounts).toEqual({ Snow: 2, Highway: 1 });
     expect(p.skillCounts).toEqual({ Merging: 1 });
+  });
+});
+
+describe("paceNeeded", () => {
+  const hold = new Date(2027, 4, 10);
+  const expiry = new Date(2027, 10, 9);
+
+  it("aims at the hold date, rounded up to the quarter hour", () => {
+    // 2913 minutes left, 171 days (24.4 weeks) to the hold: 119.2 -> 2h
+    const n = paceNeeded(2913, hold, expiry, new Date(2026, 10, 20));
+    expect(n).toEqual({ minutesPerWeek: 120, by: hold, target: "hold" });
+  });
+
+  it("aims at the expiry once the hold has passed", () => {
+    const n = paceNeeded(600, hold, expiry, new Date(2027, 6, 1));
+    expect(n?.target).toBe("expiry");
+    expect(n?.by).toEqual(expiry);
+  });
+
+  it("aims at the expiry when the hold would need more than 10 hours a week", () => {
+    expect(paceNeeded(2913, hold, expiry, new Date(2027, 4, 1))?.target).toBe("expiry");
+  });
+
+  it("keeps the hold date when there's no expiry to fall back on", () => {
+    expect(paceNeeded(2913, hold, null, new Date(2027, 4, 1))?.target).toBe("hold");
+  });
+
+  it("is null with nothing left, or no date left to aim at", () => {
+    expect(paceNeeded(0, hold, expiry, new Date(2026, 10, 20))).toBeNull();
+    expect(paceNeeded(600, hold, expiry, new Date(2027, 11, 1))).toBeNull();
+  });
+});
+
+describe("historyWeeks", () => {
+  it("counts weeks since the first drive, and is 0 with none", () => {
+    const now = new Date(2026, 10, 15);
+    expect(computeProgress([], "2026-11-01", now).historyWeeks).toBe(0);
+    const p = computeProgress([drive(new Date(2026, 10, 1), 60, 0)], "2026-11-01", now);
+    expect(p.historyWeeks).toBeCloseTo(2, 1);
   });
 });
 

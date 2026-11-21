@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useFamily } from "@/components/FamilyProvider";
-import { computeProgress, formatDate, formatMinutes } from "@/utils/progress";
+import { computeProgress, formatDate, formatMinutes, MIN_HISTORY_WEEKS } from "@/utils/progress";
+import { useNow } from "@/hooks/useNow";
 import { card, muted } from "@/components/ui/styles";
 import { countLimitText, holdText } from "@/states";
 import { FreeHoursNotice } from "@/components/UnlockCard";
@@ -18,9 +19,12 @@ function Bar({ value, max, color }: { value: number; max: number; color: string 
 }
 
 export function ProgressCard() {
-  const { learner, drives, rules } = useFamily();
+  const { learner, drives, rules, activeDrive } = useFamily();
+  // The running drive isn't counted until it's stopped; say so, so the total doesn't look stuck
+  const tick = useNow(30000, activeDrive !== null);
   if (!learner) return null;
   const now = new Date();
+  const runningMinutes = activeDrive ? Math.max(0, Math.floor((tick - activeDrive.startedAt) / 60000)) : 0;
   const p = computeProgress(drives, learner.permitDate, now, rules);
   const REQUIRED_TOTAL_MINUTES = rules.totalMinutes;
   const REQUIRED_NIGHT_MINUTES = rules.nightMinutes;
@@ -30,7 +34,9 @@ export function ProgressCard() {
   // The day they can test is whichever comes last: the hours or the hold period.
   const readyDate =
     p.projectedHoursDate && (p.projectedHoursDate > p.holdDate ? p.projectedHoursDate : p.holdDate);
-  const behindExpiry = readyDate && p.expiryDate && readyDate > p.expiryDate;
+  // A pace from a week or two of drives swings a lot; only warn once it has settled
+  const settled = p.historyWeeks >= MIN_HISTORY_WEEKS;
+  const behindExpiry = settled && readyDate && p.expiryDate && readyDate > p.expiryDate;
   const totalToGo = Math.max(0, REQUIRED_TOTAL_MINUTES - p.totalMinutes);
   const nightToGo = Math.max(0, REQUIRED_NIGHT_MINUTES - p.nightMinutes);
   const stillToGo = [
@@ -66,6 +72,9 @@ export function ProgressCard() {
           </span>
         </div>
         <Bar value={p.totalMinutes} max={REQUIRED_TOTAL_MINUTES} color="bg-emerald-700 dark:bg-emerald-600" />
+        {runningMinutes > 0 && (
+          <p className={`${muted} mt-1 text-xs`}>+{formatMinutes(runningMinutes)} from the drive in progress, once it&apos;s stopped.</p>
+        )}
       </div>
 
       {/* Massachusetts requires no night hours */}
@@ -131,14 +140,27 @@ export function ProgressCard() {
         )}
         <div>
           <dt className={muted}>Pace</dt>
-          <dd className="font-medium">{p.driveCount < 2 ? "—" : `${formatMinutes(p.minutesPerWeek)} / week`}</dd>
+          <dd className="font-medium">
+            {p.driveCount < 2 ? "—" : `${formatMinutes(p.minutesPerWeek)} / week`}
+            {p.neededPace && (
+              <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                Needs about {formatMinutes(p.neededPace.minutesPerWeek)} / week to finish{" "}
+                {p.neededPace.target === "hold" ? `by ${formatDate(p.neededPace.by)}` : `before the ${rules.permitName} expires`}
+              </span>
+            )}
+          </dd>
         </div>
         <div>
           {/* The hold period: the earliest the next license can be applied for */}
           <dt className={muted}>{holdPassed ? "Waiting period" : "Earliest test date"}</dt>
           <dd className="font-medium">
             {holdPassed ? "Done ✓" : formatDate(p.holdDate)}
-            {!holdPassed && <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">Hold of {holdText(rules)} · {daysToHold} {daysToHold === 1 ? "day" : "days"}</span>}
+            {!holdPassed && (
+              <span className="block text-xs font-normal text-gray-500 dark:text-gray-400">
+                {daysToHold} {daysToHold === 1 ? "day" : "days"} to go
+                <span className="block">Hold of {holdText(rules)}</span>
+              </span>
+            )}
           </dd>
         </div>
         {p.expiryDate && (
@@ -149,7 +171,7 @@ export function ProgressCard() {
         )}
         {!rules.noHours && (
         <div className="col-span-2">
-          <dt className={muted}>Projected test-ready</dt>
+          <dt className={muted}>{p.eligible ? "Test-ready" : "At this pace"}</dt>
           <dd className="font-medium">
             {p.eligible
               ? "Now"
@@ -161,6 +183,9 @@ export function ProgressCard() {
           </dd>
           {!p.eligible && readyDate && p.weatherRemaining > 0 && (
             <p className={`${muted} mt-1`}>Plus {formatMinutes(p.weatherRemaining)} in bad weather, whenever the weather allows.</p>
+          )}
+          {!p.eligible && readyDate && !settled && (
+            <p className={`${muted} mt-1`}>An early guess. It settles after a few weeks of drives.</p>
           )}
           {behindExpiry && (
             <p className="mt-1 text-amber-700 dark:text-amber-400">

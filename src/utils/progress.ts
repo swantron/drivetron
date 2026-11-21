@@ -78,11 +78,48 @@ export interface Progress {
   projectedHoursDate: Date | null;
   /** Average logged minutes per week since the permit date */
   minutesPerWeek: number;
+  /** Weeks of logging behind that pace (from the permit date or first drive, whichever is later); 0 with no drives */
+  historyWeeks: number;
+  /**
+   * The weekly pace that would finish the hours by the hold date (or, once that's passed or out of
+   * reach, by the permit's expiry); null when the hours are done or there's no date left to aim at
+   */
+  neededPace: { minutesPerWeek: number; by: Date; target: "hold" | "expiry" } | null;
   hoursDone: boolean;
   /** Hours done and hold passed: ready to take form 21-1600 to the exam station */
   eligible: boolean;
   conditionCounts: Record<string, number>;
   skillCounts: Record<string, number>;
+}
+
+const WEEK_MS = 7 * 86400000;
+
+/** Weeks of logging before the pace is steady enough to warn that it runs past the permit's expiry */
+export const MIN_HISTORY_WEEKS = 4;
+
+/** Past this weekly pace, aiming at the hold date isn't realistic, so aim at the expiry instead */
+const MAX_REASONABLE_PACE_MINUTES = 10 * 60;
+
+/**
+ * Minutes a week, rounded up to the quarter hour, to drive `remaining` by the hold date, or by the
+ * permit's expiry once the hold has passed or would need more than 10 hours a week.
+ */
+export function paceNeeded(
+  remaining: number,
+  holdDate: Date,
+  expiryDate: Date | null,
+  now: Date
+): { minutesPerWeek: number; by: Date; target: "hold" | "expiry" } | null {
+  if (remaining <= 0) return null;
+  const perWeek = (by: Date) => Math.ceil(remaining / Math.max(1, (by.getTime() - now.getTime()) / WEEK_MS) / 15) * 15;
+  const expiryAhead = expiryDate && expiryDate > now ? expiryDate : null;
+  if (holdDate > now) {
+    const pace = perWeek(holdDate);
+    if (pace <= MAX_REASONABLE_PACE_MINUTES || !expiryAhead || expiryAhead <= holdDate) {
+      return { minutesPerWeek: pace, by: holdDate, target: "hold" };
+    }
+  }
+  return expiryAhead ? { minutesPerWeek: perWeek(expiryAhead), by: expiryAhead, target: "expiry" } : null;
 }
 
 export function computeProgress(
@@ -112,7 +149,8 @@ export function computeProgress(
   // Pace from the permit date (or first drive, if logging started later), at least one week.
   const firstDrive = done.reduce((min, d) => Math.min(min, d.startedAt), Infinity);
   const paceStart = Math.max(permit.getTime(), Number.isFinite(firstDrive) ? Math.min(firstDrive, now.getTime()) : now.getTime());
-  const weeks = Math.max(1, (now.getTime() - paceStart) / (7 * 86400000));
+  const historyWeeks = (now.getTime() - paceStart) / WEEK_MS;
+  const weeks = Math.max(1, historyWeeks);
   const minutesPerWeek = totalMinutes / weeks;
 
   const hoursDone = totalRemaining === 0 && nightRemaining === 0 && weatherRemaining === 0 && challengingRemaining === 0;
@@ -131,6 +169,8 @@ export function computeProgress(
       projectedHoursDate = new Date(now.getTime() + weeksNeeded * 7 * 86400000);
     }
   }
+
+  const neededPace = hoursDone ? null : paceNeeded(Math.max(totalRemaining, nightRemaining), holdDate, expiryDate, now);
 
   const conditionCounts: Record<string, number> = {};
   const skillCounts: Record<string, number> = {};
@@ -154,6 +194,8 @@ export function computeProgress(
     expiryDate,
     projectedHoursDate,
     minutesPerWeek,
+    historyWeeks,
+    neededPace,
     hoursDone,
     eligible: hoursDone && now.getTime() >= holdDate.getTime(),
     conditionCounts,
