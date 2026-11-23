@@ -1,4 +1,5 @@
 import type { Family } from "@/types";
+import { isInstructor, personKey } from "@/utils/instructors";
 
 export interface Supervisor {
   uid: string;
@@ -39,15 +40,19 @@ export function distinctLabels(people: { uid: string; name: string; initials: st
   );
 }
 
-/** The printed log's labels for the adults who supervised these drives, and a key of who's who. */
+/**
+ * The printed log's labels for the adults who supervised these drives, and a key of who's who.
+ * Instructors (who aren't family members) are told apart by name, and the key says what they are.
+ */
 export function logInitials(
   drives: { supervisorUid: string; supervisorName: string; supervisorInitials: string }[]
-): { label: (uid: string) => string; key: { label: string; name: string }[]; clash: boolean } {
-  const people = drives.map((d) => ({ uid: d.supervisorUid, name: d.supervisorName, initials: d.supervisorInitials }));
+): { label: (d: { supervisorUid: string; supervisorName: string }) => string; key: { label: string; name: string }[]; clash: boolean } {
+  // The key sits in parentheses on the printed log, so "Pat Jones, driving instructor"
+  const people = drives.map((d) => ({ uid: personKey(d), name: isInstructor(d) ? `${d.supervisorName}, driving instructor` : d.supervisorName, initials: d.supervisorInitials }));
   const labels = distinctLabels(people);
   const names = new Map(people.map((p) => [p.uid, p.name]));
   return {
-    label: (uid) => labels.get(uid) ?? "",
+    label: (d) => labels.get(personKey(d)) ?? "",
     key: [...labels].map(([uid, label]) => ({ label, name: names.get(uid)! })),
     clash: [...labels].some(([uid, label]) => people.find((p) => p.uid === uid)!.initials !== label),
   };

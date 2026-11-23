@@ -1,4 +1,5 @@
 import type { Drive, Family } from "@/types";
+import { isInstructor, supervisorLabel } from "@/utils/instructors";
 import { driveLearnerId, learnersOf, vehiclesOf } from "@/utils/learners";
 import { confirmationOf } from "@/utils/signoff";
 
@@ -65,7 +66,7 @@ export function drivesCsv(family: Family, drives: Drive[]): string {
         d.dayMinutes + d.nightMinutes,
         d.dayMinutes,
         d.nightMinutes,
-        d.supervisorName,
+        supervisorLabel(d),
         d.supervisorInitials,
         d.vehicleName ?? "",
         d.conditions.join("; "),
@@ -105,7 +106,7 @@ export function logJson(family: Family, drives: Drive[], exportedAt: number): st
         endedAt: d.endedAt === null ? null : new Date(d.endedAt).toISOString(),
         dayMinutes: d.dayMinutes,
         nightMinutes: d.nightMinutes,
-        supervisor: { id: d.supervisorUid, name: d.supervisorName, initials: d.supervisorInitials },
+        supervisor: { id: d.supervisorUid, name: d.supervisorName, initials: d.supervisorInitials, drivingInstructor: isInstructor(d) },
         vehicle: d.vehicleName ?? null,
         conditions: d.conditions,
         skills: d.skills,

@@ -13,7 +13,10 @@ import { addDrive, removeDrive, saveDrive, saveVehicle } from "@/lib/firebase/fi
 import { defaultVehicleId, driveLearnerId, newId, PRIMARY_LEARNER } from "@/utils/learners";
 import { splitDayNight } from "@/utils/night";
 import { driveCoords } from "@/utils/location";
-import { defaultSupervisor, distinctLabels, supervisorsOf } from "@/utils/members";
+import { defaultSupervisor, supervisorsOf } from "@/utils/members";
+import { INSTRUCTOR_UID, isInstructor } from "@/utils/instructors";
+import { signOffFor } from "@/utils/signoff";
+import { useSupervisorPicker } from "@/components/SupervisorPicker";
 import { formatMinutes } from "@/utils/progress";
 import { CONDITIONS, SKILLS } from "@/utils/practice";
 import type { Drive, Family } from "@/types";
@@ -81,10 +84,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const { user } = useAuth();
   const { showToast } = useToast();
   const router = useRouter();
-  const supervisors = supervisorsOf(family);
-  // The same names the printed log uses: initials, or first names when two adults share them
-  const printedAs = distinctLabels(supervisors);
-  const { learners, learner: selectedLearner, vehicles, drives: learnerDrives, isSupervisor, rules } = useFamily();
+  const { learners, learner: selectedLearner, vehicles, drives: learnerDrives, isSupervisor, rules, me } = useFamily();
   // Mirrors firestore.rules: learners edit only their own drives, and only tags once it's finished.
   const ownDrive = !drive || drive.createdBy === user?.uid;
   const canEdit = isSupervisor || ownDrive;
@@ -96,7 +96,15 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
   const [startTime, setStartTime] = useState(toTimeInput(initialStart));
   // A forgotten timer has no real end; make them type it rather than guessing.
   const [endTime, setEndTime] = useState(drive?.endedAt ? toTimeInput(drive.endedAt) : forgot ? "" : toTimeInput(nowMs()));
-  const [supervisorUid, setSupervisorUid] = useState(drive?.supervisorUid ?? defaultSupervisor(family, user!.uid)?.uid ?? "");
+  const picker = useSupervisorPicker({
+    family,
+    // A drive keeps who it names, even an adult who has since left the log
+    initial: drive
+      ? supervisorsOf(family).find((s) => s.uid === drive.supervisorUid) ??
+        (isInstructor(drive) ? { uid: drive.supervisorUid, name: drive.supervisorName, initials: drive.supervisorInitials } : null)
+      : defaultSupervisor(family, user!.uid),
+    fieldLabel: "Supervised by",
+  });
   const [conditions, setConditions] = useState<string[]>(drive?.conditions ?? []);
   const [skills, setSkills] = useState<string[]>(drive?.skills ?? []);
   const [notes, setNotes] = useState(drive?.notes ?? "");
@@ -181,8 +189,8 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
     e.preventDefault();
     if (!range || !user) return;
     if (timeProblem) return showToast(timeProblem, "error");
-    const sup = supervisors.find((s) => s.uid === supervisorUid);
-    if (!sup) return showToast("Pick who supervised", "error");
+    const sup = picker.choice;
+    if (!sup) return showToast("Pick who supervised, or name the instructor", "error");
 
     let vehicle: { id: string; name: string } | null = null;
     if (vehicleId === NEW_VEHICLE) {
@@ -224,7 +232,11 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
             nightMinutes !== drive.nightMinutes)),
     };
     if (drive) saveDrive(family.id, drive.id, data, onError);
-    else addDrive(family.id, data, onError);
+    // A parent typing in an instructor's lesson is vouching for it, so it's confirmed as they save
+    // it. (A lesson the teen timed waits for a parent's Confirm instead.)
+    else if (sup.uid === INSTRUCTOR_UID && isSupervisor && me) {
+      addDrive(family.id, { ...data, signedOff: signOffFor({ ...data, id: "" }, { uid: user.uid, name: me.name, initials: me.initials }, nowMs()) }, onError);
+    } else addDrive(family.id, data, onError);
     showToast(drive ? "Drive saved" : "Drive added", "success");
     // Editing a saved drive is reached from its view page: go back to it, showing the change
     if (drive && !finished && !forgot) router.back();
@@ -331,17 +343,7 @@ function DriveForm({ family, drive, finished, forgot }: { family: Family; drive?
           </div>
         )}
 
-        <div>
-          <label className={label} htmlFor="sup">Supervised by</label>
-          <select id="sup" className={input} value={supervisorUid} onChange={(e) => setSupervisorUid(e.target.value)}>
-            {supervisors.map((s) => (
-              <option key={s.uid} value={s.uid}>
-                {s.name}
-                {printedAs.get(s.uid) === s.initials ? ` (${s.initials})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
+        {picker.element}
 
         {learners.length > 1 && (
           <div>

@@ -511,6 +511,59 @@ describe("drives: parent sign-off", () => {
   });
 });
 
+describe("drives: driving instructor", () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), "families/f1"), {
+        memberUids: ["parent", "teen"],
+        "members.teen": member("Teen", "learner"),
+      });
+    });
+  });
+  const lesson = { supervisorUid: "instructor", supervisorName: "Pat Jones", supervisorInitials: "PJ" };
+  const signOffOf = (x: ReturnType<typeof drive>) => ({
+    uid: "parent",
+    name: "Parent",
+    initials: "PA",
+    at: Date.now(),
+    startedAt: x.startedAt,
+    endedAt: x.endedAt,
+    dayMinutes: x.dayMinutes,
+    nightMinutes: x.nightMinutes,
+    supervisorUid: "instructor",
+  });
+
+  it("lets a parent save instructors ahead of the lessons, but not the teen", async () => {
+    await assertSucceeds(updateDoc(doc(db("parent"), "families/f1"), { "instructors.i1": { name: "Pat Jones", initials: "PJ" } }));
+    await assertFails(updateDoc(doc(db("teen"), "families/f1"), { "instructors.i2": { name: "My Friend", initials: "MF" } }));
+    // The teen's other family edits still go through with instructors saved
+    await assertSucceeds(updateDoc(doc(db("teen"), "families/f1"), { "vehicles.v1": { name: "Civic" } }));
+  });
+
+  it("lets a learner time a lesson with an instructor who isn't in the log", async () => {
+    await assertSucceeds(setDoc(doc(db("teen"), "families/f1/drives/l1"), { ...live("teen"), ...lesson }));
+  });
+
+  it("needs the instructor's name and initials", async () => {
+    await assertFails(setDoc(doc(db("teen"), "families/f1/drives/l2"), { ...live("teen"), ...lesson, supervisorName: "" }));
+    await assertFails(setDoc(doc(db("teen"), "families/f1/drives/l3"), { ...live("teen"), ...lesson, supervisorInitials: "" }));
+  });
+
+  it("lets a parent confirm a lesson the teen timed, but not the teen", async () => {
+    const x = { ...drive("teen"), ...lesson };
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), "families/f1/drives/l4"), x));
+    await assertFails(updateDoc(doc(db("teen"), "families/f1/drives/l4"), { signedOff: { ...signOffOf(x), uid: "teen", name: "Teen", initials: "TE" }, updatedAt: 2 }));
+    await assertSucceeds(updateDoc(doc(db("parent"), "families/f1/drives/l4"), { signedOff: signOffOf(x), updatedAt: 2 }));
+  });
+
+  it("lets a parent type in a lesson already confirmed, and only an instructor's lesson", async () => {
+    const x = { ...typedIn("parent"), ...lesson };
+    await assertSucceeds(setDoc(doc(db("parent"), "families/f1/drives/l5"), { ...x, signedOff: signOffOf(x) }));
+    // Someone else's name on it, or different hours, don't pass
+    await assertFails(setDoc(doc(db("parent"), "families/f1/drives/l6"), { ...x, signedOff: { ...signOffOf(x), dayMinutes: 300 } }));
+  });
+});
+
 describe("paid unlocks", () => {
   beforeEach(async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {

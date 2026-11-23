@@ -14,7 +14,7 @@ export function DriveRow({ drive }: { drive: Drive }) {
   // Over Texas's 2 hours a day (or a weekly limit), say what counted so the total adds up
   // The same initials the printed log uses, so two parents named Montana read apart
   // (The React compiler memoizes these per render inputs.)
-  const initials = logInitials(drives.filter((d) => d.endedAt !== null)).label(drive.supervisorUid) || drive.supervisorInitials;
+  const initials = logInitials(drives.filter((d) => d.endedAt !== null)).label(drive) || drive.supervisorInitials;
   const counted = countedPerDrive(drives, rules.countLimit).get(drive.id);
   const showVehicle = !!drive.vehicleName && vehicles.length > 1;
   return (

@@ -160,7 +160,7 @@ function PrintableLog() {
                   </td>
                   <td className="whitespace-nowrap py-1 pr-1.5 text-right tabular-nums sm:pr-2">{d.nightMinutes ? formatMinutes(d.nightMinutes) : ""}</td>
                   <td className="whitespace-nowrap py-1 text-center font-medium">
-                    {inits.label(d.supervisorUid) || d.supervisorInitials}
+                    {inits.label(d) || d.supervisorInitials}
                     {confirmationOf(d) === "confirmed" && <sup title={`Confirmed by ${d.signedOff?.name}`}>✓</sup>}
                     {needsConfirming(d) && <sup title="Not confirmed by a supervising adult">?</sup>}
                   </td>
@@ -220,12 +220,12 @@ function PrintableLog() {
         ) : null}
 
         <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          Night = {nightRangeText(rules)} at the drive&apos;s location. Init. = initials of the supervising licensed adult
+          Night = {nightRangeText(rules)} at the drive&apos;s location. Init. = initials of the supervising licensed adult or driving instructor
           {inits.key.length > 0 && <> ({inits.key.map((k) => `${k.label}: ${k.name}`).join("; ")})</>}.
           {done.some((d) => d.manual) && <> † Entered by hand after the drive, not timed live.</>}
           {done.some((d) => d.timesEdited) && <> * Times were edited after the drive was logged.</>}
-          {confirmedLater && <> ✓ Logged on another phone and confirmed afterward by a supervising adult.</>}
-          {unconfirmed > 0 && <> ? Logged on another phone and not yet confirmed by a supervising adult.</>}
+          {confirmedLater && <> ✓ Confirmed by a supervising adult: logged on another phone, or supervised by a driving instructor.</>}
+          {unconfirmed > 0 && <> ? Not yet confirmed by a supervising adult.</>}
           {done.some(syncedLate) && (
             <> ‡ Timed, but first saved more than 15 minutes after its start — usually started without signal; check the start time.</>
           )}

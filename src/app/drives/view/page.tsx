@@ -10,6 +10,7 @@ import { ConfirmationNote } from "@/components/ConfirmDrives";
 import { countLimitText } from "@/states";
 import { countedPerDrive, formatMinutes } from "@/utils/progress";
 import { driveLearnerId } from "@/utils/learners";
+import { supervisorLabel } from "@/utils/instructors";
 import { card, muted, primaryBtn, secondaryBtn } from "@/components/ui/styles";
 import type { Drive } from "@/types";
 
@@ -76,7 +77,7 @@ function DriveView({ drive }: { drive: Drive }) {
   const vehicleRemoved = !!drive.vehicleId && !vehicles.some((v) => v.id === drive.vehicleId);
   const endsNextDay = new Date(drive.endedAt).toDateString() !== start.toDateString();
   const facts: [string, string][] = [
-    ["Supervised by", drive.supervisorName],
+    ["Supervised by", supervisorLabel(drive)],
     ...(learnerName ? ([["Driver", learnerName]] as [string, string][]) : []),
     ...(drive.vehicleName ? ([["Vehicle", `${drive.vehicleName}${vehicleRemoved ? " (removed)" : ""}`]] as [string, string][]) : []),
     ["Logged", drive.manual ? "Added after the drive" : "Timed live"],

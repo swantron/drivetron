@@ -13,6 +13,9 @@ rules_version = '2';
 // - Times can't be in the future (judged by the server clock), a timer can't be relabelled as
 //   typed-in or back, and a learner's timer records when the server first saw it (syncedAt), so a
 //   drive that claims to have started long before it reached the server is marked on the log.
+// - A driving instructor can supervise without being in the log (or having the app): the drive
+//   names the 'instructor' placeholder with their name and initials, and always needs a parent's
+//   confirmation. A parent typing in an instructor's lesson confirms it as they save it.
 // - A supervisor can confirm a finished drive someone else logged (signedOff). The confirmation
 //   names its signer and copies the times it vouches for, so it can't be forged by a learner or
 //   carried over to different hours: the app treats it as void once the drive no longer matches.
@@ -60,7 +63,7 @@ service cloud.firestore {
     }
 
     function validFamily(f) {
-      return f.keys().hasOnly(['learners', 'vehicles', 'learnerName', 'learnerDob', 'permitDate', 'ownerUid',
+      return f.keys().hasOnly(['learners', 'vehicles', 'instructors', 'learnerName', 'learnerDob', 'permitDate', 'ownerUid',
                                'memberUids', 'members', 'inviteCode', 'joinCode', 'approvedUid',
                                'lastLat', 'lastLng', 'createdAt', 'state'])
         // USPS code of the state whose rules the log follows; missing = Montana
@@ -72,6 +75,7 @@ service cloud.firestore {
         // Map entries can't be iterated in rules; cap the sizes and validate shape client-side
         && (!('learners' in f) || (f.learners is map && f.learners.size() <= 6))
         && (!('vehicles' in f) || (f.vehicles is map && f.vehicles.size() <= 20))
+        && (!('instructors' in f) || (f.instructors is map && f.instructors.size() <= 10))
         && f.memberUids is list && f.memberUids.size() <= 20
         && f.members is map
         && f.inviteCode is string && f.inviteCode.size() >= 8;
@@ -129,15 +133,17 @@ service cloud.firestore {
           );
       }
 
-      // Other members: vehicles, their own name/initials (not role), last location; supervisors also learner details.
+      // Other members: vehicles, their own name/initials (not role), last location; supervisors also
+      // learner details and the driving instructors.
       function memberUpdate() {
         return request.auth.uid in resource.data.memberUids
           && !changed().hasAny(['memberUids', 'inviteCode', 'ownerUid', 'approvedUid', 'joinCode'])
           && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
           && request.resource.data.members[request.auth.uid].role == resource.data.members[request.auth.uid].role
-          // The license date drives the 6-month hold; only adults edit learner details
+          // The license date drives the 6-month hold; only adults edit learner details. Instructors
+          // too: a parent decides who may supervise.
           && (resource.data.members[request.auth.uid].role == 'supervisor'
-              || !changed().hasAny(['learners', 'learnerName', 'learnerDob', 'permitDate', 'state']));
+              || !changed().hasAny(['learners', 'learnerName', 'learnerDob', 'permitDate', 'state', 'instructors']));
       }
 
       // A member (not the owner) leaving: removes only themselves.
@@ -229,10 +235,19 @@ service cloud.firestore {
             && (!('vehicleName' in d) || d.vehicleName == null || (d.vehicleName is string && d.vehicleName.size() <= 80));
         }
 
+        // A driving instructor, who isn't in the log: a placeholder no account can have (uids are 28
+        // characters), and a name and initials for the printed log.
+        function instructorDrive(d) {
+          return d.supervisorUid == 'instructor'
+            && d.supervisorName.size() > 0
+            && d.supervisorInitials.size() > 0;
+        }
+
         // The named supervisor is a current supervising adult, under their current name and the
-        // initials the printed log shows.
+        // initials the printed log shows; or a driving instructor.
         function validSupervisor(d) {
-          return d.supervisorUid in family(fid).memberUids
+          return instructorDrive(d)
+            || d.supervisorUid in family(fid).memberUids
             && family(fid).members[d.supervisorUid].role == 'supervisor'
             && d.supervisorName == family(fid).members[d.supervisorUid].name
             && d.supervisorInitials == family(fid).members[d.supervisorUid].initials;
@@ -294,8 +309,10 @@ service cloud.firestore {
           && validSupervisor(request.resource.data)
           && request.resource.data.createdBy == request.auth.uid
           && request.resource.data.get('timesEdited', false) == false
-          // Confirmation comes after the fact, on a drive that already exists
-          && request.resource.data.get('signedOff', null) == null
+          // Confirmation comes after the fact, on a drive that already exists; except a parent
+          // typing in an instructor's lesson, who is vouching for it as they enter it
+          && (request.resource.data.get('signedOff', null) == null
+              || (instructorDrive(request.resource.data) && isSupervisor(fid) && validSignOff(request.resource.data)))
           // A timer starts running; anything created already finished is a typed-in drive and says so
           && request.resource.data.manual == (request.resource.data.endedAt != null)
           // When present, syncedAt is the server's receipt time (serverTimestamp())

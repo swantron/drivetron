@@ -10,7 +10,9 @@ import { useToast } from "@/components/ui/Toast";
 import { addDrive, patchDrive, removeDrive, updateFamily } from "@/lib/firebase/firestore";
 import { getLocation, driveCoords } from "@/utils/location";
 import { splitDayNight } from "@/utils/night";
-import { defaultSupervisor, supervisorsOf } from "@/utils/members";
+import { defaultSupervisor } from "@/utils/members";
+import { supervisorLabel } from "@/utils/instructors";
+import { useSupervisorPicker } from "@/components/SupervisorPicker";
 import { defaultVehicleId, firstName } from "@/utils/learners";
 import { nowMs } from "@/utils/time";
 import { writeErrorMessage } from "@/utils/errors";
@@ -28,12 +30,19 @@ function clock(ms: number) {
 
 export function DriveTimer() {
   const { user } = useAuth();
+  const { family, learner } = useFamily();
+  if (!family || !user || !learner) return null;
+  // The supervisor picker's state starts from this family's default
+  return <Timer key={family.id} />;
+}
+
+function Timer() {
+  const { user } = useAuth();
   const { family, learner, learners, drives, vehicles, activeDrive, isSupervisor, rules, locked } = useFamily();
   const { showToast } = useToast();
   const router = useRouter();
   const now = useNow(1000, activeDrive !== null);
   const [starting, setStarting] = useState(false);
-  const [pickedSupervisor, setPickedSupervisor] = useState<string | null>(null);
   // undefined = not touched, use the default; "" = no vehicle
   const [pickedVehicle, setPickedVehicle] = useState<string | undefined>(undefined);
   // Discard sits under Stop, so it takes a second tap within a few seconds.
@@ -43,18 +52,16 @@ export function DriveTimer() {
     const t = setTimeout(() => setDiscardArmed(false), 10000);
     return () => clearTimeout(t);
   }, [discardArmed]);
-
+  const picker = useSupervisorPicker({ family: family!, initial: defaultSupervisor(family!, user!.uid), fieldLabel: "Supervising" });
   if (!family || !user || !learner) return null;
   const vehicleId = pickedVehicle !== undefined ? pickedVehicle || null : defaultVehicleId(drives, vehicles);
   const vehicle = vehicles.find((v) => v.id === vehicleId) ?? null;
-  const supervisors = supervisorsOf(family);
-  const supervisor =
-    supervisors.find((s) => s.uid === pickedSupervisor) ?? defaultSupervisor(family, user.uid);
+  const supervisor = picker.choice;
   const onError = (e: Error) => showToast(writeErrorMessage(e), "error");
 
   const start = async () => {
     if (!supervisor) {
-      showToast("Add a supervising adult on the Family tab first", "error");
+      showToast("Pick who's supervising, or name the instructor", "error");
       return;
     }
     setStarting(true);
@@ -133,7 +140,7 @@ export function DriveTimer() {
     return (
       <section className={`${card} text-center`}>
         <p className={muted}>
-          Driving with {activeDrive.supervisorName}
+          Driving with {supervisorLabel(activeDrive)}
           {activeDrive.vehicleName && <> · {activeDrive.vehicleName}</>}
         </p>
         <p className="my-3 font-mono text-5xl font-bold tabular-nums" aria-live="off">
@@ -167,22 +174,7 @@ export function DriveTimer() {
 
   return (
     <section className={card}>
-      {supervisors.length > 1 && (
-        <label className="mb-3 block">
-          <span className={`${muted} mb-1 block`}>Supervising</span>
-          <select
-            className={input}
-            value={supervisor?.uid ?? ""}
-            onChange={(e) => setPickedSupervisor(e.target.value)}
-          >
-            {supervisors.map((s) => (
-              <option key={s.uid} value={s.uid}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+      <div className="mb-3">{picker.element}</div>
       {vehicles.length > 0 && (
         <label className="mb-3 block">
           <span className={`${muted} mb-1 block`}>Vehicle</span>

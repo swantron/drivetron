@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { confirmDrives } from "@/lib/firebase/firestore";
 import { confirmationOf, needsConfirming, signOffFor } from "@/utils/signoff";
 import { driveLearnerId, firstName } from "@/utils/learners";
+import { supervisorLabel } from "@/utils/instructors";
 import { formatDate, formatMinutes } from "@/utils/progress";
 import { writeErrorMessage } from "@/utils/errors";
 import { nowMs } from "@/utils/time";
@@ -68,8 +69,8 @@ export function ConfirmCard() {
       <div>
         <h2 className="font-semibold">{waiting.length === 1 ? "1 drive to confirm" : `${waiting.length} drives to confirm`}</h2>
         <p className={muted}>
-          Timed on a phone other than the supervising adult&apos;s, usually your teen&apos;s. Confirm each one happened as
-          logged, and the printed log shows it as checked.
+          Timed on a phone other than the supervising adult&apos;s, usually your teen&apos;s, or with a driving instructor.
+          Confirm each one happened as logged, and the printed log shows it as checked.
         </p>
       </div>
       <ul className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -81,7 +82,7 @@ export function ConfirmCard() {
               </p>
               <p className={`${muted} truncate`}>
                 {learners.length > 1 && <>{firstName(nameOf(d) ?? "")} · </>}
-                with {d.supervisorName}
+                with {supervisorLabel(d)}
                 {confirmationOf(d) === "changed" && " · changed since confirmed"}
               </p>
             </Link>

@@ -18,6 +18,12 @@ export interface Vehicle {
   name: string;
 }
 
+/** A driving instructor a parent saved ahead of the lessons. They aren't a member and have no account. */
+export interface Instructor {
+  name: string;
+  initials: string;
+}
+
 /**
  * One family log: shared supervisors, one or more learners, and a garage of vehicles. Everyone in `memberUids` can read and write it.
  * Doc: families/{familyId}
@@ -27,6 +33,8 @@ export interface Family {
   /** Learners by id. Families created before multi-learner support have none until migrated. */
   learners?: Record<string, Learner>;
   vehicles?: Record<string, Vehicle>;
+  /** Driving instructors, saved by a supervising adult so the teen can pick them when starting a lesson */
+  instructors?: Record<string, Instructor>;
   /** Legacy single-learner fields, migrated into learners["primary"] on first load */
   learnerName?: string;
   learnerDob?: string;

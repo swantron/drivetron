@@ -64,8 +64,9 @@ import { logInitials } from "../members";
 describe("logInitials", () => {
   const d = (uid: string, name: string, initials: string) => ({ supervisorUid: uid, supervisorName: name, supervisorInitials: initials });
   it("keeps distinct initials, and tells matching ones apart", () => {
-    const x = logInitials([d("a", "Molly Montana", "MM"), d("b", "Mark Montana", "MM"), d("c", "Dana Rivera", "DR")]);
-    expect([x.label("a"), x.label("b"), x.label("c")]).toEqual(["Molly", "Mark", "DR"]);
+    const drives = [d("a", "Molly Montana", "MM"), d("b", "Mark Montana", "MM"), d("c", "Dana Rivera", "DR")];
+    const x = logInitials(drives);
+    expect(drives.map(x.label)).toEqual(["Molly", "Mark", "DR"]);
     expect(x.clash).toBe(true);
     expect(x.key).toEqual([
       { label: "Molly", name: "Molly Montana" },
@@ -74,7 +75,8 @@ describe("logInitials", () => {
     ]);
   });
   it("falls back to full names when the first names match too", () => {
-    const x = logInitials([d("a", "Sam Lee", "SL"), d("b", "Sam Long", "SL")]);
-    expect([x.label("a"), x.label("b")]).toEqual(["Sam Lee", "Sam Long"]);
+    const drives = [d("a", "Sam Lee", "SL"), d("b", "Sam Long", "SL")];
+    const x = logInitials(drives);
+    expect(drives.map(x.label)).toEqual(["Sam Lee", "Sam Long"]);
   });
 });

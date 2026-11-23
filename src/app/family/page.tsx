@@ -17,9 +17,11 @@ import {
   type JoinRequest,
   removeLearner,
   removeMember,
+  removeInstructor,
   removeVehicle,
   rotateInviteCode,
   saveLearner,
+  saveInstructor,
   saveVehicle,
   transferOwnership,
   updateFamily,
@@ -53,6 +55,7 @@ function FamilySettings() {
       <Invite family={family} isOwner={isOwner} />
       {isSupervisor ? <Learners familyId={family.id} /> : <LearnerSummary />}
       <Vehicles familyId={family.id} canManage={isSupervisor} />
+      <Instructors family={family} canManage={isSupervisor} />
       {!isOwner && <LeaveFamily familyId={family.id} uid={user.uid} />}
       {isOwner && <OwnerControls family={family} myUid={user.uid} />}
       <DataExport />
@@ -526,6 +529,81 @@ function Vehicles({ familyId, canManage }: { familyId: string; canManage: boolea
           Add
         </button>
       </form>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Driving instructors, saved ahead of the lessons so the teen can pick one when starting a drive.
+ * Saving one here isn't needed (the teen can type the name), but a parent spells it the way the
+ * printed log should show it, and has said this instructor may supervise.
+ */
+function Instructors({ family, canManage }: { family: Family; canManage: boolean }) {
+  const { showToast } = useToast();
+  const [name, setName] = useState("");
+  // null = follow the name's initials until someone types their own
+  const [initials, setInitials] = useState<string | null>(null);
+  const onError = (e: Error) => showToast(writeErrorMessage(e), "error");
+  const saved = Object.entries(family.instructors ?? {}).sort(([, a], [, b]) => a.name.localeCompare(b.name));
+  const shownInitials = initials ?? initialsOf(name);
+  const cleanInitials = shownInitials.replace(/[^\p{L}]/gu, "").toUpperCase().slice(0, 4);
+  const full = saved.length >= 10;
+
+  const add = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !cleanInitials || full) return;
+    saveInstructor(family.id, newId(), { name: name.trim().slice(0, 80), initials: cleanInitials }, onError);
+    setName("");
+    setInitials(null);
+  };
+
+  if (!canManage && saved.length === 0) return null;
+  return (
+    <section className={`${card} space-y-3`}>
+      <div>
+        <h2 className="font-semibold">Driving instructors</h2>
+        <p className={muted}>
+          {canManage
+            ? "Add your teen's instructor before the lessons, and they can pick them when starting a drive. Instructors don't need the app; you confirm each lesson afterward."
+            : "Pick one under Supervising when you start a lesson. A parent or guardian confirms it afterward."}
+        </p>
+      </div>
+      {saved.length > 0 && (
+        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+          {saved.map(([id, i]) => (
+            <li key={id} className="flex items-center justify-between py-2">
+              <span className="font-medium">
+                {i.name} <span className="font-normal text-gray-500 dark:text-gray-400">({i.initials})</span>
+              </span>
+              {/* Past drives keep the instructor's name, so removing one doesn't change the log */}
+              {canManage && <ConfirmRemove label={`Remove ${i.name}`} onConfirm={() => removeInstructor(family.id, id, onError)} />}
+            </li>
+          ))}
+        </ul>
+      )}
+      {canManage && !full && (
+        <form onSubmit={add} data-unsaved={!!name.trim() || undefined} className="grid grid-cols-[1fr_4.5rem_auto] gap-2">
+          <input
+            aria-label="Instructor's name"
+            className={input}
+            placeholder="Instructor's name"
+            maxLength={80}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            aria-label="Instructor's initials"
+            className={`${input} uppercase`}
+            placeholder="Init."
+            maxLength={4}
+            value={shownInitials}
+            onChange={(e) => setInitials(e.target.value)}
+          />
+          <button className="shrink-0 rounded-xl bg-emerald-700 px-4 font-semibold text-white disabled:opacity-50" disabled={!name.trim() || !cleanInitials}>
+            Add
+          </button>
+        </form>
       )}
     </section>
   );

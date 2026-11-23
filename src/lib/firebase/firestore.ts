@@ -20,7 +20,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { getFirebaseDb } from "./config";
-import type { Drive, DriveInput, Family, Learner, Member, SignOff, Vehicle } from "@/types";
+import type { Drive, DriveInput, Family, Learner, Instructor, Member, SignOff, Vehicle } from "@/types";
 import { PRIMARY_LEARNER } from "@/utils/learners";
 
 const familiesCol = () => collection(getFirebaseDb(), "families");
@@ -239,6 +239,14 @@ export function removeLearner(familyId: string, id: string, onError?: (e: Error)
 
 export function saveVehicle(familyId: string, id: string, vehicle: Vehicle, onError?: (e: Error) => void) {
   fireAndForget(updateFamily(familyId, { [`vehicles.${id}`]: vehicle }), onError);
+}
+
+export function saveInstructor(familyId: string, id: string, instructor: Instructor, onError?: (e: Error) => void) {
+  fireAndForget(updateFamily(familyId, { [`instructors.${id}`]: instructor }), onError);
+}
+
+export function removeInstructor(familyId: string, id: string, onError?: (e: Error) => void) {
+  fireAndForget(updateFamily(familyId, { [`instructors.${id}`]: deleteField() }), onError);
 }
 
 export function removeVehicle(familyId: string, id: string, onError?: (e: Error) => void) {
