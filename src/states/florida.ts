@@ -29,6 +29,7 @@ export const florida: StateRules = {
     label: "the Certification of Driving Experience of a Minor (HSMV 71143)",
     url: "https://www.flhsmv.gov/pdf/forms/71143.pdf",
   },
+  formName: "form HSMV 71143",
   // Its columns (date, day or night, traffic, weather, time, skills) are what the printed log shows.
   practiceLog: {
     label: "FLHSMV Learner's License Driving Log",

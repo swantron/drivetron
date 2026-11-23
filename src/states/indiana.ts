@@ -28,6 +28,7 @@ export const indiana: StateRules = {
     label: "the Log of Supervised Driving Practice (State Form 54706)",
     url: "https://forms.in.gov/Download.aspx?id=9758",
   },
+  formName: "State Form 54706",
   // Its columns (date, day and night drive time) are in the printed log.
   practiceLog: {
     label: "BMV Log of Supervised Driving Practice (State Form 54706)",

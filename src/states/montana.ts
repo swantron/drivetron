@@ -21,6 +21,7 @@ export const montana: StateRules = {
     label: "MVD form 21-1600",
     url: "https://mvdmt.gov/wp-content/uploads/2023/10/21-1600-Graduated-Driver-Licensing-Certification.pdf",
   },
+  formName: "form 21-1600",
   practiceLog: {
     label: "OPI GDL fact sheet & practice driving log",
     url: "https://opi.mt.gov/Portals/182/Page%20Files/Driver%20Education/TE%20Resources/MT-GDL-Factsheet-Log-2024.pdf",

@@ -31,6 +31,7 @@ export const northCarolina: StateRules = {
     label: "the driving log (Form DL-4A), signed by the supervising driver",
     url: "https://www.ncdot.gov/dmv/downloads/Documents/DL-4A.pdf",
   },
+  formName: "form DL-4A",
   // No practiceLog: DL-4A asks for each supervising driver's license number and state, which Drivetron doesn't keep.
   logAtTest:
     "North Carolina's driving log (Form DL-4A) lists each drive's date, day and night time, and the supervising driver's name and license number, and the supervising driver signs it. NCDMV takes digital or printed logs when the teen applies for the Level 2 license. Only 10 hours a week count. Keep the drives in Drivetron, with day and night already split, then copy them onto the form.",

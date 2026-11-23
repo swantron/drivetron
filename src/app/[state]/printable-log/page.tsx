@@ -30,7 +30,10 @@ const ROWS = 16;
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = getStateBySlug((await params).state);
   if (!s) return {};
-  const title = s.noHours ? `Free printable ${s.name} practice driving log | Drivetron` : `Free printable ${s.name} driving log (${requirementText(s)}) | Drivetron`;
+  // Name the state's form, unless it's a log of its own that this sheet doesn't match (Texas's
+  // DES150N, North Carolina's DL-4A), so the title doesn't promise a stand-in for it
+  const form = s.formName && (s.practiceLog || !/log/i.test(s.certification?.label ?? "")) ? ` for ${s.formName}` : "";
+  const title = s.noHours ? `Free printable ${s.name} practice driving log | Drivetron` : `Free printable ${s.name} driving log${form} (${requirementText(s)}) | Drivetron`;
   const description = s.noHours
     ? `A free blank practice driving log for ${s.name} teen drivers: date, times, conditions, total and night time, supervisor initials and signatures. ${s.name} sets no hour requirement, so it's your own record.`
     : `A free blank supervised driving log for ${s.name}: date, times, conditions, total and night time, supervisor initials and signatures, with ${s.name}'s ${requirementText(s)} printed on the sheet.`;

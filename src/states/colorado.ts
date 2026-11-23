@@ -28,6 +28,7 @@ export const colorado: StateRules = {
     label: "the Drive Time Log Sheet (DR 2324)",
     url: "https://dmv.colorado.gov/sites/dmv/files/documents/DR2324_2022.pdf",
   },
+  formName: "form DR 2324",
   // DR 2324 columns: date, verifier's initials, driving time, night driving time, comments.
   practiceLog: {
     label: "Colorado DMV Drive Time Log Sheet (DR 2324)",

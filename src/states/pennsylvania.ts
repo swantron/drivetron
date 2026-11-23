@@ -32,6 +32,7 @@ export const pennsylvania: StateRules = {
     label: "the Parent or Guardian Certification Form (DL-180C)",
     url: "https://www.pa.gov/content/dam/copapwp-pagov/en/penndot/documents/public/dvspubsforms/bdl/bdl-form/dl-180c.pdf",
   },
+  formName: "form DL-180C",
   // No practiceLog: PennDOT has no log form of its own; DL-180C certifies the totals.
   logAtTest:
     "Pennsylvania doesn't ask for the log itself. A parent or guardian signs the DL-180C certifying the 65 hours, 10 at night and 5 in bad weather, in front of the driver license examiner at the road test, or before a notary if they won't be there. Keep the printed log as the record behind that signature.",

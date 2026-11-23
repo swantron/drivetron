@@ -28,6 +28,7 @@ export const newJersey: StateRules = {
     label: "the Certification of Supervised Driving (BA-CSD)",
     url: "https://www.nj.gov/mvc/pdf/license/BA-CSD.pdf",
   },
+  formName: "form BA-CSD",
   logAtTest:
     "New Jersey doesn't ask for the log. Only the signed Certification of Supervised Driving (BA-CSD) meets the requirement; the MVC suggests keeping a log to track the hours. Keep the printed log as the record behind that signature.",
   formGuide: {

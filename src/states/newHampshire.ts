@@ -28,6 +28,7 @@ export const newHampshire: StateRules = {
     label: "the Certification of Additional Supervised Driving (DSMV 509)",
     url: "https://www.dmv.nh.gov/sites/g/files/ehbemt416/files/inline-documents/dsmv509.pdf",
   },
+  formName: "form DSMV 509",
   // Its columns (date, start and end time, day and night hours, skill practiced, parent's initials) match the printed log.
   practiceLog: {
     label: "NH DMV Certification of Additional Supervised Driving (DSMV 509)",

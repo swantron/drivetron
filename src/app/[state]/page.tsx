@@ -28,8 +28,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description = `${s.name} doesn't require a set number of supervised driving hours; the ${s.permitName} is held at least ${holdText(s)}. Here are the rules, and an optional practice log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
     return { title, description, alternates: { canonical: `/${s.slug}` }, ...socialMeta(title, description, `/${s.slug}`), robots: { index: true, follow: true } };
   }
-  const title = `${s.name} supervised driving log: ${hours} | Drivetron`;
-  const description = `${s.name} teen drivers need ${hours}${s.noPermit ? "" : `, with the ${s.permitName} held at least ${holdText(s)}`}. Here are the rules, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
+  // People search by form number ("dl 180c"), so the title names the form when the state has one
+  const title = `${s.name} supervised driving log${s.formName ? ` & ${s.formName}` : ""}: ${hours} | Drivetron`;
+  const description = `${s.name} teen drivers need ${hours}${s.noPermit ? "" : `, with the ${s.permitName} held at least ${holdText(s)}`}. Here are the rules${s.formName ? `, what goes on ${s.formName}` : ""}, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
   return {
     title,
     description,

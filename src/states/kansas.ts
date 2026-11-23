@@ -27,6 +27,7 @@ export const kansas: StateRules = {
     label: "the Driving Time Certification on form DE-98",
     url: "https://www.ksrevenue.gov/pdf/de98.pdf",
   },
+  formName: "form DE-98",
   logAtTest:
     "Kansas doesn't require a log, though the Department of Revenue encourages one. A parent or guardian signs the Driving Time Certification on form DE-98 for 50 hours, 10 at night. Without it, the license stays restricted until 17.",
   formGuide: {

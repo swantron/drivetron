@@ -33,6 +33,7 @@ export const ohio: StateRules = {
     label: "the Fifty-Hour Affidavit (BMV 5791)",
     url: "https://dam.assets.ohio.gov/image/upload/publicsafety.ohio.gov/bmv5791.pdf",
   },
+  formName: "form BMV 5791",
   // No practiceLog: the affidavit's own Supervised Driving Log section also asks for each supervisor's
   // Ohio driver license number, which Drivetron doesn't keep, so the printed log isn't "laid out like" it.
   // BMV 5791: hours "may be documented manually by filling in the log included or by using the RoadReady Ohio App".

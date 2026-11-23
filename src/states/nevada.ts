@@ -27,6 +27,7 @@ export const nevada: StateRules = {
     label: "the Beginning Driver Experience Log (DLD 130)",
     url: "https://dmv.nv.gov/pdfforms/dld130.pdf",
   },
+  formName: "form DLD 130",
   logAtTest:
     "Nevada requires its own log: the Beginning Driver Experience Log (DLD 130) or the RoadReady app, with the dates and times of each session; other logs aren't accepted. A parent or guardian signs the first page of DLD 130 in front of a notary or DMV representative, even with the app.",
   formGuide: {

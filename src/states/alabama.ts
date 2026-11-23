@@ -24,6 +24,7 @@ export const alabama: StateRules = {
     label: "the Behind the Wheel Verification on ALEA form DL-31",
     url: "https://ALEA.gov/sites/default/files/inline-files/DL-31.pdf",
   },
+  formName: "form DL-31",
   logAtTest:
     "Alabama doesn't ask for the log itself. A parent or legal guardian signs the Behind the Wheel Verification on form DL-31, certifying 50 hours; a driver education completion certificate takes its place. Keep the printed log as the record behind that signature.",
   formGuide: {

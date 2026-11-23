@@ -24,6 +24,7 @@ export const southCarolina: StateRules = {
     label: "the Certification of School Attendance, Driver's Education, and Driving Practice (Form PDLA)",
     url: "https://dmv.sc.gov/Driver-Services/Drivers-License/Teenage-drivers",
   },
+  formName: "form PDLA",
   logAtTest:
     "South Carolina doesn't ask for the log itself. The driving practice is certified on Form PDLA, which comes only from driver training schools and high schools; SCDMV doesn't accept downloaded copies. Keep the printed log as the record behind it.",
   formGuide: {

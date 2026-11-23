@@ -56,6 +56,11 @@ export interface StateRules {
   /** The parent's certification of the hours; unset only with noHours */
   certification?: Link;
   /**
+   * The state's form number as people search for it ("form DL-180C", "State Form 54706"), taken
+   * from `certification`. Goes in the public page titles; unset when the state's form has none.
+   */
+  formName?: string;
+  /**
    * The state requires no supervised hours (Arkansas, Hawaii): totalMinutes and nightMinutes are 0,
    * there's no certification, and the log is the family's own record of practice. Progress shows
    * what's been driven and the hold, never a target.

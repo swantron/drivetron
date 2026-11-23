@@ -27,6 +27,7 @@ export const nebraska: StateRules = {
     label: "the 50 Hour Certification (DMV 06-91)",
     url: "https://dmv.nebraska.gov/sites/dmv.nebraska.gov/files/doc/dls/forms/pop50hrcert.pdf",
   },
+  formName: "form DMV 06-91",
   logAtTest:
     "Nebraska doesn't ask for the log itself. A parent, guardian, or licensed driver 21 or older signs the 50 Hour Certification and returns it to the examiner. A DMV-approved driver safety course replaces it.",
   formGuide: {

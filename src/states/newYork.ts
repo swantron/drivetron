@@ -30,6 +30,7 @@ export const newYork: StateRules = {
     label: "the Certification of Supervised Driving (MV-262)",
     url: "https://dmv.ny.gov/document/mv-262",
   },
+  formName: "form MV-262",
   logAtTest:
     "New York doesn't ask for the log itself. A parent or guardian signs the Certification of Supervised Driving (MV-262), and the teen hands it to the license examiner at every road test, including retests. Keep the printed log as the record behind that signature.",
   formGuide: {

@@ -29,6 +29,7 @@ export const georgia: StateRules = {
     label: "the Driving Experience Affidavit (DDS-7), signed at DDS",
     url: "https://dds.georgia.gov/book/export/html/34836",
   },
+  formName: "form DDS-7",
   // No practiceLog: DDS-7 is signed at DDS, with no log form of its own to mirror.
   logAtTest:
     "Georgia doesn't ask for a log. A parent or guardian signs the Driving Experience Affidavit (DDS-7) at DDS, swearing to at least 40 hours of driving, 6 at night, and teens without the 40 hours aren't tested. Keep the printed log as the record behind that signature.",

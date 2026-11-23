@@ -35,6 +35,7 @@ export const texas: StateRules = {
     label: "the 30-Hour Behind-the-Wheel Log (TDLR Form DES150N)",
     url: "https://www.tdlr.texas.gov/driver/files/DES150N-Texas-30-Hour-Behind-the-Wheel-Log.pdf",
   },
+  formName: "form DES150N",
   // No practiceLog: DES150N asks for each supervising adult's signature and driver license number on
   // every session, which Drivetron doesn't keep, so the printed log isn't "laid out like" it.
   logAtTest:
