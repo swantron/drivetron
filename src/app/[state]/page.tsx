@@ -30,7 +30,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   // People search by form number ("dl 180c"), so the title names the form when the state has one
   const title = `${s.name} supervised driving log${s.formName ? ` & ${s.formName}` : ""}: ${hours} | Drivetron`;
-  const description = `${s.name} teen drivers need ${hours}${s.noPermit ? "" : `, with the ${s.permitName} held at least ${holdText(s)}`}. Here are the rules${s.formName ? `, what goes on ${s.formName}` : ""}, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
+  const need = `${s.name} teen drivers need ${hours}${s.noPermit ? "" : `, with the ${s.permitName} held at least ${holdText(s)}`}`;
+  // Someone searching "dl 180c" wants the form, so the snippet leads with it
+  const description = s.formName
+    ? `${s.name} ${s.formName}: what it asks for, and a log the whole family can share to fill it in from${PAYWALL_ON ? ", free to start" : ", free"}. ${need}.`
+    : `${need}. Here are the rules, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
   return {
     title,
     description,
