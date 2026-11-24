@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import { randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import withSerwistInit from "@serwist/next";
 import { STATES } from "./src/states";
 
@@ -17,7 +17,12 @@ const pageUrls = readdirSync("src/app", { recursive: true, encoding: "utf8" })
   .flatMap((url) => (url.includes("[state]") ? STATES.map((s) => url.replace("[state]", s.slug)) : [url]));
 const unexpanded = pageUrls.filter((url) => /\[|\]/.test(url));
 if (unexpanded.length) throw new Error(`Dynamic routes the precache can't list: ${unexpanded.join(", ")}`);
-const buildId = randomUUID();
+// Next loads this config more than once per build (build workers too); the env var keeps one id
+// for all of them, so version.json and the bundled NEXT_PUBLIC_BUILD_ID always agree.
+const buildId = (process.env.DRIVETRON_BUILD_ID ??= randomUUID());
+// What the live site is running, for UpdateWatcher to compare with its own NEXT_PUBLIC_BUILD_ID
+// and notice when a phone is stuck on an old build. Never precached (public/ files aren't).
+writeFileSync("public/version.json", JSON.stringify({ build: buildId }) + "\n");
 
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
@@ -42,6 +47,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_BUILD_COMMIT: commit(),
+    NEXT_PUBLIC_BUILD_ID: buildId,
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
     // Always defined, so emulator-only code (the QA sign-in list) is dropped from production builds
     // at compile time instead of shipping as an unused chunk.

@@ -31,7 +31,7 @@ const bypass = (url: URL) =>
   firebaseHostnames.includes(url.hostname) ||
   url.hostname.endsWith(".firebaseio.com") ||
   url.hostname.endsWith(".firebaseapp.com") ||
-  (url.origin === self.location.origin && url.pathname.startsWith("/__/"));
+  (url.origin === self.location.origin && (url.pathname.startsWith("/__/") || url.pathname === "/version.json"));
 
 // Registered before Serwist's listener so it runs first. Not calling respondWith() leaves the
 // request to the browser, and stopping propagation keeps Serwist from answering it. This matters

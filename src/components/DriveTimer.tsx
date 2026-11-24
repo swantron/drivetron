@@ -11,7 +11,7 @@ import { addDrive, patchDrive, removeDrive, updateFamily } from "@/lib/firebase/
 import { getLocation, driveCoords } from "@/utils/location";
 import { splitDayNight } from "@/utils/night";
 import { defaultSupervisor } from "@/utils/members";
-import { supervisorLabel } from "@/utils/instructors";
+import { INSTRUCTOR_UID, supervisorLabel } from "@/utils/instructors";
 import { useSupervisorPicker } from "@/components/SupervisorPicker";
 import { defaultVehicleId, firstName } from "@/utils/learners";
 import { nowMs } from "@/utils/time";
@@ -174,7 +174,13 @@ function Timer() {
 
   return (
     <section className={card}>
-      <div className="mb-3">{picker.element}</div>
+      <div className="mb-3">
+        {picker.element}
+        {/* A lesson can be longer than the drive (students take turns), and only wheel time counts */}
+        {supervisor?.uid === INSTRUCTOR_UID && (
+          <p className={`${muted} mt-1`}>Start when you take the wheel, not when the lesson begins.</p>
+        )}
+      </div>
       {vehicles.length > 0 && (
         <label className="mb-3 block">
           <span className={`${muted} mb-1 block`}>Vehicle</span>

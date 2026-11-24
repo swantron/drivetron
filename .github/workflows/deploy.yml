@@ -24,6 +24,8 @@ jobs:
       - run: npm --prefix functions ci && npm --prefix functions run build
       # Catches a broken static export on pull requests too, not only at deploy time
       - run: npm run build
+      # One precache URL that 404s fails the service worker install and strands installed apps
+      - run: node scripts/check-precache.mjs
 
       # Security rules are the only backend and this workflow deploys them, so
       # they're tested against the emulator before anything ships.
@@ -62,6 +64,8 @@ jobs:
           NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${{ vars.NEXT_PUBLIC_RECAPTCHA_SITE_KEY }}
           # Unset = no paywall. Set only after the stripeWebhook function is deployed and tested.
           NEXT_PUBLIC_STRIPE_PAYMENT_LINK: ${{ vars.NEXT_PUBLIC_STRIPE_PAYMENT_LINK }}
+
+      - run: node scripts/check-precache.mjs
 
       # Keyless, same as the mt repo: GitHub's OIDC token is exchanged for short-lived
       # credentials. The pool's provider must also trust this repo (by numeric id) on main.

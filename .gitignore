@@ -62,3 +62,4 @@ ui-debug.log
 
 # firebase deploy cache
 .firebase/
+public/version.json
