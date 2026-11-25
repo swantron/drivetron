@@ -80,6 +80,14 @@ export interface StateRules {
     /** The fillable form itself, when the state publishes one (not, say, a guide or a statute) */
     form?: Link;
   };
+  /**
+   * The license after the permit, when people search for its rules by name ("provisional license
+   * ri rules"): `name` is their word for it, and `stage` indexes the entry in `stages` that holds
+   * the rules. The page title names it, `summary` (the key rules in about 150 characters, each
+   * from `sources`) leads the description, and the page shows the stage's rules near the top. Set
+   * it where Search Console shows the searches, not everywhere.
+   */
+  nextLicense?: { name: string; stage: number; summary: string };
   /** Agencies named in the "not affiliated with" disclaimer */
   notAffiliatedWith: string;
   /** Fallback for night calculations with no GPS fix: the capital */

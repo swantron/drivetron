@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { STATES, getStateBySlug, holdText, hoursText, requirementText, sourceLinks } from "@/states";
+import type { StateRules } from "@/states/types";
 import { socialMeta } from "@/lib/site";
 import { PAYWALL_ON } from "@/lib/pricing";
 import { formatMinutes } from "@/utils/progress";
@@ -18,6 +19,12 @@ export function generateStaticParams() {
 
 type Props = { params: Promise<{ state: string }> };
 
+/** The stage people search for by name (`nextLicense`), with its title minus the "Step 2: " prefix. */
+function nextLicenseStage(s: StateRules) {
+  const stage = s.nextLicense && s.stages[s.nextLicense.stage];
+  return stage ? { ...stage, title: stage.title.replace(/^Step \d+:\s*/, "") } : null;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = getStateBySlug((await params).state);
   if (!s) return {};
@@ -28,13 +35,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description = `${s.name} doesn't require a set number of supervised driving hours; the ${s.permitName} is held at least ${holdText(s)}. Here are the rules, and an optional practice log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
     return { title, description, alternates: { canonical: `/${s.slug}` }, ...socialMeta(title, description, `/${s.slug}`), robots: { index: true, follow: true } };
   }
-  // People search by form number ("dl 180c"), so the title names the form when the state has one
-  const title = `${s.name} supervised driving log${s.formName ? ` & ${s.formName}` : ""}: ${hours} | Drivetron`;
+  const free = PAYWALL_ON ? ", free to start" : ", free";
+  const next = nextLicenseStage(s);
+  // People search by form number ("dl 180c"), so the title names the form when the state has one;
+  // likewise the next license, when people search for its rules ("ri provisional license rules")
+  const title = next
+    ? `${s.name} ${s.nextLicense!.name} rules & supervised driving log: ${hours} | Drivetron`
+    : `${s.name} supervised driving log${s.formName ? ` & ${s.formName}` : ""}: ${hours} | Drivetron`;
   const need = `${s.name} teen drivers need ${hours}${s.noPermit ? "" : `, with the ${s.permitName} held at least ${holdText(s)}`}`;
   // Someone searching "dl 180c" wants the form, so the snippet leads with it
-  const description = s.formName
-    ? `${s.name} ${s.formName}: what it asks for, and a log the whole family can share to fill it in from${PAYWALL_ON ? ", free to start" : ", free"}. ${need}.`
-    : `${need}. Here are the rules, and a log the whole family can share${PAYWALL_ON ? ", free to start" : ", free"}.`;
+  const description = next
+    ? `${s.name} ${next.title.toLowerCase()} rules: ${s.nextLicense!.summary} Plus the full rules, and a log the whole family can share${free}.`
+    : s.formName
+      ? `${s.name} ${s.formName}: what it asks for, and a log the whole family can share to fill it in from${free}. ${need}.`
+      : `${need}. Here are the rules, and a log the whole family can share${free}.`;
   return {
     title,
     description,
@@ -47,6 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function StatePage({ params }: Props) {
   const s = getStateBySlug((await params).state);
   if (!s) notFound();
+  const next = nextLicenseStage(s);
   const facts = [
     { label: "Supervised hours", value: s.noHours ? "None required" : formatMinutes(s.totalMinutes) },
     ...(s.nightMinutes ? [{ label: "At night", value: formatMinutes(s.nightMinutes) }] : []),
@@ -81,7 +96,7 @@ export default async function StatePage({ params }: Props) {
           {s.weatherMinutes ? <> and {hoursText(s.weatherMinutes)} in bad weather</> : null}
           {s.challengingMinutes ? <>, {hoursText(s.challengingMinutes)} of it at night or in bad weather</> : null}
           {/* The comma closes a night clause; without one it would dangle ("50 hours of supervised driving, before…") */}
-          {s.nightMinutes || s.challengingMinutes ? "," : ""} before moving to the next license. A parent or guardian
+          {s.nightMinutes || s.challengingMinutes ? "," : ""} before moving to {next ? `the ${next.title.toLowerCase()}` : "the next license"}. A parent or guardian
           certifies the hours on {s.certification?.label}.
           </>
           )}
@@ -108,6 +123,20 @@ export default async function StatePage({ params }: Props) {
           {PAYWALL_ON ? `Start your ${s.name} log free` : `Start your free ${s.name} log`}
         </Link>
         <PriceLine className="mt-2" />
+
+        {/* Answer-first for people searching the next license's rules by name; the full steps are further down */}
+        {next && (
+          <section className="mt-8">
+            <h2 className="text-xl font-bold">
+              {s.name} {next.title.toLowerCase()} rules
+            </h2>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
+              {next.points.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="mt-8">
           <h2 className="text-xl font-bold">When can your teen move up in {s.name}?</h2>
