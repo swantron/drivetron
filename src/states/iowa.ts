@@ -1,6 +1,6 @@
 import type { StateRules } from "./types";
 
-/** Source: Iowa Code 321.180B (graduated driver's licenses). */
+/** Sources: Iowa Code 321.180B (graduated driver's licenses) and 321.178A (parent-taught driver education), and the Iowa DOT parent-taught pages. */
 export const iowa: StateRules = {
   code: "IA",
   slug: "iowa",
@@ -33,6 +33,7 @@ export const iowa: StateRules = {
       "A parent, guardian, or custodian signs the DOT's affidavit that the teen has driven at least 20 hours on streets or highways, 2 of them after sunset and before sunrise.",
       "The hours count with a parent, guardian, custodian, instructor, a person certified by the DOT, or a person 25 or older with written parent permission.",
       "The teen must also have been crash- and violation-free for the six months before applying, and have finished driver education.",
+      "With parent-taught driver education, 20 of the course's 30 driving hours can count toward these 20 hours.",
     ],
   },
   notAffiliatedWith: "the State of Iowa or the Iowa Department of Transportation (DOT)",
@@ -47,6 +48,16 @@ export const iowa: StateRules = {
       ],
     },
     {
+      title: "Parent-taught driver education",
+      points: [
+        "Instead of a school or commercial course, a parent, guardian, or custodian with custody of the student can teach an Iowa DOT-approved course. The teaching parent needs a license for unaccompanied driving and a clear driving record for the last two years.",
+        "The student needs an instruction permit and must be 14 to 21 and attending a public or accredited nonpublic school, or homeschooled under chapter 299A.",
+        "The course includes 30 hours of street or highway driving, 3 of them after sunset and before sunrise, with the teaching parent or a qualified driving instructor. 20 of those 30 hours can count toward the 20-hour affidavit.",
+        "The DOT's driving log (Form 431228) needs, for each session: the date, the skills covered with notes on deficiencies and improvements, the drive time, and the night hours. Drivetron keeps the date, times, night minutes, skills and notes for each drive; copy them onto the DOT's log.",
+        "When it's done, the parent applies online with the course completion certificate and a copy of the log. The DOT emails a Letter of Completion, needed before the driving test. Most applications are denied for missing or incomplete log entries.",
+      ],
+    },
+    {
       title: "Step 2: Intermediate license",
       points: [
         "At 16 or 17, after 12 months on the permit, driver education, the 20-hour affidavit, and six months crash- and violation-free.",
@@ -55,6 +66,11 @@ export const iowa: StateRules = {
       ],
     },
   ],
-  sources: [{ label: "Iowa Code 321.180B: Graduated driver's licenses", url: "https://www.legis.iowa.gov/docs/code/321.180B.pdf" }],
-  verified: "2026-11-19",
+  sources: [
+    { label: "Iowa Code 321.180B: Graduated driver's licenses", url: "https://www.legis.iowa.gov/docs/code/321.180B.pdf" },
+    { label: "Iowa Code 321.178A: Driver education, teaching parent", url: "https://www.legis.iowa.gov/docs/code/321.178A.pdf" },
+    { label: "Iowa DOT: Parent-Taught Driver's Education", url: "https://iowadot.gov/mvd/driverseducation/Parent-taught" },
+    { label: "Iowa DOT: Parent-taught driver's ed FAQ", url: "https://iowadot.gov/drivers-licenses-ids/driver-education/how-do-i-parent-taught-driver-education/faqs" },
+  ],
+  verified: "2026-11-28",
 };

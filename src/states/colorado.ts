@@ -1,8 +1,8 @@
 import type { StateRules } from "./types";
 
 /**
- * Sources: Colorado DMV Drive Time Log Sheet (DR 2324, 02/11/22) and CDOT's "Colorado Graduated
- * Driver Licensing Laws" resource guide.
+ * Sources: Colorado DMV Drive Time Log Sheet (DR 2324, 02/11/22), the Affidavit of Liability and
+ * Guardianship (DR 2460, 06/26/23), and CDOT's "Colorado Graduated Driver Licensing Laws" resource guide.
  */
 export const colorado: StateRules = {
   code: "CO",
@@ -19,7 +19,7 @@ export const colorado: StateRules = {
   permitValidMonths: null,
   // CDOT: "the Colorado-licensed parent or legal guardian who signed the Affidavit of Liability, or a Colorado-licensed alternate permit supervisor"
   supervisor:
-    "the Colorado-licensed parent or legal guardian who signed the Affidavit of Liability and Guardianship, or a Colorado-licensed alternate permit supervisor they appoint",
+    "the Colorado-licensed parent or legal guardian who signed the Affidavit of Liability and Guardianship (DR 2460), or a Colorado-licensed alternate permit supervisor, 21 or older, they appoint",
   // Neither DR 2324 nor CDOT's guide says when "night" starts.
   nightDefinition: null,
   nightOffsetMinutes: 0,
@@ -53,7 +53,8 @@ export const colorado: StateRules = {
       title: "Step 1: Instruction permit",
       points: [
         "From 15 with a 30-hour driver education course, from 15½ with a 4-hour driver awareness program, or from 16.",
-        "A parent or legal guardian signs the Affidavit of Liability and Guardianship.",
+        "A parent or legal guardian, 21 or older, signs the Affidavit of Liability and Guardianship (DR 2460) in front of a DMV employee or a notary, taking on liability for the teen's driving. Withdrawing that signature in writing cancels the permit or license.",
+        "A signer without a Colorado license names an alternate permit supervisor on DR 2460, who must hold a Colorado license and be 21 or older.",
         "Drive with the signing parent or guardian, or an alternate permit supervisor they appoint.",
         "Hold it 12 full months. A teen under 16½ when applying for the license also needs 6 hours of behind-the-wheel training with an instructor.",
       ],
@@ -70,10 +71,11 @@ export const colorado: StateRules = {
   ],
   sources: [
     { label: "Colorado DMV DR 2324: Drive Time Log Sheet", url: "https://dmv.colorado.gov/sites/dmv/files/documents/DR2324_2022.pdf" },
+    { label: "Colorado DMV DR 2460: Affidavit of Liability and Guardianship", url: "https://dmv.colorado.gov/sites/dmv/files/documents/DR2460.pdf" },
     {
       label: "CDOT: Colorado Graduated Driver Licensing Laws",
       url: "https://www.codot.gov/safety/colorado-teen-drivers/assets/2025-assets/teendriving_gdlresourceguide_cdotreview_ada-1.pdf",
     },
   ],
-  verified: "2026-11-19",
+  verified: "2026-11-28",
 };
